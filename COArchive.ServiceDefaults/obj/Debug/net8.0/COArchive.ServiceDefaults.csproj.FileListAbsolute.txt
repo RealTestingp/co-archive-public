@@ -1,0 +1,12 @@
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\bin\Debug\net8.0\COArchive.ServiceDefaults.deps.json
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\bin\Debug\net8.0\COArchive.ServiceDefaults.dll
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\bin\Debug\net8.0\COArchive.ServiceDefaults.pdb
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.csproj.AssemblyReference.cache
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.AssemblyInfoInputs.cache
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.AssemblyInfo.cs
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.csproj.CoreCompileInputs.cache
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.dll
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\refint\COArchive.ServiceDefaults.dll
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\COArchive.ServiceDefaults.pdb
+C:\Users\khuud\source\repos\COArchive\COArchive.ServiceDefaults\obj\Debug\net8.0\ref\COArchive.ServiceDefaults.dll
