@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations; //Comments
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace COArchive.Models
 
