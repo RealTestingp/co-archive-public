@@ -3,7 +3,7 @@ using COArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace COArchive.Controllers
+namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
