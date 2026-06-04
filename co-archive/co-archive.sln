@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37301.10 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COArchive.API", "..\backend\COArchive.API\COArchive.API.csproj", "{4D6DAA16-D49E-D952-2954-02C2E99571DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COArchive", "..\COArchive\COArchive.csproj", "{6340B410-F6D6-275F-C2EA-5565D5B22F01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D6DAA16-D49E-D952-2954-02C2E99571DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D6DAA16-D49E-D952-2954-02C2E99571DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D6DAA16-D49E-D952-2954-02C2E99571DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D6DAA16-D49E-D952-2954-02C2E99571DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6340B410-F6D6-275F-C2EA-5565D5B22F01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6340B410-F6D6-275F-C2EA-5565D5B22F01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6340B410-F6D6-275F-C2EA-5565D5B22F01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6340B410-F6D6-275F-C2EA-5565D5B22F01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9D594959-2D64-4D16-90ED-0B38EB79B4A8}
+	EndGlobalSection
+EndGlobal
