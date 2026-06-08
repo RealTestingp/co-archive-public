@@ -8,85 +8,178 @@ namespace COArchive.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
 
-        public DbSet<Contributor> Contributors => Set<Contributor>();
+        // ── DbSets ────────────────────────────────────────────────────────
+        // Lookup tables
+        public DbSet<Season> Seasons => Set<Season>();
+        public DbSet<EventType> EventTypes => Set<EventType>();
         public DbSet<Venue> Venues => Set<Venue>();
-        public DbSet<Event> Events => Set<Event>();
-        public DbSet<Performance> Performances => Set<Performance>();
+        public DbSet<Language> Languages => Set<Language>();
+        public DbSet<VoiceType> VoiceTypes => Set<VoiceType>();
+        public DbSet<Nationality> Nationalities => Set<Nationality>();
+        public DbSet<Composer> Composers => Set<Composer>();
+        public DbSet<Librettist> Librettists => Set<Librettist>();
+        public DbSet<Opera> Operas => Set<Opera>();
         public DbSet<Character> Characters => Set<Character>();
-        public DbSet<EventContributor> EventContributors => Set<EventContributor>();
+        public DbSet<ContributorType> ContributorTypes => Set<ContributorType>();
+        public DbSet<Position> Positions => Set<Position>();
+
+        // Core tables
+        public DbSet<Person> Persons => Set<Person>();
+        public DbSet<Events> Events => Set<Events>();
+        public DbSet<Performance> Performances => Set<Performance>();
+        public DbSet<Appearance> Appearances => Set<Appearance>();
+
+        // System tables
+        public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Contributor
-            modelBuilder.Entity<Contributor>()
-                .Property(c => c.ContributorType)
-                .HasConversion<string>(); // Store as readable string in DB
 
-            // Event
-            modelBuilder.Entity<Event>()
-                .Property(e => e.EventType)
-                .HasConversion<string>();
+            // ── Many-to-many join tables ──────────────────────────────────
 
-            modelBuilder.Entity<Event>()
-                .HasIndex(e => e.Season);
+            // Opera ↔ Composer
+            modelBuilder.Entity<Opera>()
+                .HasMany(o => o.Composers)
+                .WithMany(c => c.Operas)
+                .UsingEntity(j => j.ToTable("OperaComposer"));
 
-            modelBuilder.Entity<Event>()
+            // Opera ↔ Librettist
+            modelBuilder.Entity<Opera>()
+                .HasMany(o => o.Librettists)
+                .WithMany(l => l.Operas)
+                .UsingEntity(j => j.ToTable("OperaLibrettist"));
+
+            // Person ↔ Nationality
+            modelBuilder.Entity<Person>()
+                .HasMany(p => p.Nationalities)
+                .WithMany(n => n.Persons)
+                .UsingEntity(j => j.ToTable("PersonNationality"));
+
+            // ── Language — two FKs pointing to same table ─────────────────
+            // Must be explicit — EF Core can't auto-resolve two FKs
+            // pointing to the same table
+
+            modelBuilder.Entity<Events>()
+                .HasOne(e => e.WrittenLanguage)
+                .WithMany(l => l.WrittenLanguageEvents)
+                .HasForeignKey(e => e.WrittenLanguageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Events>()
+                .HasOne(e => e.SungLanguage)
+                .WithMany(l => l.SungLanguageEvents)
+                .HasForeignKey(e => e.SungLanguageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ── Events relationships ───────────────────────────────────────
+
+            modelBuilder.Entity<Events>()
+                .HasOne(e => e.Season)
+                .WithMany(s => s.Events)
+                .HasForeignKey(e => e.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete a Season that still has Events
+
+            modelBuilder.Entity<Events>()
+                .HasOne(e => e.EventType)
+                .WithMany(et => et.Events)
+                .HasForeignKey(e => e.EventTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete an EventType that still has Events
+
+            modelBuilder.Entity<Events>()
                 .HasOne(e => e.Venue)
                 .WithMany(v => v.Events)
                 .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete a Venue that still has Events
 
-            // Performance → Event
+            modelBuilder.Entity<Events>()
+                .HasOne(e => e.Opera)
+                .WithMany(o => o.Events)
+                .HasForeignKey(e => e.OperaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete an Opera that still has Events
+
+            // ── Performance relationships ──────────────────────────────────
+
             modelBuilder.Entity<Performance>()
                 .HasOne(p => p.Event)
                 .WithMany(e => e.Performances)
                 .HasForeignKey(p => p.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Cascade — deleting an Event deletes its Performances too
 
-            // Performance → Venue (override, no cascade conflict)
-            modelBuilder.Entity<Performance>()
-                .HasOne(p => p.Venue)
-                .WithMany()
-                .HasForeignKey(p => p.VenueId)
-                .OnDelete(DeleteBehavior.NoAction);
+            // ── Appearance relationships ───────────────────────────────────
 
-            modelBuilder.Entity<Performance>()
-                .HasIndex(p => p.PerformanceDate);
-
-            // Character → Event
-            modelBuilder.Entity<Character>()
-                .HasOne(c => c.Event)
-                .WithMany(e => e.Characters)
-                .HasForeignKey(c => c.EventId)
+            modelBuilder.Entity<Appearance>()
+                .HasOne(a => a.Event)
+                .WithMany(e => e.Appearances)
+                .HasForeignKey(a => a.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Cascade — deleting an Event deletes its Appearances too
 
-            // EventContributor → Event
-            modelBuilder.Entity<EventContributor>()
-                .HasOne(ec => ec.Event)
-                .WithMany(e => e.EventContributors)
-                .HasForeignKey(ec => ec.EventId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Appearance>()
+                .HasOne(a => a.Person)
+                .WithMany(p => p.Appearances)
+                .HasForeignKey(a => a.PersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete a Person who has Appearances
 
-            // EventContributor → Contributor
-            modelBuilder.Entity<EventContributor>()
-                .HasOne(ec => ec.Contributor)
-                .WithMany(c => c.EventContributors)
-                .HasForeignKey(ec => ec.ContributorId)
+            modelBuilder.Entity<Appearance>()
+                .HasOne(a => a.ContributorType)
+                .WithMany(ct => ct.Appearances)
+                .HasForeignKey(a => a.ContributorTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // EventContributor → Character (optional)
-            modelBuilder.Entity<EventContributor>()
-                .HasOne(ec => ec.Character)
-                .WithMany(c => c.EventContributors)
-                .HasForeignKey(ec => ec.CharacterId)
-                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Appearance>()
+                .HasOne(a => a.Position)
+                .WithMany(p => p.Appearances)
+                .HasForeignKey(a => a.PositionId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Prevent duplicate contributor in the same role for the same event
-            modelBuilder.Entity<EventContributor>()
-                .HasIndex(ec => new { ec.EventId, ec.ContributorId, ec.Role })
-                .IsUnique();
+            modelBuilder.Entity<Appearance>()
+                .HasOne(a => a.Character)
+                .WithMany(c => c.Appearances)
+                .HasForeignKey(a => a.CharacterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ── Character relationships ────────────────────────────────────
+
+            modelBuilder.Entity<Character>()
+                .HasOne(c => c.Opera)
+                .WithMany(o => o.Characters)
+                .HasForeignKey(c => c.OperaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict — can't delete an Opera that still has Characters
+
+            // ── Position relationships ─────────────────────────────────────
+
+            modelBuilder.Entity<Position>()
+                .HasOne(p => p.ContributorType)
+                .WithMany(ct => ct.Positions)
+                .HasForeignKey(p => p.ContributorTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ── Person relationships ───────────────────────────────────────
+
+            modelBuilder.Entity<Person>()
+                .HasOne(p => p.VoiceType)
+                .WithMany(vt => vt.Persons)
+                .HasForeignKey(p => p.VoiceTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ── Notification relationships ─────────────────────────────────
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Person)
+                .WithMany(p => p.Notifications)
+                .HasForeignKey(n => n.PersonId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Cascade — deleting a Person deletes their Notifications too
         }
     }
 }
