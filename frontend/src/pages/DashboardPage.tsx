@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import Navbar from '../components/NavBar';
-import Breadcrumb from '../components/BreadCrumb';
-import AddContributorModal from '../components/AddContributorModal';
 import { useNavigate } from 'react-router-dom';
+import NavBar from '../components/NavBar';
+import Breadcrumb from '../components/Breadcrumb';
+import AddContributorModal from '../components/AddContributorModal';
+import AddProductionModal from '../components/AddProductionModal';
+import AddCharacterModal from '../components/AddCharacterModal';
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'Contributors' | 'Productions' | 'Characters'>('Contributors');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isContributorModalOpen, setIsContributorModalOpen] = useState(false);
+  const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
+  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const tabs = ['Contributors', 'Productions', 'Characters'] as const;
@@ -15,6 +19,12 @@ const DashboardPage = () => {
     Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Productions: ['Title', 'Composer', 'Season', 'Year'],
     Characters: ['Name', 'Production', 'Voice Type'],
+  };
+
+  const handleAddNew = () => {
+    if (activeTab === 'Contributors') setIsContributorModalOpen(true);
+    if (activeTab === 'Productions') setIsProductionModalOpen(true);
+    if (activeTab === 'Characters') setIsCharacterModalOpen(true);
   };
 
   const handleView = (i: number) => {
@@ -26,7 +36,7 @@ const DashboardPage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
 
-      <Navbar />
+      <NavBar />
 
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
@@ -85,7 +95,7 @@ const DashboardPage = () => {
             Search
           </button>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleAddNew}
             style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
           >
             + Add New
@@ -126,7 +136,9 @@ const DashboardPage = () => {
 
       </div>
 
-      <AddContributorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddContributorModal isOpen={isContributorModalOpen} onClose={() => setIsContributorModalOpen(false)} />
+      <AddProductionModal isOpen={isProductionModalOpen} onClose={() => setIsProductionModalOpen(false)} />
+      <AddCharacterModal isOpen={isCharacterModalOpen} onClose={() => setIsCharacterModalOpen(false)} />
 
     </div>
   );
