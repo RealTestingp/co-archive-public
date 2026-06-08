@@ -2,10 +2,12 @@ import { useState } from 'react';
 import Navbar from '../components/NavBar';
 import Breadcrumb from '../components/BreadCrumb';
 import AddContributorModal from '../components/AddContributorModal';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'Contributors' | 'Productions' | 'Characters'>('Contributors');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const tabs = ['Contributors', 'Productions', 'Characters'] as const;
 
@@ -13,6 +15,12 @@ const DashboardPage = () => {
     Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Productions: ['Title', 'Composer', 'Season', 'Year'],
     Characters: ['Name', 'Production', 'Voice Type'],
+  };
+
+  const handleView = (i: number) => {
+    if (activeTab === 'Contributors') navigate(`/person/${i}`);
+    if (activeTab === 'Productions') navigate(`/production/${i}`);
+    if (activeTab === 'Characters') navigate(`/character/${i}`);
   };
 
   return (
@@ -54,13 +62,10 @@ const DashboardPage = () => {
                 padding: '8px 16px',
                 cursor: 'pointer',
                 color: activeTab === tab ? '#9B1C1C' : '#6b7280',
-                borderBottom: activeTab === tab ? '2px solid #9B1C1C' : '2px solid transparent',
-                marginBottom: '-1px',
                 background: 'none',
                 border: 'none',
-                borderBottomStyle: 'solid',
-                borderBottomWidth: '2px',
-                borderBottomColor: activeTab === tab ? '#9B1C1C' : 'transparent',
+                borderBottom: activeTab === tab ? '2px solid #9B1C1C' : '2px solid transparent',
+                marginBottom: '-1px',
                 fontFamily: 'Inter, sans-serif',
               }}
             >
@@ -105,8 +110,15 @@ const DashboardPage = () => {
                 <span key={h} style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>—</span>
               ))}
               <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
-                <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>Edit</button>
-                <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}>View</button>
+                <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleView(i)}
+                  style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
+                >
+                  View
+                </button>
               </div>
             </div>
           ))}
