@@ -29,6 +29,6 @@ namespace COArchive.Models
         public string? Country { get; set; }
 
         // Navigation properties
-        public ICollection<Event> Events { get; set; } = new List<Event>();
+        public ICollection<Events> Events { get; set; } = new List<Events>();
     }
 }

@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local settings — never commit these
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json

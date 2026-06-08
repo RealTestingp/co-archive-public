@@ -21,11 +21,13 @@ namespace COArchive.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var events = await _db.Events
+                .Include(e => e.Season)
+                .Include(e => e.EventType)
                 .Include(e => e.Venue)
+                .Include(e => e.Opera)
                 .Include(e => e.Performances)
-                .OrderBy(e => e.Season)
+                .OrderBy(e => e.Season.Label)
                 .ToListAsync();
-
             return Ok(events);
         }
 
@@ -34,11 +36,24 @@ namespace COArchive.API.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var ev = await _db.Events
+                .Include(e => e.Season)
+                .Include(e => e.EventType)
                 .Include(e => e.Venue)
+                .Include(e => e.Opera)
+                    .ThenInclude(o => o.Composers)
+                .Include(e => e.Opera)
+                    .ThenInclude(o => o.Librettists)
+                .Include(e => e.WrittenLanguage)
+                .Include(e => e.SungLanguage)
                 .Include(e => e.Performances)
-                .Include(e => e.Characters)
-                .Include(e => e.EventContributors)
-                    .ThenInclude(ec => ec.Contributor)
+                .Include(e => e.Appearances)
+                    .ThenInclude(a => a.Person)
+                .Include(e => e.Appearances)
+                    .ThenInclude(a => a.ContributorType)
+                .Include(e => e.Appearances)
+                    .ThenInclude(a => a.Position)
+                .Include(e => e.Appearances)
+                    .ThenInclude(a => a.Character)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (ev == null) return NotFound();
@@ -47,7 +62,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/events
         [HttpPost]
-        public async Task<IActionResult> Create(Event ev)
+        public async Task<IActionResult> Create(Events ev)
         {
             _db.Events.Add(ev);
             await _db.SaveChangesAsync();
@@ -56,7 +71,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/events/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Event ev)
+        public async Task<IActionResult> Update(int id, Events ev)
         {
             if (id != ev.Id) return BadRequest();
             _db.Entry(ev).State = EntityState.Modified;
