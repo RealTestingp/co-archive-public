@@ -1,21 +1,24 @@
 import { useState } from 'react';
-import Navbar from '../components/NavBar';
+import { useNavigate } from 'react-router-dom';
+import NavBar from '../components/NavBar';
 
 const SearchPage = () => {
   const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>('Productions');
   const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
   const tabs = ['Productions', 'Contributors', 'Characters'] as const;
 
   const handleSearch = () => {
-    // wire up to API later
-    console.log(`Searching ${activeTab} for: ${query}`);
+    if (query.trim()) {
+      navigate(`/search/results?q=${encodeURIComponent(query)}&tab=${activeTab}`);
+    }
   };
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
 
-      <Navbar />
+      <NavBar />
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem 4rem', textAlign: 'center' }}>
 
