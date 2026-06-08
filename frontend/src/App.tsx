@@ -5,6 +5,7 @@ import PersonPage from './pages/PersonPage';
 import ProductionPage from './pages/ProductionPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 
 function App() {
     return (
@@ -12,6 +13,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<SearchPage />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/search/results" element={<SearchResultsPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/reports" element={<div>Reports coming soon</div>} />
                 <Route path="/person/:id" element={<PersonPage />} />
