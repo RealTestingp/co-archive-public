@@ -4,6 +4,7 @@ import CharacterPage from './pages/CharacterPage';
 import PersonPage from './pages/PersonPage';
 import ProductionPage from './pages/ProductionPage';
 import DashboardPage from './pages/DashboardPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
     return (
@@ -16,6 +17,7 @@ function App() {
                 <Route path="/person/:id" element={<PersonPage />} />
                 <Route path="/production/:id" element={<ProductionPage />} />
                 <Route path="/character/:id" element={<CharacterPage />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     );
