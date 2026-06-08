@@ -1,9 +1,20 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import SearchPage from './pages/SearchPage';
+import CharacterPage from './pages/CharacterPage';
+import PersonPage from './pages/PersonPage';
+import ProductionPage from './pages/ProductionPage';
+
 function App() {
-  return (
-    <div>
-      <h1>Calgary Opera Archive</h1>
-    </div>
-  )
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<SearchPage />} />
+                <Route path="/character/:id" element={<CharacterPage />} />
+                <Route path="/person/:id" element={<PersonPage />} />
+                <Route path="/production/:id" element={<ProductionPage />} />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
-export default App
+export default App;
