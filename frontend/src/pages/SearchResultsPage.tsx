@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
-import Breadcrumb from '../components/BreadCrumb';
+import BreadCrumb from '../components/BreadCrumb';
 
 const SearchResultsPage = () => {
-  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>('Productions');
-  const [query, setQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>(
+    (searchParams.get('tab') as 'Productions' | 'Contributors' | 'Characters') || 'Productions'
+  );
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const navigate = useNavigate();
 
   const tabs = ['Productions', 'Contributors', 'Characters'] as const;
@@ -28,6 +31,12 @@ const SearchResultsPage = () => {
     if (activeTab === 'Characters') navigate(`/character/${i}`);
   };
 
+  const handleSearch = () => {
+    if (query.trim()) {
+      navigate(`/search/results?q=${encodeURIComponent(query)}&tab=${activeTab}`);
+    }
+  };
+
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
 
@@ -35,7 +44,7 @@ const SearchResultsPage = () => {
 
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-        <Breadcrumb path={['Archive', 'Search']} current="Results" />
+        <BreadCrumb path={['Archive', 'Search']} current="Results" />
 
         <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
           Search Results
@@ -50,6 +59,7 @@ const SearchResultsPage = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search by title, name, or keyword..."
             style={{ flex: 1, padding: '9px 12px', fontSize: '14px', fontFamily: 'Inter, sans-serif', border: '1px solid #e5e7eb', borderRadius: '6px', outline: 'none', color: '#111' }}
           />
@@ -60,6 +70,7 @@ const SearchResultsPage = () => {
             ← New Search
           </button>
           <button
+            onClick={handleSearch}
             style={{ background: '#9B1C1C', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '9px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: 'Inter, sans-serif' }}
           >
             Search
@@ -112,7 +123,7 @@ const SearchResultsPage = () => {
 
         {/* Results Count */}
         <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '1rem' }}>
-          <strong style={{ color: '#9B1C1C' }}>—</strong> results
+          <strong style={{ color: '#9B1C1C' }}>—</strong> results {query && `for "${query}"`}
         </div>
 
         {/* Table */}

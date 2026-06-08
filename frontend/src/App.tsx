@@ -6,6 +6,7 @@ import ProductionPage from './pages/ProductionPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchResultsPage from './pages/SearchResultsPage';
+import ReportsPage from './pages/ReportsPage';
 
 function App() {
     return (
@@ -15,7 +16,7 @@ function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/search/results" element={<SearchResultsPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/reports" element={<div>Reports coming soon</div>} />
+                <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/person/:id" element={<PersonPage />} />
                 <Route path="/production/:id" element={<ProductionPage />} />
                 <Route path="/character/:id" element={<CharacterPage />} />
