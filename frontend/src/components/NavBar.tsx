@@ -1,15 +1,26 @@
-import { Link } from 'react-router-dom';
-const Navbar = () => {
+import { Link, useLocation } from 'react-router-dom';
+
+const NavBar = () => {
+  const { pathname } = useLocation();
+
+  const linkStyle = (path: string) => ({
+    color: pathname.startsWith(path) ? '#9B1C1C' : '#6b7280',
+    textDecoration: 'none',
+    fontWeight: pathname.startsWith(path) ? 600 : 400,
+  });
+
   return (
     <nav style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0 2rem', height: '52px', borderBottom: '1px solid #e5e7eb' }}>
       <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.04em' }}>
-        CALGARY OPERA <span style={{ color: '#9B1C1C' }}>ARCHIVE</span>
+        <Link to="/" style={{ textDecoration: 'none', color: '#111' }}>
+          CALGARY OPERA <span style={{ color: '#9B1C1C' }}>ARCHIVE</span>
+        </Link>
       </div>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', gap: '1.75rem', fontSize: '12px', color: '#6b7280' }}>
-          <Link to="/search" style={{ color: '#6b7280', textDecoration: 'none' }}>Search</Link>
-          <a href="#" style={{ color: '#6b7280', textDecoration: 'none' }}>Dashboard</a>
-          <a href="#" style={{ color: '#6b7280', textDecoration: 'none' }}>Reports</a>
+        <div style={{ display: 'flex', gap: '1.75rem', fontSize: '12px' }}>
+          <Link to="/search" style={linkStyle('/search')}>Search</Link>
+          <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
+          <Link to="/reports" style={linkStyle('/reports')}>Reports</Link>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -21,4 +32,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default NavBar;
