@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavBar from '../components/NavBar';
-import Breadcrumb from '../components/Breadcrumb';
+import Breadcrumb from '../components/BreadCrumb';
 import AddContributorModal from '../components/AddContributorModal';
 import AddProductionModal from '../components/AddProductionModal';
 import AddCharacterModal from '../components/AddCharacterModal';
