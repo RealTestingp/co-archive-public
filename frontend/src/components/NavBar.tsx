@@ -3,11 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 const NavBar = () => {
   const { pathname } = useLocation();
 
-  const linkStyle = (path: string) => ({
-    color: pathname.startsWith(path) ? '#9B1C1C' : '#6b7280',
+    const isActive = (path: string) =>
+    pathname.startsWith(path) || (pathname === '/' && path === '/search');
+
+    const linkStyle = (path: string) => ({
+    color: isActive(path) ? '#9B1C1C' : '#6b7280',
     textDecoration: 'none',
-    fontWeight: pathname.startsWith(path) ? 600 : 400,
-  });
+    fontWeight: isActive(path) ? 600 : 400,
+    });
 
   return (
     <nav style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0 2rem', height: '52px', borderBottom: '1px solid #e5e7eb' }}>
