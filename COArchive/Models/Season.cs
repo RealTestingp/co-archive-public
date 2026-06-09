@@ -10,6 +10,6 @@ namespace COArchive.Models
         public string Label { get; set; } = string.Empty; //e.g. 2023-2024
 
         // Navigation
-        public ICollection<Events> Events { get; set; } = new List<Events>(); 
+        public ICollection<Production> Productions { get; set; } = new List<Production>(); 
     }
 }

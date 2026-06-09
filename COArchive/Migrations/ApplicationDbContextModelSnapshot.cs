@@ -36,13 +36,13 @@ namespace COArchive.Migrations
                     b.Property<int>("ContributorTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("EventId")
-                        .HasColumnType("int");
-
                     b.Property<int>("PersonId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PositionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductionId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -51,11 +51,11 @@ namespace COArchive.Migrations
 
                     b.HasIndex("ContributorTypeId");
 
-                    b.HasIndex("EventId");
-
                     b.HasIndex("PersonId");
 
                     b.HasIndex("PositionId");
+
+                    b.HasIndex("ProductionId");
 
                     b.ToTable("Appearances");
                 });
@@ -183,65 +183,6 @@ namespace COArchive.Migrations
                     b.ToTable("EventTypes");
                 });
 
-            modelBuilder.Entity("COArchive.Models.Events", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("EventTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("OperaId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProgramPdfUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("RuntimeMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SeasonId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SungLanguageId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("VenueId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WrittenLanguageId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventTypeId");
-
-                    b.HasIndex("OperaId");
-
-                    b.HasIndex("SeasonId");
-
-                    b.HasIndex("SungLanguageId");
-
-                    b.HasIndex("VenueId");
-
-                    b.HasIndex("WrittenLanguageId");
-
-                    b.ToTable("Events");
-                });
-
             modelBuilder.Entity("COArchive.Models.Language", b =>
                 {
                     b.Property<int>("Id")
@@ -360,12 +301,12 @@ namespace COArchive.Migrations
                     b.Property<DateTime?>("DateTo")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("EventId")
+                    b.Property<int>("ProductionId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EventId");
+                    b.HasIndex("ProductionId");
 
                     b.ToTable("Performances");
                 });
@@ -434,6 +375,65 @@ namespace COArchive.Migrations
                     b.HasIndex("ContributorTypeId");
 
                     b.ToTable("Positions");
+                });
+
+            modelBuilder.Entity("COArchive.Models.Production", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EventTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("OperaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProgramPdfUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RuntimeMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SungLanguageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("VenueId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WrittenLanguageId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventTypeId");
+
+                    b.HasIndex("OperaId");
+
+                    b.HasIndex("SeasonId");
+
+                    b.HasIndex("SungLanguageId");
+
+                    b.HasIndex("VenueId");
+
+                    b.HasIndex("WrittenLanguageId");
+
+                    b.ToTable("Productions");
                 });
 
             modelBuilder.Entity("COArchive.Models.Season", b =>
@@ -568,12 +568,6 @@ namespace COArchive.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("COArchive.Models.Events", "Event")
-                        .WithMany("Appearances")
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("COArchive.Models.Person", "Person")
                         .WithMany("Appearances")
                         .HasForeignKey("PersonId")
@@ -585,15 +579,21 @@ namespace COArchive.Migrations
                         .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("COArchive.Models.Production", "Production")
+                        .WithMany("Appearances")
+                        .HasForeignKey("ProductionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Character");
 
                     b.Navigation("ContributorType");
 
-                    b.Navigation("Event");
-
                     b.Navigation("Person");
 
                     b.Navigation("Position");
+
+                    b.Navigation("Production");
                 });
 
             modelBuilder.Entity("COArchive.Models.Character", b =>
@@ -605,54 +605,6 @@ namespace COArchive.Migrations
                         .IsRequired();
 
                     b.Navigation("Opera");
-                });
-
-            modelBuilder.Entity("COArchive.Models.Events", b =>
-                {
-                    b.HasOne("COArchive.Models.EventType", "EventType")
-                        .WithMany("Events")
-                        .HasForeignKey("EventTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("COArchive.Models.Opera", "Opera")
-                        .WithMany("Events")
-                        .HasForeignKey("OperaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("COArchive.Models.Season", "Season")
-                        .WithMany("Events")
-                        .HasForeignKey("SeasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("COArchive.Models.Language", "SungLanguage")
-                        .WithMany("SungLanguageEvents")
-                        .HasForeignKey("SungLanguageId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("COArchive.Models.Venue", "Venue")
-                        .WithMany("Events")
-                        .HasForeignKey("VenueId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("COArchive.Models.Language", "WrittenLanguage")
-                        .WithMany("WrittenLanguageEvents")
-                        .HasForeignKey("WrittenLanguageId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("EventType");
-
-                    b.Navigation("Opera");
-
-                    b.Navigation("Season");
-
-                    b.Navigation("SungLanguage");
-
-                    b.Navigation("Venue");
-
-                    b.Navigation("WrittenLanguage");
                 });
 
             modelBuilder.Entity("COArchive.Models.Notification", b =>
@@ -668,13 +620,13 @@ namespace COArchive.Migrations
 
             modelBuilder.Entity("COArchive.Models.Performance", b =>
                 {
-                    b.HasOne("COArchive.Models.Events", "Event")
+                    b.HasOne("COArchive.Models.Production", "Production")
                         .WithMany("Performances")
-                        .HasForeignKey("EventId")
+                        .HasForeignKey("ProductionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Event");
+                    b.Navigation("Production");
                 });
 
             modelBuilder.Entity("COArchive.Models.Person", b =>
@@ -696,6 +648,54 @@ namespace COArchive.Migrations
                         .IsRequired();
 
                     b.Navigation("ContributorType");
+                });
+
+            modelBuilder.Entity("COArchive.Models.Production", b =>
+                {
+                    b.HasOne("COArchive.Models.EventType", "EventType")
+                        .WithMany("Productions")
+                        .HasForeignKey("EventTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("COArchive.Models.Opera", "Opera")
+                        .WithMany("Productions")
+                        .HasForeignKey("OperaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("COArchive.Models.Season", "Season")
+                        .WithMany("Productions")
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("COArchive.Models.Language", "SungLanguage")
+                        .WithMany("SungLanguageProductions")
+                        .HasForeignKey("SungLanguageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("COArchive.Models.Venue", "Venue")
+                        .WithMany("Productions")
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("COArchive.Models.Language", "WrittenLanguage")
+                        .WithMany("WrittenLanguageProductions")
+                        .HasForeignKey("WrittenLanguageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("EventType");
+
+                    b.Navigation("Opera");
+
+                    b.Navigation("Season");
+
+                    b.Navigation("SungLanguage");
+
+                    b.Navigation("Venue");
+
+                    b.Navigation("WrittenLanguage");
                 });
 
             modelBuilder.Entity("ComposerOpera", b =>
@@ -757,28 +757,21 @@ namespace COArchive.Migrations
 
             modelBuilder.Entity("COArchive.Models.EventType", b =>
                 {
-                    b.Navigation("Events");
-                });
-
-            modelBuilder.Entity("COArchive.Models.Events", b =>
-                {
-                    b.Navigation("Appearances");
-
-                    b.Navigation("Performances");
+                    b.Navigation("Productions");
                 });
 
             modelBuilder.Entity("COArchive.Models.Language", b =>
                 {
-                    b.Navigation("SungLanguageEvents");
+                    b.Navigation("SungLanguageProductions");
 
-                    b.Navigation("WrittenLanguageEvents");
+                    b.Navigation("WrittenLanguageProductions");
                 });
 
             modelBuilder.Entity("COArchive.Models.Opera", b =>
                 {
                     b.Navigation("Characters");
 
-                    b.Navigation("Events");
+                    b.Navigation("Productions");
                 });
 
             modelBuilder.Entity("COArchive.Models.Person", b =>
@@ -793,14 +786,21 @@ namespace COArchive.Migrations
                     b.Navigation("Appearances");
                 });
 
+            modelBuilder.Entity("COArchive.Models.Production", b =>
+                {
+                    b.Navigation("Appearances");
+
+                    b.Navigation("Performances");
+                });
+
             modelBuilder.Entity("COArchive.Models.Season", b =>
                 {
-                    b.Navigation("Events");
+                    b.Navigation("Productions");
                 });
 
             modelBuilder.Entity("COArchive.Models.Venue", b =>
                 {
-                    b.Navigation("Events");
+                    b.Navigation("Productions");
                 });
 
             modelBuilder.Entity("COArchive.Models.VoiceType", b =>

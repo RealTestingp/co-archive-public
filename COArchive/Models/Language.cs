@@ -10,8 +10,8 @@ namespace COArchive.Models
         public string Name { get; set; } = string.Empty;
 
         // Navigation
-        public ICollection<Events> WrittenLanguageEvents { get; set; } = new List<Events>();
-        public ICollection<Events> SungLanguageEvents { get; set; } = new List<Events>();
+        public ICollection<Production> WrittenLanguageProductions { get; set; } = new List<Production>();
+        public ICollection<Production> SungLanguageProductions { get; set; } = new List<Production>();
     }
 }
 

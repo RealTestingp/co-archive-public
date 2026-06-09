@@ -11,13 +11,13 @@ namespace COArchive.Models
     {
         public int Id { get; set; }
 
-        public int EventId { get; set; }
+        public int ProductionId { get; set; }
 
         public DateTime Date { get; set; }
 
         public DateTime? DateTo { get; set; }
 
         // Navigation
-        public Events Event { get; set; } = null!;
+        public Production Production { get; set; } = null!;
     }
 }
