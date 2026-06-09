@@ -10,6 +10,6 @@ namespace COArchive.Models
         public string Name { get; set; } = string.Empty;
         public bool TrackMilestones { get; set; } = false;
 
-        public ICollection<Events> Events { get; set; } = new List<Events>();
+        public ICollection<Production> Productions { get; set; } = new List<Production>();
     }
 }

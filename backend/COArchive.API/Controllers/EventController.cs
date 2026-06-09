@@ -7,20 +7,20 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class EventsController : ControllerBase
+    public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
 
-        public EventsController(ApplicationDbContext db)
+        public ProductionsController(ApplicationDbContext db)
         {
             _db = db;
         }
 
-        // GET /api/events
+        // GET /api/productions
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var events = await _db.Events
+            var events = await _db.Productions
                 .Include(e => e.Season)
                 .Include(e => e.EventType)
                 .Include(e => e.Venue)
@@ -31,11 +31,11 @@ namespace COArchive.API.Controllers
             return Ok(events);
         }
 
-        // GET /api/events/5
+        // GET /api/productions/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var ev = await _db.Events
+            var ev = await _db.Productions
                 .Include(e => e.Season)
                 .Include(e => e.EventType)
                 .Include(e => e.Venue)
@@ -60,18 +60,18 @@ namespace COArchive.API.Controllers
             return Ok(ev);
         }
 
-        // POST /api/events
+        // POST /api/productions
         [HttpPost]
-        public async Task<IActionResult> Create(Events ev)
+        public async Task<IActionResult> Create(Production ev)
         {
-            _db.Events.Add(ev);
+            _db.Productions.Add(ev);
             await _db.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = ev.Id }, ev);
         }
 
-        // PUT /api/events/5
+        // PUT /api/productions/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Events ev)
+        public async Task<IActionResult> Update(int id, Production ev)
         {
             if (id != ev.Id) return BadRequest();
             _db.Entry(ev).State = EntityState.Modified;
@@ -79,13 +79,13 @@ namespace COArchive.API.Controllers
             return NoContent();
         }
 
-        // DELETE /api/events/5
+        // DELETE /api/productions/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var ev = await _db.Events.FindAsync(id);
+            var ev = await _db.Productions.FindAsync(id);
             if (ev == null) return NotFound();
-            _db.Events.Remove(ev);
+            _db.Productions.Remove(ev);
             await _db.SaveChangesAsync();
             return NoContent();
         }

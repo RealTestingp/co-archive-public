@@ -25,7 +25,7 @@ namespace COArchive.Data
 
         // Core tables
         public DbSet<Person> Persons => Set<Person>();
-        public DbSet<Events> Events => Set<Events>();
+        public DbSet<Production> Productions => Set<Production>();
         public DbSet<Performance> Performances => Set<Performance>();
         public DbSet<Appearance> Appearances => Set<Appearance>();
 
@@ -62,44 +62,44 @@ namespace COArchive.Data
             // Must be explicit — EF Core can't auto-resolve two FKs
             // pointing to the same table
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.WrittenLanguage)
-                .WithMany(l => l.WrittenLanguageEvents)
+                .WithMany(l => l.WrittenLanguageProductions)
                 .HasForeignKey(e => e.WrittenLanguageId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.SungLanguage)
-                .WithMany(l => l.SungLanguageEvents)
+                .WithMany(l => l.SungLanguageProductions)
                 .HasForeignKey(e => e.SungLanguageId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ── Events relationships ───────────────────────────────────────
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.Season)
-                .WithMany(s => s.Events)
+                .WithMany(s => s.Productions)
                 .HasForeignKey(e => e.SeasonId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete a Season that still has Events
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.EventType)
-                .WithMany(et => et.Events)
+                .WithMany(et => et.Productions)
                 .HasForeignKey(e => e.EventTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete an EventType that still has Events
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.Venue)
-                .WithMany(v => v.Events)
+                .WithMany(v => v.Productions)
                 .HasForeignKey(e => e.VenueId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete a Venue that still has Events
 
-            modelBuilder.Entity<Events>()
+            modelBuilder.Entity<Production>()
                 .HasOne(e => e.Opera)
-                .WithMany(o => o.Events)
+                .WithMany(o => o.Productions)
                 .HasForeignKey(e => e.OperaId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete an Opera that still has Events
@@ -107,18 +107,18 @@ namespace COArchive.Data
             // ── Performance relationships ──────────────────────────────────
 
             modelBuilder.Entity<Performance>()
-                .HasOne(p => p.Event)
+                .HasOne(p => p.Production)
                 .WithMany(e => e.Performances)
-                .HasForeignKey(p => p.EventId)
+                .HasForeignKey(p => p.ProductionId)
                 .OnDelete(DeleteBehavior.Cascade);
             // Cascade — deleting an Event deletes its Performances too
 
             // ── Appearance relationships ───────────────────────────────────
 
             modelBuilder.Entity<Appearance>()
-                .HasOne(a => a.Event)
+                .HasOne(a => a.Production)
                 .WithMany(e => e.Appearances)
-                .HasForeignKey(a => a.EventId)
+                .HasForeignKey(a => a.ProductionId)
                 .OnDelete(DeleteBehavior.Cascade);
             // Cascade — deleting an Event deletes its Appearances too
 

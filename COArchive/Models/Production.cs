@@ -8,7 +8,7 @@ namespace COArchive.Models
     /// e.g. "Madama Butterfly" (MainStage), "Barber of Seville - Brunch" (Brunch).
     /// A single Event can have multiple Performances on different dates.
 
-    public class Events
+    public class Production
     {
         public int Id { get; set; }
 

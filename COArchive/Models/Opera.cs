@@ -13,6 +13,6 @@ namespace COArchive.Models
         public ICollection<Composer> Composers { get; set; } = new List<Composer>();
         public ICollection<Librettist> Librettists { get; set; } = new List<Librettist>();
         public ICollection<Character> Characters { get; set; } = new List<Character>();
-        public ICollection<Events> Events { get; set; } = new List<Events>();
+        public ICollection<Production> Productions { get; set; } = new List<Production>();
     }
 }
