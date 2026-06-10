@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// DEBUG — remove after fixing
+Console.WriteLine("Connection string: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

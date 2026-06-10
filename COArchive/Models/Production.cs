@@ -22,7 +22,7 @@ namespace COArchive.Models
         [Required, MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        public int RuntimeMinutes { get; set; }
+        public int? RuntimeMinutes { get; set; }
 
         [MaxLength(500)]
         public string? ProgramPdfUrl { get; set; }

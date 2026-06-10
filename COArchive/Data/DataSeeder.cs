@@ -189,6 +189,10 @@ namespace COArchive.Data
                 new Position { Name = "Répétiteur", ContributorTypeId = creative.Id },
                 new Position { Name = "Chorus Répétiteur", ContributorTypeId = creative.Id },
                 new Position { Name = "Assistant to the Lighting Designer", ContributorTypeId = creative.Id },
+                new Position { Name = "Music Director", ContributorTypeId = creative.Id },
+                new Position { Name = "Scenic, Lighting, and Projection Design", ContributorTypeId = creative.Id },
+                new Position { Name = "Set & Prop Designer", ContributorTypeId = creative.Id },
+                
                 // Crew positions
                 new Position { Name = "Head of Props", ContributorTypeId = crew.Id },
                 new Position { Name = "Head of Wardrobe", ContributorTypeId = crew.Id },
@@ -198,9 +202,12 @@ namespace COArchive.Data
                 new Position { Name = "Production & Facility Coordinator", ContributorTypeId = crew.Id },
                 new Position { Name = "Projected English Titles", ContributorTypeId = crew.Id },
                 new Position { Name = "Titles Operator", ContributorTypeId = crew.Id },
+                new Position { Name = "Assistant Technical Director", ContributorTypeId = crew.Id },
                 // Artist positions (equity)
                 new Position { Name = "Stage Manager", ContributorTypeId = artist.Id },
-                new Position { Name = "Assistant Stage Manager", ContributorTypeId = artist.Id }
+                new Position { Name = "Assistant Stage Manager", ContributorTypeId = artist.Id },
+                new Position { Name = "Puppeteer", ContributorTypeId = artist.Id },
+                new Position { Name = "Apprentice Stage Manager", ContributorTypeId = artist.Id }
             );
             await db.SaveChangesAsync();
         }

@@ -399,7 +399,7 @@ namespace COArchive.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("RuntimeMinutes")
+                    b.Property<int?>("RuntimeMinutes")
                         .HasColumnType("int");
 
                     b.Property<int>("SeasonId")
