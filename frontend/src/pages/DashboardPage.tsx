@@ -4,13 +4,13 @@ import NavBar from '../components/NavBar';
 import Breadcrumb from '../components/BreadCrumb';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import ErrorState from '../components/ErrorState';
-import AddContributorModal from '../components/AddContributorModal';
+import AddPersonModal from '../components/AddPersonModal';
 import AddProductionModal from '../components/AddProductionModal';
 import AddCharacterModal from '../components/AddCharacterModal';
 
 const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState<'Contributors' | 'Productions' | 'Characters'>('Contributors');
-  const [isContributorModalOpen, setIsContributorModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Persons' | 'Productions' | 'Characters'>('Persons');
+  const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,27 +18,26 @@ const DashboardPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // simulate API call — replace with real fetch later
     const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
   }, [activeTab]);
 
-  const tabs = ['Contributors', 'Productions', 'Characters'] as const;
+  const tabs = ['Persons', 'Productions', 'Characters'] as const;
 
   const tableHeaders = {
-    Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
+    Persons: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Productions: ['Title', 'Composer', 'Season', 'Year'],
     Characters: ['Name', 'Production', 'Voice Type'],
   };
 
   const handleAddNew = () => {
-    if (activeTab === 'Contributors') setIsContributorModalOpen(true);
+    if (activeTab === 'Persons') setIsPersonModalOpen(true);
     if (activeTab === 'Productions') setIsProductionModalOpen(true);
     if (activeTab === 'Characters') setIsCharacterModalOpen(true);
   };
 
   const handleView = (i: number) => {
-    if (activeTab === 'Contributors') navigate(`/person/${i}`);
+    if (activeTab === 'Persons') navigate(`/person/${i}`);
     if (activeTab === 'Productions') navigate(`/production/${i}`);
     if (activeTab === 'Characters') navigate(`/character/${i}`);
   };
@@ -64,7 +63,7 @@ const DashboardPage = () => {
         {/* Stats */}
         <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
           {[
-            { label: 'Contributors', value: '—' },
+            { label: 'Persons', value: '—' },
             { label: 'Productions', value: '—' },
             { label: 'Characters', value: '—' },
           ].map((stat) => (
@@ -171,7 +170,7 @@ const DashboardPage = () => {
 
       </div>
 
-      <AddContributorModal isOpen={isContributorModalOpen} onClose={() => setIsContributorModalOpen(false)} />
+      <AddPersonModal isOpen={isPersonModalOpen} onClose={() => setIsPersonModalOpen(false)} />
       <AddProductionModal isOpen={isProductionModalOpen} onClose={() => setIsProductionModalOpen(false)} />
       <AddCharacterModal isOpen={isCharacterModalOpen} onClose={() => setIsCharacterModalOpen(false)} />
 

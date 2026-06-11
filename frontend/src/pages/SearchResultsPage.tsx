@@ -5,30 +5,30 @@ import BreadCrumb from '../components/BreadCrumb';
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>(
-    (searchParams.get('tab') as 'Productions' | 'Contributors' | 'Characters') || 'Productions'
+  const [activeTab, setActiveTab] = useState<'Productions' | 'Persons' | 'Characters'>(
+    (searchParams.get('tab') as 'Productions' | 'Persons' | 'Characters') || 'Productions'
   );
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [hasResults, setHasResults] = useState(true);
   const navigate = useNavigate();
 
-  const tabs = ['Productions', 'Contributors', 'Characters'] as const;
+  const tabs = ['Productions', 'Persons', 'Characters'] as const;
 
   const tableHeaders = {
     Productions: ['Title', 'Composer', 'Librettist', 'Language', 'Year', 'Season'],
-    Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
+    Persons: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Characters: ['Name', 'Production', 'Voice Type'],
   };
 
   const filters = {
     Productions: ['Year', 'Language', 'Season'],
-    Contributors: ['Voice Type', 'Nationality'],
+    Persons: ['Voice Type', 'Nationality'],
     Characters: ['Voice Type', 'Production'],
   };
 
   const handleView = (i: number) => {
     if (activeTab === 'Productions') navigate(`/production/${i}`);
-    if (activeTab === 'Contributors') navigate(`/person/${i}`);
+    if (activeTab === 'Persons') navigate(`/person/${i}`);
     if (activeTab === 'Characters') navigate(`/character/${i}`);
   };
 

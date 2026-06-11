@@ -5,7 +5,7 @@ interface Props {
 
 const voiceTypes = ['Soprano', 'Mezzo-soprano', 'Contralto', 'Tenor', 'Baritone', 'Bass'];
 
-const AddContributorModal = ({ isOpen, onClose }: Props) => {
+const AddPersonModal = ({ isOpen, onClose }: Props) => {
   if (!isOpen) return null;
 
   const selectStyle = {
@@ -52,7 +52,7 @@ const AddContributorModal = ({ isOpen, onClose }: Props) => {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111' }}>Add Contributor</h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111' }}>Add Person</h2>
           <button onClick={onClose} style={{ fontSize: '18px', color: '#9ca3af', cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
         </div>
 
@@ -103,7 +103,7 @@ const AddContributorModal = ({ isOpen, onClose }: Props) => {
               Cancel
             </button>
             <button style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}>
-              Add Contributor
+              Add Person
             </button>
           </div>
         </div>
@@ -113,4 +113,4 @@ const AddContributorModal = ({ isOpen, onClose }: Props) => {
   );
 };
 
-export default AddContributorModal;
+export default AddPersonModal;
