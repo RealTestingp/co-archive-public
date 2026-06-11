@@ -33,13 +33,13 @@ const PersonPage = () => {
 
       {hasError ? (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-          <Breadcrumb path={['Archive', 'Contributors']} current="Person Name" />
+          <Breadcrumb path={['Archive', 'Persons']} current="Person Name" />
           <ErrorState onRetry={() => { setHasError(false); setIsLoading(true); }} />
         </div>
       ) : (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-          <Breadcrumb path={['Archive', 'Contributors']} current="Person Name" />
+          <Breadcrumb path={['Archive', 'Persons']} current="Person Name" />
 
           {/* Profile Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -54,7 +54,7 @@ const PersonPage = () => {
                 }
                 {isLoading
                   ? <LoadingSkeleton width="140px" height="14px" />
-                  : <div style={{ fontSize: '13px', color: '#d1d5db' }}>Contributor · Nationality</div>
+                  : <div style={{ fontSize: '13px', color: '#d1d5db' }}>Person · Nationality</div>
                 }
               </div>
             </div>

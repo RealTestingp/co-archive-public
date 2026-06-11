@@ -29,10 +29,10 @@ const ProductionPage = () => {
   ];
 
   const castCrew = [
-    { name: 'Contributor Name', role: 'Role / Character', type: 'Cast' },
-    { name: 'Contributor Name', role: 'Role / Character', type: 'Crew' },
-    { name: 'Contributor Name', role: 'Role / Character', type: 'Orchestra' },
-    { name: 'Contributor Name', role: 'Role / Character', type: 'Cast' },
+    { name: 'Person Name', role: 'Role / Character', type: 'Cast' },
+    { name: 'Person Name', role: 'Role / Character', type: 'Crew' },
+    { name: 'Person Name', role: 'Role / Character', type: 'Orchestra' },
+    { name: 'Person Name', role: 'Role / Character', type: 'Cast' },
   ];
 
   return (

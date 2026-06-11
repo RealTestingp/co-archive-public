@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 
 const SearchPage = () => {
-  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>('Productions');
+  const [activeTab, setActiveTab] = useState<'Productions' | 'Persons' | 'Characters'>('Productions');
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
-  const tabs = ['Productions', 'Contributors', 'Characters'] as const;
+  const tabs = ['Productions', 'Persons', 'Characters'] as const;
 
   const handleSearch = () => {
     if (query.trim()) {
@@ -32,7 +32,7 @@ const SearchPage = () => {
           Explore the Archive
         </h1>
         <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '1.5rem' }}>
-          Search productions, contributors, and characters spanning decades of performance.
+          Search productions, persons, and characters spanning decades of performance.
         </p>
 
         {/* Tabs */}

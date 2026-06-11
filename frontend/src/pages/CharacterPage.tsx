@@ -26,9 +26,9 @@ const CharacterPage = () => {
   ];
 
   const performers = [
-    { name: 'Contributor Name', production: 'Production Title', year: 'Year' },
-    { name: 'Contributor Name', production: 'Production Title', year: 'Year' },
-    { name: 'Contributor Name', production: 'Production Title', year: 'Year' },
+    { name: 'Person Name', production: 'Production Title', year: 'Year' },
+    { name: 'Person Name', production: 'Production Title', year: 'Year' },
+    { name: 'Person Name', production: 'Production Title', year: 'Year' },
   ];
 
   return (
@@ -91,7 +91,7 @@ const CharacterPage = () => {
           <SectionTitle>Performed By</SectionTitle>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              {['Contributor', 'Production', 'Year'].map((h, i) => (
+              {['Person', 'Production', 'Year'].map((h, i) => (
                 <span key={h} style={{ flex: i < 2 ? 1 : 0, minWidth: i === 2 ? '48px' : 'auto', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
                   {h}
                 </span>
