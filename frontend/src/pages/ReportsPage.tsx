@@ -6,7 +6,7 @@ import Divider from '../components/Divider';
 const ReportsPage = () => {
 
   const stats = [
-    { label: 'Contributors', value: '—' },
+    { label: 'Persons', value: '—' },
     { label: 'Productions', value: '—' },
     { label: 'Characters', value: '—' },
     { label: 'Seasons', value: '—' },
@@ -45,7 +45,7 @@ const ReportsPage = () => {
         <SectionTitle>Productions by Season</SectionTitle>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-            {['Season', 'Productions', 'Contributors'].map((h) => (
+            {['Season', 'Productions', 'Persons'].map((h) => (
               <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>{h}</span>
             ))}
           </div>
@@ -79,18 +79,18 @@ const ReportsPage = () => {
 
         <Divider />
 
-        {/* Contributor Milestones */}
-        <SectionTitle>Contributor Milestones</SectionTitle>
+        {/* Person Milestones */}
+        <SectionTitle>Person Milestones</SectionTitle>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-            {['Contributor', 'Milestone'].map((h) => (
+            {['Person', 'Milestone'].map((h) => (
               <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>{h}</span>
             ))}
           </div>
           {[
-            { name: 'Contributor Name', badge: '50th Performance' },
-            { name: 'Contributor Name', badge: '10 Year Anniversary' },
-            { name: 'Contributor Name', badge: '25th Production' },
+            { name: 'Person Name', badge: '50th Performance' },
+            { name: 'Person Name', badge: '10 Year Anniversary' },
+            { name: 'Person Name', badge: '25th Production' },
           ].map((item, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < 2 ? '1px solid #f3f4f6' : 'none' }}>
               <span style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>{item.name}</span>
