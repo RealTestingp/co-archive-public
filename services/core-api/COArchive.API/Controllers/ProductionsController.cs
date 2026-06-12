@@ -151,6 +151,7 @@ namespace COArchive.API.Controllers
             return Ok(result);
         }
 
+        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
         // PUT /api/productions/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
@@ -171,6 +172,43 @@ namespace COArchive.API.Controllers
             existing.ProgramPdfUrl = dto.ProgramPdfUrl;
             existing.Notes = dto.Notes;
 
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
+        // POST /api/productions
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
+        {
+            var production = new Production
+            {
+                Title = dto.Title,
+                SeasonId = dto.SeasonId,
+                EventTypeId = dto.EventTypeId,
+                VenueId = dto.VenueId,
+                OperaId = dto.OperaId,
+                WrittenLanguageId = dto.WrittenLanguageId,
+                SungLanguageId = dto.SungLanguageId,
+                RuntimeMinutes = dto.RuntimeMinutes,
+                ProgramPdfUrl = dto.ProgramPdfUrl,
+                Notes = dto.Notes,
+            };
+
+            _db.Productions.Add(production);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = production.Id }, production);
+        }
+
+        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
+        // DELETE /api/productions/1
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var production = await _db.Productions.FindAsync(id);
+            if (production == null) return NotFound();
+
+            _db.Productions.Remove(production);
             await _db.SaveChangesAsync();
             return NoContent();
         }
