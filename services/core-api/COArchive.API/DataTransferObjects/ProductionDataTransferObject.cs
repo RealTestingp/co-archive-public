@@ -1,6 +1,6 @@
 ﻿namespace COArchive.API.DataTransferObjects
 {
-    public class ProductionDataTransferObject
+    public class CreateProductionDto
     {
         public string Title { get; set; } = string.Empty;
         public int SeasonId { get; set; }
@@ -29,4 +29,3 @@
         public string? Notes { get; set; }
     }
 }
-
