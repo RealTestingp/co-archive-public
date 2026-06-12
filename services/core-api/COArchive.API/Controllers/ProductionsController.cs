@@ -16,26 +16,41 @@ namespace COArchive.API.Controllers
             _db = db;
         }
 
-        // GET /api/productions
+        // GET /api/productions?search=butterfly
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? search)
         {
-            var events = await _db.Productions
+            var query = _db.Productions
                 .Include(e => e.Season)
                 .Include(e => e.EventType)
                 .Include(e => e.Venue)
                 .Include(e => e.Opera)
-                .Include(e => e.Performances)
-                .OrderBy(e => e.Season.Label)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(e => e.Title.Contains(search));
+
+            var results = await query
+                .OrderByDescending(e => e.Season.Label)
+                .Select(e => new
+                {
+                    e.Id,
+                    e.Title,
+                    Season = e.Season.Label,
+                    EventType = e.EventType.Name,
+                    Opera = e.Opera != null ? e.Opera.Title : null,
+                    Venue = e.Venue.Name,
+                })
                 .ToListAsync();
-            return Ok(events);
+
+            return Ok(results);
         }
 
         // GET /api/productions/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var ev = await _db.Productions
+            var production = await _db.Productions
                 .Include(e => e.Season)
                 .Include(e => e.EventType)
                 .Include(e => e.Venue)
@@ -46,48 +61,93 @@ namespace COArchive.API.Controllers
                 .Include(e => e.WrittenLanguage)
                 .Include(e => e.SungLanguage)
                 .Include(e => e.Performances)
-                .Include(e => e.Appearances)
-                    .ThenInclude(a => a.Person)
-                .Include(e => e.Appearances)
-                    .ThenInclude(a => a.ContributorType)
-                .Include(e => e.Appearances)
-                    .ThenInclude(a => a.Position)
-                .Include(e => e.Appearances)
-                    .ThenInclude(a => a.Character)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (ev == null) return NotFound();
-            return Ok(ev);
-        }
+            if (production == null) return NotFound();
 
-        // POST /api/productions
-        [HttpPost]
-        public async Task<IActionResult> Create(Production ev)
-        {
-            _db.Productions.Add(ev);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = ev.Id }, ev);
-        }
+            var appearances = await _db.Appearances
+                .Where(a => a.ProductionId == id)
+                .Include(a => a.Person)
+                .Include(a => a.ContributorType)
+                .Include(a => a.Position)
+                .Include(a => a.Character)
+                .ToListAsync();
 
-        // PUT /api/productions/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Production ev)
-        {
-            if (id != ev.Id) return BadRequest();
-            _db.Entry(ev).State = EntityState.Modified;
-            await _db.SaveChangesAsync();
-            return NoContent();
-        }
+            var result = new
+            {
+                production.Id,
+                production.Title,
+                production.RuntimeMinutes,
+                production.ProgramPdfUrl,
+                production.Notes,
+                Season = production.Season.Label,
+                EventType = production.EventType.Name,
+                Venue = production.Venue.Name,
+                Opera = production.Opera?.Title,
+                Composers = production.Opera?.Composers
+                    .Select(c => c.Name).ToList() ?? new List<string>(),
+                Librettists = production.Opera?.Librettists
+                    .Select(l => l.Name).ToList() ?? new List<string>(),
+                WrittenLanguage = production.WrittenLanguage?.Name,
+                SungLanguage = production.SungLanguage?.Name,
+                Performances = production.Performances
+                    .OrderBy(p => p.Date)
+                    .Select(p => new { p.Id, p.Date })
+                    .ToList(),
+                Cast = appearances
+                    .Where(a => a.ContributorType.Name == "Artist"
+                             || a.ContributorType.Name == "McPhee")
+                    .Select(a => new
+                    {
+                        a.Person.FirstName,
+                        a.Person.LastName,
+                        ContributorType = a.ContributorType.Name,
+                        Character = a.Character?.Name,
+                        Position = a.Position?.Name,
+                    })
+                    .OrderBy(a => a.LastName)
+                    .ToList(),
+                Creative = appearances
+                    .Where(a => a.ContributorType.Name == "Creative")
+                    .Select(a => new
+                    {
+                        a.Person.FirstName,
+                        a.Person.LastName,
+                        Position = a.Position?.Name,
+                    })
+                    .OrderBy(a => a.Position)
+                    .ToList(),
+                Crew = appearances
+                    .Where(a => a.ContributorType.Name == "Crew")
+                    .Select(a => new
+                    {
+                        a.Person.FirstName,
+                        a.Person.LastName,
+                        Position = a.Position?.Name,
+                    })
+                    .OrderBy(a => a.Position)
+                    .ToList(),
+                Orchestra = appearances
+                    .Where(a => a.ContributorType.Name == "Orchestra")
+                    .Select(a => new
+                    {
+                        a.Person.FirstName,
+                        a.Person.LastName,
+                    })
+                    .OrderBy(a => a.LastName)
+                    .ToList(),
+                Chorus = appearances
+                    .Where(a => a.ContributorType.Name == "Chorus")
+                    .Select(a => new
+                    {
+                        a.Person.FirstName,
+                        a.Person.LastName,
+                    })
+                    .OrderBy(a => a.LastName)
+                    .ToList(),
+            };
 
-        // DELETE /api/productions/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var ev = await _db.Productions.FindAsync(id);
-            if (ev == null) return NotFound();
-            _db.Productions.Remove(ev);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            return Ok(result);
         }
     }
 }
