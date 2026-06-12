@@ -2,6 +2,7 @@
 using COArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using COArchive.API.DataTransferObjects;
 
 namespace COArchive.API.Controllers
 {
@@ -16,7 +17,7 @@ namespace COArchive.API.Controllers
             _db = db;
         }
 
-        // GET /api/productions?search=butterfly
+        // GET /api/productions?search=butterfly - search terms
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
         {
@@ -46,7 +47,7 @@ namespace COArchive.API.Controllers
             return Ok(results);
         }
 
-        // GET /api/productions/5
+        // GET /api/productions/1 - specific production
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -148,6 +149,30 @@ namespace COArchive.API.Controllers
             };
 
             return Ok(result);
+        }
+
+        // PUT /api/productions/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
+        {
+            if (id != dto.Id) return BadRequest("ID mismatch.");
+
+            var existing = await _db.Productions.FindAsync(id);
+            if (existing == null) return NotFound();
+
+            existing.Title = dto.Title;
+            existing.SeasonId = dto.SeasonId;
+            existing.EventTypeId = dto.EventTypeId;
+            existing.VenueId = dto.VenueId;
+            existing.OperaId = dto.OperaId;
+            existing.WrittenLanguageId = dto.WrittenLanguageId;
+            existing.SungLanguageId = dto.SungLanguageId;
+            existing.RuntimeMinutes = dto.RuntimeMinutes;
+            existing.ProgramPdfUrl = dto.ProgramPdfUrl;
+            existing.Notes = dto.Notes;
+
+            await _db.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
