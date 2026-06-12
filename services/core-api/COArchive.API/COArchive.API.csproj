@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\COArchive\COArchive.csproj" />
+    <ProjectReference Include="..\COArchive\COArchive.csproj" />
   </ItemGroup>
 
 </Project>
