@@ -5,29 +5,30 @@ import BreadCrumb from '../components/BreadCrumb';
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>(
-    (searchParams.get('tab') as 'Productions' | 'Contributors' | 'Characters') || 'Productions'
+  const [activeTab, setActiveTab] = useState<'Productions' | 'Persons' | 'Characters'>(
+    (searchParams.get('tab') as 'Productions' | 'Persons' | 'Characters') || 'Productions'
   );
   const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [hasResults, setHasResults] = useState(true);
   const navigate = useNavigate();
 
-  const tabs = ['Productions', 'Contributors', 'Characters'] as const;
+  const tabs = ['Productions', 'Persons', 'Characters'] as const;
 
   const tableHeaders = {
     Productions: ['Title', 'Composer', 'Librettist', 'Language', 'Year', 'Season'],
-    Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
+    Persons: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Characters: ['Name', 'Production', 'Voice Type'],
   };
 
   const filters = {
     Productions: ['Year', 'Language', 'Season'],
-    Contributors: ['Voice Type', 'Nationality'],
+    Persons: ['Voice Type', 'Nationality'],
     Characters: ['Voice Type', 'Production'],
   };
 
   const handleView = (i: number) => {
     if (activeTab === 'Productions') navigate(`/production/${i}`);
-    if (activeTab === 'Contributors') navigate(`/person/${i}`);
+    if (activeTab === 'Persons') navigate(`/person/${i}`);
     if (activeTab === 'Characters') navigate(`/character/${i}`);
   };
 
@@ -138,24 +139,42 @@ const SearchResultsPage = () => {
               Actions
             </span>
           </div>
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
-              {tableHeaders[activeTab].map((h) => (
-                <span key={h} style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>—</span>
-              ))}
-              <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
-                <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleView(i)}
-                  style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
-                >
-                  View
-                </button>
+
+          {hasResults ? (
+            [1, 2, 3].map((i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
+                {tableHeaders[activeTab].map((h) => (
+                  <span key={h} style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>—</span>
+                ))}
+                <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
+                  <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleView(i)}
+                    style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
+                  >
+                    View
+                  </button>
+                </div>
               </div>
+            ))
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '0.5rem' }}>
+                No Results
+              </div>
+              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '1.5rem', maxWidth: '320px', lineHeight: 1.75 }}>
+                No {activeTab.toLowerCase()} matched your search. Try a different keyword or adjust your filters.
+              </p>
+              <button
+                onClick={() => navigate('/search')}
+                style={{ fontSize: '12px', fontWeight: 500, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
+              >
+                New Search
+              </button>
             </div>
-          ))}
+          )}
         </div>
 
       </div>

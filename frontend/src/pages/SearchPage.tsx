@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 
 const SearchPage = () => {
-  const [activeTab, setActiveTab] = useState<'Productions' | 'Contributors' | 'Characters'>('Productions');
+  const [activeTab, setActiveTab] = useState<'Productions' | 'Persons' | 'Characters'>('Productions');
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
-  const tabs = ['Productions', 'Contributors', 'Characters'] as const;
+  const tabs = ['Productions', 'Persons', 'Characters'] as const;
 
   const handleSearch = () => {
     if (query.trim()) {
@@ -20,19 +20,19 @@ const SearchPage = () => {
 
       <NavBar />
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem 4rem', textAlign: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 2rem 6rem', textAlign: 'center' }}>
 
         {/* Eyebrow */}
-        <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#9B1C1C', marginBottom: '1rem' }}>
+        <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#9B1C1C', marginBottom: '1rem' }}>
           Calgary Opera Archive
         </div>
 
         {/* Heading */}
-        <h1 style={{ fontSize: '40px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '52px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
           Explore the Archive
         </h1>
-        <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '2.5rem' }}>
-          Search productions, contributors, and characters spanning decades of performance.
+        <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '1.5rem' }}>
+          Search productions, persons, and characters spanning decades of performance.
         </p>
 
         {/* Tabs */}
@@ -59,7 +59,7 @@ const SearchPage = () => {
         </div>
 
         {/* Search Bar */}
-        <div style={{ display: 'flex', width: '100%', maxWidth: '560px', border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', width: '100%', maxWidth: '680px', border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
           <input
             type="text"
             value={query}

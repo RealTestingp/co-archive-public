@@ -1,36 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Breadcrumb from '../components/BreadCrumb';
-import AddContributorModal from '../components/AddContributorModal';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import ErrorState from '../components/ErrorState';
+import AddPersonModal from '../components/AddPersonModal';
 import AddProductionModal from '../components/AddProductionModal';
 import AddCharacterModal from '../components/AddCharacterModal';
 
 const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState<'Contributors' | 'Productions' | 'Characters'>('Contributors');
-  const [isContributorModalOpen, setIsContributorModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Persons' | 'Productions' | 'Characters'>('Persons');
+  const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
 
-  const tabs = ['Contributors', 'Productions', 'Characters'] as const;
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, [activeTab]);
+
+  const tabs = ['Persons', 'Productions', 'Characters'] as const;
 
   const tableHeaders = {
-    Contributors: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
+    Persons: ['Name', 'Nationality', 'Voice Type', 'Active Since'],
     Productions: ['Title', 'Composer', 'Season', 'Year'],
     Characters: ['Name', 'Production', 'Voice Type'],
   };
 
   const handleAddNew = () => {
-    if (activeTab === 'Contributors') setIsContributorModalOpen(true);
+    if (activeTab === 'Persons') setIsPersonModalOpen(true);
     if (activeTab === 'Productions') setIsProductionModalOpen(true);
     if (activeTab === 'Characters') setIsCharacterModalOpen(true);
   };
 
   const handleView = (i: number) => {
-    if (activeTab === 'Contributors') navigate(`/person/${i}`);
+    if (activeTab === 'Persons') navigate(`/person/${i}`);
     if (activeTab === 'Productions') navigate(`/production/${i}`);
     if (activeTab === 'Characters') navigate(`/character/${i}`);
+  };
+
+  const handleTabChange = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    setIsLoading(true);
   };
 
   return (
@@ -49,13 +63,16 @@ const DashboardPage = () => {
         {/* Stats */}
         <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
           {[
-            { label: 'Contributors', value: '—' },
+            { label: 'Persons', value: '—' },
             { label: 'Productions', value: '—' },
             { label: 'Characters', value: '—' },
           ].map((stat) => (
             <div key={stat.label}>
-              <div style={{ fontSize: '28px', fontWeight: 600, color: '#d1d5db', letterSpacing: '-0.02em' }}>{stat.value}</div>
-              <div style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginTop: '2px' }}>{stat.label}</div>
+              {isLoading
+                ? <LoadingSkeleton width="48px" height="28px" />
+                : <div style={{ fontSize: '28px', fontWeight: 600, color: '#d1d5db', letterSpacing: '-0.02em' }}>{stat.value}</div>
+              }
+              <div style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginTop: '4px' }}>{stat.label}</div>
             </div>
           ))}
         </div>
@@ -65,7 +82,7 @@ const DashboardPage = () => {
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
               style={{
                 fontSize: '13px',
                 fontWeight: 500,
@@ -103,40 +120,57 @@ const DashboardPage = () => {
         </div>
 
         {/* Table */}
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-            {tableHeaders[activeTab].map((h) => (
-              <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
-                {h}
-              </span>
-            ))}
-            <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', minWidth: '100px', textAlign: 'right' }}>
-              Actions
-            </span>
-          </div>
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
+        {hasError ? (
+          <ErrorState onRetry={() => { setHasError(false); setIsLoading(true); }} />
+        ) : (
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
               {tableHeaders[activeTab].map((h) => (
-                <span key={h} style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>—</span>
+                <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
+                  {h}
+                </span>
               ))}
-              <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
-                <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleView(i)}
-                  style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
-                >
-                  View
-                </button>
-              </div>
+              <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', minWidth: '100px', textAlign: 'right' }}>
+                Actions
+              </span>
             </div>
-          ))}
-        </div>
+            {isLoading
+              ? [1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
+                    {tableHeaders[activeTab].map((h) => (
+                      <LoadingSkeleton key={h} width="100%" height="13px" />
+                    ))}
+                    <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
+                      <LoadingSkeleton width="40px" height="26px" borderRadius="4px" />
+                      <LoadingSkeleton width="40px" height="26px" borderRadius="4px" />
+                    </div>
+                  </div>
+                ))
+              : [1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
+                    {tableHeaders[activeTab].map((h) => (
+                      <span key={h} style={{ flex: 1, fontSize: '13px', color: '#d1d5db' }}>—</span>
+                    ))}
+                    <div style={{ display: 'flex', gap: '6px', minWidth: '100px', justifyContent: 'flex-end' }}>
+                      <button style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleView(i)}
+                        style={{ fontSize: '11px', fontWeight: 500, padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff' }}
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                ))
+            }
+          </div>
+        )}
 
       </div>
 
-      <AddContributorModal isOpen={isContributorModalOpen} onClose={() => setIsContributorModalOpen(false)} />
+      <AddPersonModal isOpen={isPersonModalOpen} onClose={() => setIsPersonModalOpen(false)} />
       <AddProductionModal isOpen={isProductionModalOpen} onClose={() => setIsProductionModalOpen(false)} />
       <AddCharacterModal isOpen={isCharacterModalOpen} onClose={() => setIsCharacterModalOpen(false)} />
 
