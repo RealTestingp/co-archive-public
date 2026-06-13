@@ -1,20 +1,25 @@
 using COArchive.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DEBUG ó remove after fixing
+// DEBUG ‚Äî remove after fixing
 Console.WriteLine("Connection string: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+
+// Add Entra ID authentication
+builder.Services.AddAuthentication()
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// DbContext ó pulled from COArchive project via project reference
+// DbContext ‚Äî pulled from COArchive project via project reference
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS ó allow React frontend
+// CORS ‚Äî allow React frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
@@ -38,6 +43,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("ReactFrontend");
+app.UseAuthentication(); // ‚Üê added
 app.UseAuthorization();
 app.MapControllers();
 
