@@ -58,12 +58,17 @@ co-archive/
 1. Clone the repo
 2. Create a `.env` file at the repo root:
    DB_CONNECTION_STRING=your-azure-sql-connection-string
+   
    AZURE_TENANT_ID=your-entra-tenant-id
+   
    AZURE_CLIENT_ID=your-entra-client-id
-3. Create `frontend/.env.local`:
+   
+4. Create `frontend/.env.local`:
    VITE_ENTRA_CLIENT_ID=your-entra-client-id
+   
    VITE_ENTRA_TENANT_ID=your-entra-tenant-id
-4. Create `services/core-api/COArchive.API/appsettings.Development.json` (never commit this):
+   
+6. Create `services/core-api/COArchive.API/appsettings.Development.json` (never commit this):
 
 ```json
 {
