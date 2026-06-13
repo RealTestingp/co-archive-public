@@ -3,11 +3,13 @@ using COArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using COArchive.API.DataTransferObjects;
+using Microsoft.AspNetCore.Authorization;
 
 namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize] // all endpoints require login
     public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -151,8 +153,8 @@ namespace COArchive.API.Controllers
             return Ok(result);
         }
 
-        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
         // PUT /api/productions/5
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
@@ -176,8 +178,8 @@ namespace COArchive.API.Controllers
             return NoContent();
         }
 
-        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
         // POST /api/productions
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
@@ -200,8 +202,8 @@ namespace COArchive.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = production.Id }, production);
         }
 
-        // TODO: Add [Authorize(Roles = "Admin")] once Entra ID is configured
         // DELETE /api/productions/1
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
