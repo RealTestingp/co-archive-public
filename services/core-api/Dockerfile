@@ -10,7 +10,7 @@ RUN dotnet restore COArchive.API/COArchive.API.csproj
 
 COPY . .
 
-RUN dotnet publish COArchive.API/COArchive.API.csproj -c Release -o /app/publish
+RUN dotnet publish COArchive.API/COArchive.API.csproj -c Release -o /app/publish /p:ErrorOnDuplicatePublishOutputFiles=false
 
 # Stage 2 - Run the .NET app
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
