@@ -4,8 +4,7 @@ using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DEBUG — remove after fixing
-Console.WriteLine("Connection string: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+
 
 // Add Entra ID authentication
 builder.Services.AddAuthentication()
