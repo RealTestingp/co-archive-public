@@ -54,5 +54,78 @@ namespace COArchive.API.Controllers
 
             return Ok(results);
         }
+
+        // GET /api/persons/1
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var person = await _db.Persons
+                .Where(p => p.Id == id)
+                .Include(p => p.VoiceType)
+                .Include(p => p.Nationalities)
+                .FirstOrDefaultAsync();
+
+            if (person == null) return NotFound();
+
+            var appearances = await _db.Appearances
+                .Where(a => a.PersonId == id)
+                .Include(a => a.Production)
+                    .ThenInclude(pr => pr.Season)
+                .Include(a => a.Production)
+                    .ThenInclude(pr => pr.EventType)
+                .Include(a => a.ContributorType)
+                .Include(a => a.Position)
+                .Include(a => a.Character)
+                .ToListAsync();
+
+            var result = new
+            {
+                person.Id,
+                person.FirstName,
+                person.LastName,
+                person.Email,
+                person.IsActive,
+                person.ProfileImageUrl,
+                VoiceType = person.VoiceType?.Name,
+                Nationalities = person.Nationalities
+                    .Select(n => n.Name)
+                    .ToList(),
+                ContributorTypes = appearances
+                    .Select(a => a.ContributorType.Name)
+                    .Distinct()
+                    .ToList(),
+                Appearances = appearances
+                    .Where(a => a.Production.EventType.TrackMilestones)
+                    .GroupBy(a => a.Production)
+                    .Select(g => new
+                    {
+                        ProductionId = g.Key.Id,
+                        ProductionTitle = g.Key.Title,
+                        Season = g.Key.Season.Label,
+                        EventType = g.Key.EventType.Name,
+                        Roles = g.Select(a => new
+                        {
+                            ContributorType = a.ContributorType.Name,
+                            Character = a.Character?.Name,
+                            Position = a.Position?.Name,
+                        }).ToList()
+                    })
+                    .OrderByDescending(a => a.Season)
+                    .ToList(),
+                MainStageProductionCount = appearances
+                    .Where(a => a.Production.EventType.TrackMilestones)
+                    .Select(a => a.ProductionId)
+                    .Distinct()
+                    .Count(),
+                PerformanceCount = appearances
+                    .Where(a => a.ContributorType.TrackPerformances
+                             && a.Production.EventType.TrackMilestones)
+                    .Select(a => a.ProductionId)
+                    .Distinct()
+                    .Count(),
+            };
+
+            return Ok(result);
+        }
     }
 }
