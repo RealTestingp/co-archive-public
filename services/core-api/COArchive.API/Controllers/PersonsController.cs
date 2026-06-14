@@ -1,4 +1,7 @@
-﻿using COArchive.Data;
+﻿using COArchive.API.DataTransferObjects;
+using COArchive.Data;
+using COArchive.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -126,6 +129,47 @@ namespace COArchive.API.Controllers
             };
 
             return Ok(result);
+        }
+
+        // POST /api/persons
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreatePersonDto dto)
+        {
+            var person = new Person
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                MiddleName = dto.MiddleName,
+                Email = dto.Email,
+                VoiceTypeId = dto.VoiceTypeId,
+                ProfileImageUrl = dto.ProfileImageUrl,
+                IsActive = dto.IsActive,
+            };
+
+            // Handle nationalities — many-to-many
+            if (dto.NationalityIds.Any())
+            {
+                var nationalities = await _db.Nationalities
+                    .Where(n => dto.NationalityIds.Contains(n.Id))
+                    .ToListAsync();
+                person.Nationalities = nationalities;
+            }
+
+            _db.Persons.Add(person);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = person.Id }, new { person.Id });
+        }
+
+        // DELETE /api/persons/1
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var person = await _db.Persons.FindAsync(id);
+            if (person == null) return NotFound();
+
+            _db.Persons.Remove(person);
+            await _db.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
