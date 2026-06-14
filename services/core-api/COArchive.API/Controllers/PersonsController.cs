@@ -171,5 +171,39 @@ namespace COArchive.API.Controllers
             await _db.SaveChangesAsync();
             return NoContent();
         }
+
+        // PUT /api/persons/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdatePersonDto dto)
+        {
+            if (id != dto.Id) return BadRequest("ID mismatch.");
+
+            var existing = await _db.Persons
+                .Include(p => p.Nationalities)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (existing == null) return NotFound();
+
+            existing.FirstName = dto.FirstName;
+            existing.LastName = dto.LastName;
+            existing.MiddleName = dto.MiddleName;
+            existing.Email = dto.Email;
+            existing.VoiceTypeId = dto.VoiceTypeId;
+            existing.ProfileImageUrl = dto.ProfileImageUrl;
+            existing.IsActive = dto.IsActive;
+
+            // Update nationalities — clear existing and replace
+            existing.Nationalities.Clear();
+            if (dto.NationalityIds.Any())
+            {
+                var nationalities = await _db.Nationalities
+                    .Where(n => dto.NationalityIds.Contains(n.Id))
+                    .ToListAsync();
+                existing.Nationalities = nationalities;
+            }
+
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
