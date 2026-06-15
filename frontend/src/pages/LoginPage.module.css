@@ -1,0 +1,106 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f7f5f2;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 80px; /* nudges card up optically */
+}
+
+.card {
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 56px 52px 48px; /* slightly more breathing room */
+  width: 420px; /* wider */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 36px;
+}
+
+.wordmarkText {
+  font-size: 18px;
+  font-weight: 500;
+  color: #111111;
+  letter-spacing: 0.01em;
+}
+
+.wordmarkAccent {
+  width: 32px;
+  height: 2px;
+  background: #9B1C1C;
+  border-radius: 2px;
+}
+
+.divider {
+  width: 100%;
+  height: 0.5px;
+  background: rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+}
+
+.heading {
+  font-size: 20px;
+  font-weight: 500;
+  color: #111111;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.subheading {
+  font-size: 13px;
+  color: #666666;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 0 28px;
+  max-width: 280px;
+}
+
+.msButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 20px;
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111111;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s ease;
+}
+
+.msButton:hover {
+  background: #f5f5f5;
+}
+
+.msButton:active {
+  background: #eeeeee;
+  transform: scale(0.98);
+}
+
+.msButton:focus-visible {
+  outline: 2px solid #9B1C1C;
+  outline-offset: 2px;
+}
+
+.footer {
+  font-size: 12px;
+  color: #999999;
+  text-align: center;
+  margin-top: 24px;
+  line-height: 1.6;
+}
