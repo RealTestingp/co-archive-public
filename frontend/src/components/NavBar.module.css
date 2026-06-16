@@ -1,0 +1,140 @@
+.nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 2rem;
+  height: 52px;
+  border-bottom: 1px solid #e5e7eb;
+  font-family: 'Inter', sans-serif;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+}
+
+.brandLink {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #111111;
+  text-decoration: none;
+}
+
+.brandAccent {
+  color: #9B1C1C;
+}
+
+.links {
+  display: flex;
+  gap: 1.75rem;
+  font-size: 12px;
+}
+
+.link {
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.15s ease;
+}
+
+.link:hover {
+  color: #111111;
+}
+
+.linkActive {
+  color: #9B1C1C;
+  font-weight: 600;
+}
+
+.right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.adminBadge {
+  background: #111111;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.avatarWrap {
+  position: relative;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f3e8e8;
+  border: 1.5px solid #9B1C1C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9B1C1C;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s ease;
+}
+
+.avatar:hover {
+  background: #ead8d8;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 0.5px solid #e5e7eb;
+  border-radius: 8px;
+  width: 210px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdownHeader {
+  padding: 12px 14px;
+  border-bottom: 0.5px solid #e5e7eb;
+}
+
+.dropdownName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111111;
+}
+
+.dropdownEmail {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background: #f9f9f9;
+  color: #111111;
+}
