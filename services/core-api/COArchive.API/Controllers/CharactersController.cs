@@ -1,10 +1,13 @@
 ﻿
+using COArchive.API.DataTransferObjects;
 using COArchive.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace COArchive.API.Controllers
 {
+    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
     
@@ -88,6 +91,49 @@ namespace COArchive.API.Controllers
             };
 
             return Ok(result);
+        }
+
+        // POST /api/characters
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
+        {
+            var character = new COArchive.Models.Character
+            {
+                Name = dto.Name,
+                OperaId = dto.OperaId,
+            };
+
+            _db.Characters.Add(character);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = character.Id }, new { character.Id });
+        }
+
+        // PUT /api/characters/1
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCharacterDto dto)
+        {
+            if (id != dto.Id) return BadRequest("ID mismatch.");
+
+            var existing = await _db.Characters.FindAsync(id);
+            if (existing == null) return NotFound();
+
+            existing.Name = dto.Name;
+            existing.OperaId = dto.OperaId;
+
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // DELETE /api/characters/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var character = await _db.Characters.FindAsync(id);
+            if (character == null) return NotFound();
+
+            _db.Characters.Remove(character);
+            await _db.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
