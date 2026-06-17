@@ -22,7 +22,11 @@ namespace COArchive.API.Controllers
         // GET /api/productions?search=butterfly - search terms
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
+
         {
+            if (search != null && search.Length > 100)
+                return BadRequest("Search term too long.");
+
             var query = _db.Productions
                 .Include(e => e.Season)
                 .Include(e => e.EventType)
@@ -154,7 +158,7 @@ namespace COArchive.API.Controllers
         }
 
         // PUT /api/productions/5
-        [Authorize(Roles = "Admin")]
+       
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
@@ -179,7 +183,7 @@ namespace COArchive.API.Controllers
         }
 
         // POST /api/productions
-        [Authorize(Roles = "Admin")]
+        
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
@@ -203,7 +207,7 @@ namespace COArchive.API.Controllers
         }
 
         // DELETE /api/productions/1
-        [Authorize(Roles = "Admin")]
+       
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

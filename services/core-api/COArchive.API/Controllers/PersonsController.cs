@@ -90,13 +90,13 @@ namespace COArchive.API.Controllers
                 person.IsActive,
                 person.ProfileImageUrl,
                 VoiceType = person.VoiceType?.Name,
-                Nationalities = person.Nationalities
-                    .Select(n => n.Name)
-                    .ToList(),
-                ContributorTypes = appearances
-                    .Select(a => a.ContributorType.Name)
-                    .Distinct()
-                    .ToList(),
+                Nationalities = person.Nationalities?
+                .Select(n => n.Name)
+                .ToList() ?? new List<string>(),
+                            ContributorTypes = appearances
+                .Select(a => a.ContributorType.Name)
+                .Distinct()
+                .ToList() ?? new List<string>(),
                 Appearances = appearances
                     .Where(a => a.Production.EventType.TrackMilestones)
                     .GroupBy(a => a.Production)
