@@ -10,6 +10,7 @@ namespace COArchive.API.Controllers
     //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
+   
     
     public class CharactersController : ControllerBase
     {
@@ -95,6 +96,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/characters
         [HttpPost]
+        
         public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
         {
             var character = new COArchive.Models.Character
