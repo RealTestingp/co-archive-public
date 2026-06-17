@@ -18,8 +18,8 @@ namespace COArchive.API.Controllers
             _db = db;
         }
 
-        // GET /api/appearances?productionId=1 - all appearances for one production
-        // GET /api/appearances?personId=10 - all appearances for one person
+        // GET /api/appearances?productionId=1 - all appearances for one production for production page
+        // GET /api/appearances?personId=10 - all appearances for one person for person profile
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? productionId, [FromQuery] int? personId)
         {
