@@ -278,7 +278,11 @@ const ManageArchivePage = () => {
         )}
       </div>
 
-      <AddPersonModal isOpen={isPersonModalOpen} onClose={() => setIsPersonModalOpen(false)} />
+      <AddPersonModal
+        isOpen={isPersonModalOpen}
+        onClose={() => setIsPersonModalOpen(false)}
+        onSuccess={() => fetchData('Persons', search)}
+      />
       <AddProductionModal
         isOpen={isProductionModalOpen}
         onClose={() => setIsProductionModalOpen(false)}
