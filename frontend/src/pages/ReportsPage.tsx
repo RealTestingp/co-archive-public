@@ -19,7 +19,7 @@ const ReportsPage = () => {
 
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-        <BreadCrumb path={['Admin']} current="Reports" />
+        <BreadCrumb path={[{ label: 'Archive', to: '/search' }]} current="Reports" />
 
         <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
           Reports

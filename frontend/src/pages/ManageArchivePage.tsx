@@ -183,7 +183,7 @@ const ManageArchivePage = () => {
       <NavBar />
 
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-        <Breadcrumb path={['Admin']} current="Manage Archive" />
+        <Breadcrumb path={[{ label: 'Admin', to: '/manage' }]} current="Manage Archive" />
 
         <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '1.5rem' }}>
           Manage Archive

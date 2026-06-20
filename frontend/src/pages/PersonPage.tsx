@@ -33,13 +33,13 @@ const PersonPage = () => {
 
       {hasError ? (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-          <Breadcrumb path={['Archive', 'Persons']} current="Person Name" />
+          <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Persons', to: '/search' }]} current={person?.firstName ? `${person.firstName} ${person.lastName}` : 'Person'} />
           <ErrorState onRetry={() => { setHasError(false); setIsLoading(true); }} />
         </div>
       ) : (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-          <Breadcrumb path={['Archive', 'Persons']} current="Person Name" />
+          <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Persons', to: '/search' }]} current={person?.firstName ? `${person.firstName} ${person.lastName}` : 'Person'} />
 
           {/* Profile Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>

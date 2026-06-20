@@ -130,7 +130,7 @@ const ProductionPage = () => {
       <NavBar />
 
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-        <Breadcrumb path={['Archive', 'Productions']} current={production?.title ?? 'Production'} />
+       <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Productions', to: '/search' }]} current={production?.title ?? 'Production'} />
 
         {hasError ? (
           <ErrorState onRetry={fetchProduction} />

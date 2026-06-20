@@ -38,13 +38,13 @@ const CharacterPage = () => {
 
       {hasError ? (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-          <Breadcrumb path={['Archive', 'Characters']} current="Character Name" />
+          <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Characters', to: '/search' }]} current="Character" />
           <ErrorState onRetry={() => { setHasError(false); setIsLoading(true); }} />
         </div>
       ) : (
         <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
 
-          <Breadcrumb path={['Archive', 'Characters']} current="Character Name" />
+         <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Characters', to: '/search' }]} current="Character" />
 
           {/* Header */}
           {isLoading
