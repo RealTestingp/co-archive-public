@@ -63,7 +63,7 @@ const SearchResultsPage = () => {
       <NavBar />
 
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem" }}>
-        <BreadCrumb path={["Archive", "Search"]} current="Results" />
+        <BreadCrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Search', to: '/search' }]} current="Results" />
 
         <h1
           style={{
