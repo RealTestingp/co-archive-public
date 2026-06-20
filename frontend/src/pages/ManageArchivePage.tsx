@@ -288,7 +288,11 @@ const ManageArchivePage = () => {
         onClose={() => setIsProductionModalOpen(false)}
         onSuccess={() => fetchData('Productions', search)}
       />
-      <AddCharacterModal isOpen={isCharacterModalOpen} onClose={() => setIsCharacterModalOpen(false)} />
+      <AddCharacterModal
+        isOpen={isCharacterModalOpen}
+        onClose={() => setIsCharacterModalOpen(false)}
+        onSuccess={() => fetchData('Characters', search)}
+      />
     </div>
   );
 };
