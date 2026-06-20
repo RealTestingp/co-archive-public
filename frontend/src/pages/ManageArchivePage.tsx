@@ -8,7 +8,7 @@ import AddPersonModal from '../components/AddPersonModal';
 import AddProductionModal from '../components/AddProductionModal';
 import AddCharacterModal from '../components/AddCharacterModal';
 
-const DashboardPage = () => {
+const ManageArchivePage = () => {
   const [activeTab, setActiveTab] = useState<'Persons' | 'Productions' | 'Characters'>('Persons');
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
@@ -178,4 +178,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default ManageArchivePage;

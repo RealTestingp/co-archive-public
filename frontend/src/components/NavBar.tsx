@@ -1,18 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useMsal } from "@azure/msal-react";
 import styles from "./NavBar.module.css";
+
+// ── TEMP: mock auth while EntraID is disabled ──────────────────────────────
+const MOCK_USER = {
+  name: "Aurora Choban",
+  email: "aurora.choban@calgaryopera.com",
+  isAdmin: true, // toggle to false to test regular user view
+};
+// ──────────────────────────────────────────────────────────────────────────
 
 const NavBar = () => {
   const { pathname } = useLocation();
-  const { instance, accounts } = useMsal();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const account = accounts[0];
-  const name = account?.name ?? "";
-  const email = account?.username ?? "";
-  const isAdmin = (account?.idTokenClaims as any)?.roles?.includes("Admin") ?? false;
+  const { name, email, isAdmin } = MOCK_USER;
 
   const initials = name
     .split(" ")
@@ -25,7 +28,9 @@ const NavBar = () => {
     pathname.startsWith(path) || (pathname === "/" && path === "/search");
 
   const handleLogout = () => {
-    instance.logoutRedirect();
+    // TODO: re-enable when EntraID is back
+    // instance.logoutRedirect();
+    console.log("logout");
   };
 
   useEffect(() => {
@@ -50,12 +55,14 @@ const NavBar = () => {
         <Link to="/search" className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}>
           Search
         </Link>
-        <Link to="/dashboard" className={`${styles.link} ${isActive("/dashboard") ? styles.linkActive : ""}`}>
-          Dashboard
-        </Link>
         <Link to="/reports" className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}>
           Reports
         </Link>
+        {isAdmin && (
+          <Link to="/manage" className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}>
+            Manage Archive
+          </Link>
+        )}
       </div>
 
       <div className={styles.right}>

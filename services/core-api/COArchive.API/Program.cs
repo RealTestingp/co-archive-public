@@ -7,8 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Add Entra ID authentication
-builder.Services.AddAuthentication()
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+//builder.Services.AddAuthentication()
+//    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
