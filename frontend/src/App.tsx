@@ -8,7 +8,6 @@ import PersonPage from "./pages/PersonPage";
 import ProductionPage from "./pages/ProductionPage";
 import ManageArchivePage from "./pages/ManageArchivePage";
 import NotFoundPage from "./pages/NotFoundPage";
-import SearchResultsPage from "./pages/SearchResultsPage";
 import ReportsPage from "./pages/ReportsPage";
 
 function App() {
@@ -21,11 +20,10 @@ function App() {
         {/* Protected */}
         <Route path="/" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
-        <Route path="/search/results" element={<ProtectedRoute><SearchResultsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-        <Route path="/person/:id" element={<ProtectedRoute><PersonPage /></ProtectedRoute>} />
-        <Route path="/production/:id" element={<ProtectedRoute><ProductionPage /></ProtectedRoute>} />
-        <Route path="/character/:id" element={<ProtectedRoute><CharacterPage /></ProtectedRoute>} />
+        <Route path="/persons/:id" element={<ProtectedRoute><PersonPage /></ProtectedRoute>} />
+        <Route path="/productions/:id" element={<ProtectedRoute><ProductionPage /></ProtectedRoute>} />
+        <Route path="/characters/:id" element={<ProtectedRoute><CharacterPage /></ProtectedRoute>} />
 
         {/* Admin only */}
         <Route

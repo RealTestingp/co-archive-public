@@ -52,7 +52,7 @@ interface Production {
   chorus: { firstName: string; lastName: string }[];
 }
 
-const badgeStyle = (type: string): React.CSSProperties => ({
+const badgeStyle = (_type: string): React.CSSProperties => ({
   fontSize: '11px',
   fontWeight: 500,
   padding: '2px 8px',
@@ -128,15 +128,13 @@ const ProductionPage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
       <NavBar />
-
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-       <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Productions', to: '/search' }]} current={production?.title ?? 'Production'} />
+        <Breadcrumb path={[{ label: 'Archive', to: '/search' }, { label: 'Productions', to: '/search' }]} current={production?.title ?? 'Production'} />
 
         {hasError ? (
           <ErrorState onRetry={fetchProduction} />
         ) : (
           <>
-            {/* Header */}
             {isLoading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
                 <LoadingSkeleton width="280px" height="26px" />
@@ -152,7 +150,6 @@ const ProductionPage = () => {
 
             <Divider />
 
-            {/* Details */}
             {isLoading ? (
               <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -166,7 +163,6 @@ const ProductionPage = () => {
               <DetailRow details={details} />
             )}
 
-            {/* Performances */}
             {!isLoading && production && production.performances.length > 0 && (
               <>
                 <Divider />
@@ -183,7 +179,6 @@ const ProductionPage = () => {
 
             <Divider />
 
-            {/* Cast & Crew sections */}
             {isLoading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {[1, 2, 3, 4].map(i => <LoadingSkeleton key={i} width="100%" height="40px" />)}
@@ -196,36 +191,30 @@ const ProductionPage = () => {
                     {renderPersonTable(production.cast, true, false)}
                   </>
                 )}
-
                 {production.creative.length > 0 && (
                   <>
                     <SectionTitle>Creative Team</SectionTitle>
                     {renderPersonTable(production.creative, true, false)}
                   </>
                 )}
-
                 {production.crew.length > 0 && (
                   <>
                     <SectionTitle>Crew</SectionTitle>
                     {renderPersonTable(production.crew, true, false)}
                   </>
                 )}
-
                 {production.orchestra.length > 0 && (
                   <>
                     <SectionTitle>Orchestra</SectionTitle>
                     {renderPersonTable(production.orchestra, false, false)}
                   </>
                 )}
-
                 {production.chorus.length > 0 && (
                   <>
                     <SectionTitle>Chorus</SectionTitle>
                     {renderPersonTable(production.chorus, false, false)}
                   </>
                 )}
-
-                {/* Notes */}
                 {production.notes && (
                   <>
                     <Divider />

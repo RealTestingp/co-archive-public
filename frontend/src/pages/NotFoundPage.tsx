@@ -4,9 +4,7 @@ import NavBar from '../components/NavBar';
 const NotFoundPage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
-
       <NavBar />
-
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 52px)', textAlign: 'center', padding: '2rem', paddingBottom: '12rem' }}>
 
         <div style={{ fontSize: '72px', fontWeight: 600, letterSpacing: '-0.02em', color: '#9B1C1C', marginBottom: '1rem', lineHeight: 1 }}>

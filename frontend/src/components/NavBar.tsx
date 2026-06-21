@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./NavBar.module.css";
 
 // ── TEMP: mock auth while EntraID is disabled ──────────────────────────────
@@ -12,7 +12,9 @@ const MOCK_USER = {
 
 const NavBar = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { name, email, isAdmin } = MOCK_USER;
@@ -24,8 +26,14 @@ const NavBar = () => {
     .slice(0, 2)
     .toUpperCase();
 
-  const isActive = (path: string) =>
-    pathname.startsWith(path) || (pathname === "/" && path === "/search");
+  const isActive = (path: string) => pathname.startsWith(path);
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+    }
+  };
 
   const handleLogout = () => {
     // TODO: re-enable when EntraID is back
@@ -52,20 +60,53 @@ const NavBar = () => {
       </div>
 
       <div className={styles.links}>
-        <Link to="/search" className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}>
+        <Link
+          to="/search"
+          className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}
+        >
           Search
         </Link>
-        <Link to="/reports" className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}>
+        <Link
+          to="/reports"
+          className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}
+        >
           Reports
         </Link>
         {isAdmin && (
-          <Link to="/manage" className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}>
+          <Link
+            to="/manage"
+            className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}
+          >
             Manage Archive
           </Link>
         )}
       </div>
 
       <div className={styles.right}>
+        <div className={styles.searchWrap}>
+          <div className={styles.searchInputWrap}>
+            <svg className={styles.searchIcon} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              className={styles.searchInput}
+              type="text"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
+              aria-label="Search archive"
+            />
+          </div>
+          <Link to="/search" className={styles.searchIconBtn} aria-label="Go to search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </Link>
+        </div>
+
         {isAdmin && <div className={styles.adminBadge}>Admin</div>}
 
         <div className={styles.avatarWrap} ref={dropdownRef}>

@@ -69,7 +69,6 @@ const CharacterPage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
       <NavBar />
-
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
         <Breadcrumb
           path={[{ label: 'Archive', to: '/search' }, { label: 'Characters', to: '/search' }]}

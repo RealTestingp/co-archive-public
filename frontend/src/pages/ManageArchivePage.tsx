@@ -98,9 +98,9 @@ const ManageArchivePage = () => {
   };
 
   const handleView = (id: number) => {
-    if (activeTab === 'Persons') navigate(`/person/${id}`);
-    if (activeTab === 'Productions') navigate(`/production/${id}`);
-    if (activeTab === 'Characters') navigate(`/character/${id}`);
+    if (activeTab === 'Persons') navigate(`/persons/${id}`);
+    if (activeTab === 'Productions') navigate(`/productions/${id}`);
+    if (activeTab === 'Characters') navigate(`/characters/${id}`);
   };
 
   const tabs: Tab[] = ['Persons', 'Productions', 'Characters'];
@@ -181,7 +181,6 @@ const ManageArchivePage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
       <NavBar />
-
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
         <Breadcrumb path={[{ label: 'Admin', to: '/manage' }]} current="Manage Archive" />
 
@@ -248,7 +247,6 @@ const ManageArchivePage = () => {
           <ErrorState onRetry={() => fetchData(activeTab, search)} />
         ) : (
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-            {/* Header */}
             <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
               {tableHeaders[activeTab].map((h, i) => (
                 <span key={i} style={{ flex: h === '' ? 0 : i === 0 ? 2 : 1, minWidth: h === '' ? '100px' : undefined, textAlign: h === '' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
@@ -256,8 +254,6 @@ const ManageArchivePage = () => {
                 </span>
               ))}
             </div>
-
-            {/* Rows */}
             {isLoading
               ? [1, 2, 3].map((i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px 16px', borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>

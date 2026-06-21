@@ -80,7 +80,6 @@ const PersonPage = () => {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
       <NavBar />
-
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
         <Breadcrumb
           path={[{ label: 'Archive', to: '/search' }, { label: 'Persons', to: '/search' }]}
@@ -159,7 +158,7 @@ const PersonPage = () => {
                     {person.appearances.map((a, i) => (
                       <div
                         key={i}
-                        onClick={() => navigate(`/production/${a.productionId}`)}
+                        onClick={() => navigate(`/productions/${a.productionId}`)}
                         style={{ display: 'flex', alignItems: 'center', padding: '11px 16px', borderBottom: i < person.appearances.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
