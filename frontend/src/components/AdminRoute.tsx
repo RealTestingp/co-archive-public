@@ -1,15 +1,18 @@
-import React from "react";
+import { useMsal } from "@azure/msal-react";
 import { Navigate } from "react-router-dom";
-
-// TEMP: mirrors MOCK_USER in NavBar — keep in sync
-const IS_ADMIN = true; // toggle to false to test redirect
 
 interface AdminRouteProps {
   children: React.ReactNode;
 }
 
 function AdminRoute({ children }: AdminRouteProps) {
-  if (!IS_ADMIN) return <Navigate to="/search" replace />;
+  const { accounts } = useMsal();
+  const account = accounts[0];
+
+  const roles = (account?.idTokenClaims as { roles?: string[] })?.roles ?? [];
+  const isAdmin = roles.includes("Admin");
+
+  if (!isAdmin) return <Navigate to="/search" replace />;
   return <>{children}</>;
 }
 
