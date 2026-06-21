@@ -69,13 +69,17 @@ const PersonPage = () => {
     { label: 'Nationality', value: person.nationalities.join(', ') || '—' },
     { label: 'Contributor Type', value: person.contributorTypes.join(', ') || '—' },
     { label: 'Status', value: person.isActive ? 'Active' : 'Inactive' },
-    { label: 'MainStage Productions', value: String(person.mainStageProductionCount) },
-    { label: 'Performances', value: String(person.performanceCount) },
   ] : [];
 
   const initials = person
     ? `${person.firstName[0]}${person.lastName[0]}`.toUpperCase()
     : '';
+
+  const metrics = person ? [
+    { label: 'Performances', value: person.performanceCount },
+    { label: 'Productions', value: person.mainStageProductionCount },
+    { label: 'Seasons Active', value: new Set(person.appearances.map(a => a.season)).size },
+  ] : [];
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
@@ -93,13 +97,13 @@ const PersonPage = () => {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f3e8e8', border: '1.5px solid #9B1C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#9B1C1C', fontWeight: 600, flexShrink: 0 }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f3e8e8', border: '1.5px solid #9B1C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#9B1C1C', fontWeight: 500, flexShrink: 0 }}>
                   {isLoading ? '' : initials}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {isLoading
                     ? <LoadingSkeleton width="200px" height="26px" />
-                    : <h1 style={{ fontSize: '22px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em' }}>{fullName}</h1>
+                    : <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>{fullName}</h1>
                   }
                   {isLoading
                     ? <LoadingSkeleton width="140px" height="14px" />
@@ -124,7 +128,7 @@ const PersonPage = () => {
 
             {/* Details */}
             {isLoading
-              ? <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              ? <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                   {[1, 2, 3, 4].map(i => (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <LoadingSkeleton width="80px" height="10px" />
@@ -137,8 +141,38 @@ const PersonPage = () => {
 
             <Divider />
 
-            {/* Appearances */}
-            <SectionTitle>Productions</SectionTitle>
+            {/* Milestone Metrics */}
+            {!isLoading && person && (
+              <>
+                <SectionTitle>Milestones</SectionTitle>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                  {metrics.map((m) => (
+                    <div key={m.label} style={{ background: '#fff', padding: '1.25rem' }}>
+                      <div style={{ fontSize: '28px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '4px' }}>
+                        {m.value}
+                      </div>
+                      <div style={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
+                        {m.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {isLoading && (
+              <>
+                <div style={{ height: '16px', marginBottom: '0.75rem' }}><LoadingSkeleton width="100px" height="13px" /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', marginBottom: '1.5rem' }}>
+                  {[1, 2, 3].map(i => <LoadingSkeleton key={i} width="100%" height="72px" />)}
+                </div>
+              </>
+            )}
+
+            <Divider />
+
+            {/* Production History */}
+            <SectionTitle>Production History</SectionTitle>
             {isLoading
               ? [1, 2, 3].map(i => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
@@ -152,7 +186,7 @@ const PersonPage = () => {
                   <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                       {['Production', 'Season', 'Role'].map(h => (
-                        <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#9ca3af' }}>{h}</span>
+                        <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#9ca3af' }}>{h}</span>
                       ))}
                     </div>
                     {person.appearances.map((a, i) => (

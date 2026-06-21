@@ -9,10 +9,10 @@ interface Props {
 const PageHeader = ({ title, subtitle, onEdit, onViewHistory, editLabel = 'Edit' }: Props) => (
   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
     <div>
-      <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#d1d5db', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+      <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#111111', letterSpacing: '-0.02em', marginBottom: '4px' }}>
         {title}
       </h1>
-      <div style={{ fontSize: '13px', color: '#d1d5db' }}>{subtitle}</div>
+      <div style={{ fontSize: '13px', color: '#6b7280' }}>{subtitle}</div>
     </div>
     <div>
       <button

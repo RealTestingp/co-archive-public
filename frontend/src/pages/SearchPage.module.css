@@ -126,6 +126,7 @@
   display: flex;
   gap: 10px;
   max-width: 680px;
+  margin: 0 auto;
 }
 
 .compactInputWrap {
@@ -190,6 +191,13 @@
   max-width: 720px;
   margin: 0 auto;
   padding: 0 2rem 4rem;
+}
+
+/* Results count */
+.resultsCount {
+  font-size: 13px;
+  color: #6b7280;
+  padding-top: 1.5rem;
 }
 
 /* Tabs */
@@ -279,11 +287,64 @@
   color: #9ca3af;
 }
 
+/* Filters */
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 0 0.25rem;
+}
+
+.filterSelect {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: #6b7280;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border: 0.5px solid #d1d5db;
+  border-radius: 6px;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.filterSelect:hover {
+  border-color: #9B1C1C;
+}
+
+.filterSelect:focus {
+  border-color: #9B1C1C;
+  box-shadow: 0 0 0 3px rgba(155, 28, 28, 0.1);
+}
+
+.filterSelectActive {
+  border-color: #9B1C1C;
+  color: #9B1C1C;
+  background-color: rgba(155, 28, 28, 0.05);
+}
+
+.filterClear {
+  font-size: 12px;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 4px;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.15s ease;
+}
+
+.filterClear:hover {
+  color: #9B1C1C;
+}
+
 /* Result groups */
 .resultGroups {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
 }
 
 .group {
@@ -297,25 +358,23 @@
   color: #9ca3af;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding-bottom: 8px;
-  margin-bottom: 4px;
-  border-bottom: 0.5px solid #f3f4f6;
+  padding: 1.25rem 0 0.75rem;
 }
 
 /* Result card */
 .resultCard {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 0;
-  border-bottom: 0.5px solid #f3f4f6;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 1.1rem 0;
+  border-top: 0.5px solid #f3f4f6;
   text-decoration: none;
   color: inherit;
   transition: background 0.1s ease;
 }
 
 .resultCard:last-child {
-  border-bottom: none;
+  border-bottom: 0.5px solid #f3f4f6;
 }
 
 .resultCard:hover .cardName {
@@ -323,22 +382,23 @@
 }
 
 .avatar {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(155, 28, 28, 0.08);
   color: #9B1C1C;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   font-family: 'Inter', sans-serif;
+  margin-top: 2px;
 }
 
 .avatarProd {
-  border-radius: 8px;
+  border-radius: 10px;
   background: #f3f4f6;
   color: #6b7280;
 }
@@ -355,23 +415,35 @@
 }
 
 .cardName {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: #111111;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   transition: color 0.15s ease;
 }
 
 .cardMeta {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
 }
 
-.cardTag {
+.cardChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cardChip {
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 10px;
   background: #f3f4f6;
   color: #6b7280;
   white-space: nowrap;
+}
+
+.cardChipRed {
+  background: rgba(155, 28, 28, 0.08);
+  color: #9B1C1C;
 }
