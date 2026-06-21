@@ -1,18 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 import styles from "./NavBar.module.css";
 
 // ── TEMP: mock auth while EntraID is disabled ──────────────────────────────
 const MOCK_USER = {
   name: "Aurora Choban",
   email: "aurora.choban@calgaryopera.com",
-  isAdmin: true, // toggle to false to test regular user view
+  isAdmin: true,
 };
 // ──────────────────────────────────────────────────────────────────────────
 
 const NavBar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,8 +38,6 @@ const NavBar = () => {
   };
 
   const handleLogout = () => {
-    // TODO: re-enable when EntraID is back
-    // instance.logoutRedirect();
     console.log("logout");
   };
 
@@ -60,23 +60,14 @@ const NavBar = () => {
       </div>
 
       <div className={styles.links}>
-        <Link
-          to="/search"
-          className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}
-        >
+        <Link to="/search" className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}>
           Search
         </Link>
-        <Link
-          to="/reports"
-          className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}
-        >
+        <Link to="/reports" className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}>
           Reports
         </Link>
         {isAdmin && (
-          <Link
-            to="/manage"
-            className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}
-          >
+          <Link to="/manage" className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}>
             Manage Archive
           </Link>
         )}
@@ -124,6 +115,26 @@ const NavBar = () => {
                 <div className={styles.dropdownName}>{name}</div>
                 <div className={styles.dropdownEmail}>{email}</div>
               </div>
+              <button className={styles.dropdownItem} onClick={toggleTheme}>
+                {isDark ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+                {isDark ? 'Light mode' : 'Dark mode'}
+              </button>
               <button className={styles.dropdownItem} onClick={handleLogout}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

@@ -229,3 +229,92 @@
   background: #f9f9f9;
   color: #111111;
 }
+
+/* ── Dark mode ── */
+[data-theme="dark"] .nav {
+  background: #111111;
+  border-bottom-color: #2a2a2a;
+}
+
+[data-theme="dark"] .brandLink {
+  color: #f9f9f9;
+}
+
+[data-theme="dark"] .link {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .link:hover {
+  color: #f9f9f9;
+}
+
+[data-theme="dark"] .linkActive {
+  color: #c0392b;
+}
+
+[data-theme="dark"] .searchInput {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #f9f9f9;
+}
+
+[data-theme="dark"] .searchInput:focus {
+  background: #222222;
+  border-color: #c0392b;
+}
+
+[data-theme="dark"] .searchInput::placeholder {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .searchIcon {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .searchIconBtn {
+  border-color: #2a2a2a;
+  background: #1c1c1c;
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .adminBadge {
+  background: rgba(192, 57, 43, 0.15);
+  border-color: rgba(192, 57, 43, 0.3);
+  color: #c0392b;
+}
+
+[data-theme="dark"] .avatar {
+  background: rgba(192, 57, 43, 0.15);
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+[data-theme="dark"] .avatar:hover {
+  background: rgba(192, 57, 43, 0.25);
+}
+
+[data-theme="dark"] .dropdown {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+}
+
+[data-theme="dark"] .dropdownHeader {
+  border-bottom-color: #2a2a2a;
+}
+
+[data-theme="dark"] .dropdownName {
+  color: #f9f9f9;
+}
+
+[data-theme="dark"] .dropdownEmail {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .dropdownItem {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .dropdownItem:hover {
+  background: #242424;
+  color: #f9f9f9;
+}
