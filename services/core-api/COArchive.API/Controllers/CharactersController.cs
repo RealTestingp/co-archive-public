@@ -23,7 +23,7 @@ namespace COArchive.API.Controllers
 
         // GET /api/characters?search=figaro
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search)
+        public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? operaId)
         {
             if (search != null && search.Length > 100)
                 return BadRequest("Search term too long.");
@@ -34,6 +34,9 @@ namespace COArchive.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(c => c.Name.Contains(search));
+
+            if (operaId.HasValue)
+                query = query.Where(c => c.OperaId == operaId);
 
             var results = await query
                 .OrderBy(c => c.Name)

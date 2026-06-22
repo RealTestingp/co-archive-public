@@ -1,4 +1,6 @@
-﻿using COArchive.Data;
+﻿using COArchive.API.DataTransferObjects;
+using COArchive.Data;
+using COArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -101,6 +103,7 @@ namespace COArchive.API.Controllers
     public class OperasController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        
         public OperasController(ApplicationDbContext db) => _db = db;
 
         [HttpGet]
@@ -109,6 +112,80 @@ namespace COArchive.API.Controllers
                 .OrderBy(o => o.Title)
                 .Select(o => new { o.Id, o.Title })
                 .ToListAsync());
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateOperaDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return BadRequest("Title is required.");
+
+            if (await _db.Operas.AnyAsync(o => o.Title == dto.Title))
+                return Conflict("An opera with this title already exists.");
+
+            var opera = new Opera { Title = dto.Title };
+
+            if (dto.ComposerIds.Any())
+            {
+                var composers = await _db.Composers
+                    .Where(c => dto.ComposerIds.Contains(c.Id))
+                    .ToListAsync();
+                opera.Composers = composers;
+            }
+
+            if (dto.LibrettistIds.Any())
+            {
+                var librettists = await _db.Librettists
+                    .Where(l => dto.LibrettistIds.Contains(l.Id))
+                    .ToListAsync();
+                opera.Librettists = librettists;
+            }
+
+            _db.Operas.Add(opera);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = opera.Id }, new { opera.Id, opera.Title });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateOperaDto dto)
+        {
+            if (id != dto.Id) return BadRequest("ID mismatch.");
+
+            var existing = await _db.Operas
+                .Include(o => o.Composers)
+                .Include(o => o.Librettists)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (existing == null) return NotFound();
+
+            // Check title isn't already taken by another opera
+            if (await _db.Operas.AnyAsync(o => o.Title == dto.Title && o.Id != id))
+                return Conflict("An opera with this title already exists.");
+
+            existing.Title = dto.Title;
+
+            // Update composers — clear and replace
+            existing.Composers.Clear();
+            if (dto.ComposerIds.Any())
+            {
+                var composers = await _db.Composers
+                    .Where(c => dto.ComposerIds.Contains(c.Id))
+                    .ToListAsync();
+                existing.Composers = composers;
+            }
+
+            // Update librettists — clear and replace
+            existing.Librettists.Clear();
+            if (dto.LibrettistIds.Any())
+            {
+                var librettists = await _db.Librettists
+                    .Where(l => dto.LibrettistIds.Contains(l.Id))
+                    .ToListAsync();
+                existing.Librettists = librettists;
+            }
+
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
     }
 
     [ApiController]
