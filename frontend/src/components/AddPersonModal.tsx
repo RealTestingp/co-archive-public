@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-
-const BASE_URL = 'http://localhost:5166';
+import { useState, useEffect, useRef } from 'react';
 
 interface LookupItem {
   id: number;
@@ -33,7 +31,7 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '8px 12px',
   fontSize: '13px',
@@ -41,35 +39,37 @@ const inputStyle = {
   border: '1px solid #e5e7eb',
   borderRadius: '6px',
   outline: 'none',
-  boxSizing: 'border-box' as const,
+  boxSizing: 'border-box',
   color: '#111',
+  background: '#fff',
 };
 
-const selectStyle = {
+const selectStyle: React.CSSProperties = {
   ...inputStyle,
-  background: '#fff',
   color: '#374151',
   cursor: 'pointer',
-  appearance: 'none' as const,
+  appearance: 'none',
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'right 12px center',
+  backgroundSize: '12px',
   paddingRight: '32px',
 };
 
-const labelStyle = {
+const labelStyle: React.CSSProperties = {
   fontSize: '10px',
   fontWeight: 600,
-  textTransform: 'uppercase' as const,
+  textTransform: 'uppercase',
   letterSpacing: '0.08em',
   color: '#6b7280',
   marginBottom: '5px',
   display: 'block',
 };
 
-const fieldWrap = { marginBottom: '1.1rem' };
+const fieldWrap: React.CSSProperties = { marginBottom: '1.1rem' };
 
 const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [voiceTypes, setVoiceTypes] = useState<LookupItem[]>([]);
   const [nationalities, setNationalities] = useState<LookupItem[]>([]);
@@ -77,14 +77,19 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Image state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [avatarHovered, setAvatarHovered] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     const fetchLookups = async () => {
       setLoadingLookups(true);
       try {
         const [vt, nat] = await Promise.all([
-          fetch(`${BASE_URL}/api/voicetypes`).then(r => r.json()),
-          fetch(`${BASE_URL}/api/nationalities`).then(r => r.json()),
+          fetch(`/api/voicetypes`).then(r => r.json()),
+          fetch(`/api/nationalities`).then(r => r.json()),
         ]);
         setVoiceTypes(vt);
         setNationalities(nat);
@@ -110,6 +115,29 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }));
   };
 
+  const handleImageClick = () => fileInputRef.current?.click();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB.');
+      return;
+    }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Derive initials from form for preview
+  const previewInitials = [form.firstName[0], form.lastName[0]].filter(Boolean).join('').toUpperCase();
+
   const handleSubmit = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError('First name and last name are required.');
@@ -120,7 +148,8 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setError(null);
 
     try {
-      const res = await fetch(`${BASE_URL}/api/persons`, {
+      // 1. Create the person
+      const res = await fetch(`/api/persons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,11 +164,24 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
         }),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Failed to create person.');
+      const created = await res.json();
 
-      setForm(EMPTY_FORM);
+      // 2. Upload image if one was selected
+      if (imageFile && created.id) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        // Fire and forget — don't block on image upload failure
+        fetch(`/api/persons/${created.id}/image`, {
+          method: 'POST',
+          body: formData,
+        }).catch(() => {
+          // Image upload failed silently; person is still created
+        });
+      }
+
+      handleClose();
       onSuccess?.();
-      onClose();
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -150,6 +192,8 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const handleClose = () => {
     setForm(EMPTY_FORM);
     setError(null);
+    setImageFile(null);
+    setImagePreview(null);
     onClose();
   };
 
@@ -169,6 +213,70 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
           <div style={{ textAlign: 'center', padding: '2rem 0', fontSize: '13px', color: '#6b7280' }}>Loading form options...</div>
         ) : (
           <>
+            {/* Avatar picker */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div
+                  onClick={handleImageClick}
+                  onMouseEnter={() => setAvatarHovered(true)}
+                  onMouseLeave={() => setAvatarHovered(false)}
+                  title="Click to add photo"
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    border: `1.5px ${imagePreview || avatarHovered ? 'solid #9B1C1C' : 'dashed #d1d5db'}`,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    background: '#f3e8e8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : previewInitials ? (
+                    <span style={{ fontSize: '18px', color: '#9B1C1C', fontWeight: 500 }}>{previewInitials}</span>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  )}
+
+                  {/* Hover overlay */}
+                  {avatarHovered && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0.35)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: '50%',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                  {imageFile ? imageFile.name : 'Add photo (optional)'}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleImageChange}
+                />
+              </div>
+            </div>
+
             {/* First + Last Name */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.1rem' }}>
               <div>
@@ -256,10 +364,10 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
               <span style={{ fontSize: '11px', color: '#9ca3af' }}><span style={{ color: '#9B1C1C' }}>*</span> Required fields</span>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleClose} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
+                <button onClick={handleClose} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontFamily: 'Inter, sans-serif' }}>
                   Cancel
                 </button>
-                <button onClick={handleSubmit} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: submitting ? '#c85a5a' : '#9B1C1C', color: '#fff' }}>
+                <button onClick={handleSubmit} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: submitting ? '#c85a5a' : '#9B1C1C', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
                   {submitting ? 'Saving...' : 'Add Person'}
                 </button>
               </div>

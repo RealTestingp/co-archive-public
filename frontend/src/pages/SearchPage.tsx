@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
+import { useTheme } from '../context/ThemeContext';
 import styles from './SearchPage.module.css';
 
-type Tab = 'All' | 'Productions' | 'Persons' | 'Characters';
+type Tab = 'Productions' | 'Persons' | 'Characters';
 
 interface PersonResult {
   id: number;
@@ -40,17 +41,22 @@ interface LookupItem {
   label?: string;
 }
 
-const BASE_URL = 'http://localhost:5166';
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { colors } = useTheme();
 
   const urlQuery = searchParams.get('q') || '';
   const [inputValue, setInputValue] = useState(urlQuery);
-  const [activeTab, setActiveTab] = useState<Tab>('All');
+  const [activeTab, setActiveTab] = useState<Tab>('Productions');
   const [results, setResults] = useState<Results | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Pagination
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
   // Filter state
   const [voiceTypes, setVoiceTypes] = useState<LookupItem[]>([]);
@@ -65,22 +71,21 @@ const SearchPage = () => {
 
   const hasSearched = urlQuery.trim().length > 0;
 
-  // Fetch lookup data on mount
   useEffect(() => {
     const fetchLookups = async () => {
       try {
         const [vtRes, natRes, langRes, seasonRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/voicetypes`),
-          fetch(`${BASE_URL}/api/nationalities`),
-          fetch(`${BASE_URL}/api/languages`),
-          fetch(`${BASE_URL}/api/seasons`),
+          fetch(`/api/voicetypes`),
+          fetch(`/api/nationalities`),
+          fetch(`/api/languages`),
+          fetch(`/api/seasons`),
         ]);
         if (vtRes.ok) setVoiceTypes(await vtRes.json());
         if (natRes.ok) setNationalities(await natRes.json());
         if (langRes.ok) setLanguages(await langRes.json());
         if (seasonRes.ok) setSeasons(await seasonRes.json());
       } catch {
-        // silently fail — filters just won't populate
+        // silently fail
       }
     };
     fetchLookups();
@@ -95,13 +100,18 @@ const SearchPage = () => {
     }
   }, [urlQuery]);
 
-  // Reset filters when tab changes
+  // Reset page when tab or filters change
   useEffect(() => {
+    setPage(1);
     setSelectedVoiceType('');
     setSelectedNationality('');
     setSelectedLanguage('');
     setSelectedSeason('');
   }, [activeTab]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedVoiceType, selectedNationality, selectedLanguage, selectedSeason, pageSize]);
 
   const fetchResults = async (q: string) => {
     setLoading(true);
@@ -110,7 +120,8 @@ const SearchPage = () => {
       const [personsRes, productionsRes, charactersRes] = await Promise.all([
         fetch(`/api/persons?search=${encodeURIComponent(q)}`),
         fetch(`/api/productions?search=${encodeURIComponent(q)}`),
-        fetch(`/api/characters?name=${encodeURIComponent(q)}`),
+        // Fixed: characters uses ?search= not ?name=
+        fetch(`/api/characters?search=${encodeURIComponent(q)}`),
       ]);
 
       const [persons, productions, characters] = await Promise.all([
@@ -120,6 +131,7 @@ const SearchPage = () => {
       ]);
 
       setResults({ persons, productions, characters });
+      setPage(1);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -137,6 +149,14 @@ const SearchPage = () => {
     if (e.key === 'Enter') handleSearch();
   };
 
+  const handleClearAll = () => {
+    setInputValue('');
+    setSearchParams({});
+    setResults(null);
+    setActiveTab('Productions');
+    clearFilters();
+  };
+
   // Client-side filtering
   const filteredPersons = results?.persons.filter((p) => {
     if (selectedVoiceType && p.voiceType !== selectedVoiceType) return false;
@@ -151,26 +171,19 @@ const SearchPage = () => {
 
   const filteredCharacters = results?.characters ?? [];
 
-  const totalCount = results
-    ? results.persons.length + results.productions.length + results.characters.length
-    : 0;
-
-  const filteredTotal = filteredPersons.length + filteredProductions.length + filteredCharacters.length;
-
-  const tabs: Tab[] = ['All', 'Productions', 'Persons', 'Characters'];
+  const tabs: Tab[] = ['Productions', 'Persons', 'Characters'];
 
   const tabCount = (tab: Tab) => {
     if (!results) return 0;
-    if (tab === 'All') return totalCount;
     if (tab === 'Productions') return results.productions.length;
     if (tab === 'Persons') return results.persons.length;
     if (tab === 'Characters') return results.characters.length;
     return 0;
   };
 
-  const showPersons = activeTab === 'All' || activeTab === 'Persons';
-  const showProductions = activeTab === 'All' || activeTab === 'Productions';
-  const showCharacters = activeTab === 'All' || activeTab === 'Characters';
+  const showPersons = activeTab === 'Persons';
+  const showProductions = activeTab === 'Productions';
+  const showCharacters = activeTab === 'Characters';
 
   const hasActiveFilters = selectedVoiceType || selectedNationality || selectedLanguage || selectedSeason;
 
@@ -181,8 +194,25 @@ const SearchPage = () => {
     setSelectedSeason('');
   };
 
+  // Pagination
+  const paginate = <T,>(arr: T[]): T[] => {
+    const start = (page - 1) * pageSize;
+    return arr.slice(start, start + pageSize);
+  };
+
+  const activeSingleList =
+    activeTab === 'Persons' ? filteredPersons :
+    activeTab === 'Productions' ? filteredProductions :
+    filteredCharacters;
+
+  const totalPages = Math.ceil(activeSingleList.length / pageSize) || 1;
+
+  const pagedPersons = paginate(filteredPersons);
+  const pagedProductions = paginate(filteredProductions);
+  const pagedCharacters = paginate(filteredCharacters);
+
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={{ background: colors.background, color: colors.textPrimary }}>
       <NavBar />
 
       {/* ── Hero ── */}
@@ -194,7 +224,7 @@ const SearchPage = () => {
             Search productions, persons, and characters spanning decades of performance.
           </p>
           <div className={styles.heroTabs}>
-            {(['All', 'Productions', 'Persons', 'Characters'] as const).map((tab) => (
+            {(['Productions', 'Persons', 'Characters'] as const).map((tab) => (
               <button
                 key={tab}
                 className={`${styles.heroTab} ${activeTab === tab ? styles.heroTabActive : ''}`}
@@ -211,7 +241,7 @@ const SearchPage = () => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={activeTab === 'All' ? 'Search by title, name, or keyword…' : `Search ${activeTab.toLowerCase()} by title, name, or keyword…`}
+              placeholder={`Search ${activeTab.toLowerCase()} by title, name, or keyword…`}
             />
             <button className={styles.heroBtn} onClick={handleSearch}>Search</button>
           </div>
@@ -238,6 +268,7 @@ const SearchPage = () => {
               />
             </div>
             <button className={styles.compactBtn} onClick={handleSearch}>Search</button>
+            <button className={styles.clearAllBtn} onClick={handleClearAll}>Clear all</button>
           </div>
         </div>
       )}
@@ -247,8 +278,24 @@ const SearchPage = () => {
         <div className={styles.results}>
 
           {results && !loading && (
-            <div className={styles.resultsCount}>
-              {filteredTotal} result{filteredTotal !== 1 ? 's' : ''} for "{urlQuery}"
+            <div className={styles.resultsHeader}>
+              <span className={styles.resultsCount}>
+                {activeSingleList.length} result{activeSingleList.length !== 1 ? 's' : ''} for "{urlQuery}"
+              </span>
+              {/* Per-page dropdown */}
+              <div className={styles.perPageWrap}>
+                <span className={styles.perPageLabel}>Show</span>
+                <select
+                  className={styles.perPageSelect}
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  {PAGE_SIZE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+                <span className={styles.perPageLabel}>per page</span>
+              </div>
             </div>
           )}
 
@@ -273,7 +320,7 @@ const SearchPage = () => {
           {/* Filters */}
           {hasSearched && !loading && (
             <div className={styles.filterRow}>
-              {(activeTab === 'All' || activeTab === 'Persons') && (
+              {activeTab === 'Persons' && (
                 <>
                   <select
                     className={`${styles.filterSelect} ${selectedVoiceType ? styles.filterSelectActive : ''}`}
@@ -297,7 +344,7 @@ const SearchPage = () => {
                   </select>
                 </>
               )}
-              {(activeTab === 'All' || activeTab === 'Productions') && (
+              {activeTab === 'Productions' && (
                 <>
                   <select
                     className={`${styles.filterSelect} ${selectedLanguage ? styles.filterSelectActive : ''}`}
@@ -346,7 +393,7 @@ const SearchPage = () => {
           )}
 
           {/* Empty */}
-          {!loading && !error && results && filteredTotal === 0 && (
+          {!loading && !error && results && activeSingleList.length === 0 && (
             <div className={styles.emptyState}>
               <p className={styles.emptyTitle}>No results for "{urlQuery}"</p>
               <p className={styles.emptyText}>Try a different spelling or adjust your filters.</p>
@@ -354,13 +401,13 @@ const SearchPage = () => {
           )}
 
           {/* Result groups */}
-          {!loading && !error && results && filteredTotal > 0 && (
+          {!loading && !error && results && activeSingleList.length > 0 && (
             <div className={styles.resultGroups}>
 
-              {showPersons && filteredPersons.length > 0 && (
+              {showPersons && pagedPersons.length > 0 && (
                 <div className={styles.group}>
                   <div className={styles.groupLabel}>People</div>
-                  {filteredPersons.map((p) => (
+                  {pagedPersons.map((p) => (
                     <Link key={p.id} to={`/persons/${p.id}`} className={styles.resultCard}>
                       <div className={styles.avatar}>
                         {p.firstName[0]}{p.lastName[0]}
@@ -378,10 +425,10 @@ const SearchPage = () => {
                 </div>
               )}
 
-              {showProductions && filteredProductions.length > 0 && (
+              {showProductions && pagedProductions.length > 0 && (
                 <div className={styles.group}>
                   <div className={styles.groupLabel}>Productions</div>
-                  {filteredProductions.map((p) => (
+                  {pagedProductions.map((p) => (
                     <Link key={p.id} to={`/productions/${p.id}`} className={styles.resultCard}>
                       <div className={`${styles.avatar} ${styles.avatarProd}`}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -401,10 +448,10 @@ const SearchPage = () => {
                 </div>
               )}
 
-              {showCharacters && filteredCharacters.length > 0 && (
+              {showCharacters && pagedCharacters.length > 0 && (
                 <div className={styles.group}>
                   <div className={styles.groupLabel}>Characters</div>
-                  {filteredCharacters.map((c) => (
+                  {pagedCharacters.map((c) => (
                     <Link key={c.id} to={`/characters/${c.id}`} className={styles.resultCard}>
                       <div className={`${styles.avatar} ${styles.avatarChar}`}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -426,6 +473,28 @@ const SearchPage = () => {
 
             </div>
           )}
+
+          {/* Pagination */}
+          {!loading && !error && totalPages > 1 && (
+            <div className={styles.pagination}>
+              <button
+                className={styles.pageBtn}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                ← Prev
+              </button>
+              <span className={styles.pageInfo}>Page {page} of {totalPages}</span>
+              <button
+                className={styles.pageBtn}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import LoginPage from "./pages/LoginPage";
@@ -17,8 +17,10 @@ function App() {
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* Root redirect */}
+        <Route path="/" element={<Navigate to="/search" replace />} />
+
         {/* Protected */}
-        <Route path="/" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
         <Route path="/persons/:id" element={<ProtectedRoute><PersonPage /></ProtectedRoute>} />

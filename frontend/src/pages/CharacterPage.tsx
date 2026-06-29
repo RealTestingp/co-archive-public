@@ -8,8 +8,7 @@ import SectionTitle from '../components/SectionTitle';
 import Divider from '../components/Divider';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import ErrorState from '../components/ErrorState';
-
-const BASE_URL = 'http://localhost:5166';
+import { useTheme } from '../context/ThemeContext';
 
 interface Performer {
   firstName: string;
@@ -35,6 +34,7 @@ interface Character {
 const CharacterPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isDark, colors } = useTheme();
   const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -43,7 +43,7 @@ const CharacterPage = () => {
     setIsLoading(true);
     setHasError(false);
     try {
-      const res = await fetch(`${BASE_URL}/api/characters/${id}`);
+      const res = await fetch(`/api/characters/${id}`);
       if (!res.ok) throw new Error();
       setCharacter(await res.json());
     } catch {
@@ -62,12 +62,17 @@ const CharacterPage = () => {
     { label: 'Productions', value: String(character.productionHistory.length) },
   ] : [];
 
-  const totalPerformers = character
-    ? character.productionHistory.reduce((acc, p) => acc + p.performers.length, 0)
-    : 0;
+  const border = isDark ? '#2a2a2a' : '#e5e7eb';
+  const borderLight = isDark ? '#2a2a2a' : '#f3f4f6';
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
+  const textMuted = isDark ? '#6b7280' : '#9ca3af';
+  const surface = isDark ? '#1c1c1c' : '#fff';
+  const tableBg = isDark ? '#161616' : '#f9fafb';
+  const rowHover = isDark ? '#1e1e1e' : '#fafafa';
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
+    <div style={{ background: colors.background, minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: textPrimary }}>
       <NavBar />
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
         <Breadcrumb
@@ -115,31 +120,35 @@ const CharacterPage = () => {
             <SectionTitle>Production History</SectionTitle>
             {isLoading ? (
               [1, 2, 3].map(i => (
-                <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+                <div key={i} style={{ padding: '12px 0', borderBottom: `1px solid ${borderLight}` }}>
                   <LoadingSkeleton width="200px" height="13px" />
                 </div>
               ))
             ) : !character || character.productionHistory.length === 0 ? (
-              <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '1.5rem' }}>No production history on record.</p>
+              <p style={{ fontSize: '13px', color: textMuted, marginBottom: '1.5rem' }}>No production history on record.</p>
             ) : (
-              <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+              <div style={{ border: `1px solid ${border}`, borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', padding: '8px 16px', background: tableBg, borderBottom: `1px solid ${border}` }}>
                   {['Production', 'Season', 'Performers'].map(h => (
-                    <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#9ca3af' }}>{h}</span>
+                    <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: textMuted }}>{h}</span>
                   ))}
                 </div>
                 {character.productionHistory.map((p, i) => (
                   <div
                     key={i}
-                    onClick={() => navigate(`/production/${p.productionId}`)}
-                    style={{ display: 'flex', alignItems: 'center', padding: '11px 16px', borderBottom: i < character.productionHistory.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
+                    onClick={() => navigate(`/productions/${p.productionId}`)}
+                    style={{
+                      display: 'flex', alignItems: 'center', padding: '11px 16px',
+                      borderBottom: i < character.productionHistory.length - 1 ? `1px solid ${borderLight}` : 'none',
+                      cursor: 'pointer', transition: 'background 0.1s ease',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = rowHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: '#111' }}>{p.productionTitle}</span>
-                    <span style={{ flex: 1, fontSize: '13px', color: '#6b7280' }}>{p.season}</span>
-                    <span style={{ flex: 1, fontSize: '13px', color: '#6b7280' }}>
-                      {p.performers.map(p => `${p.firstName} ${p.lastName}`).join(', ') || '—'}
+                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: textPrimary }}>{p.productionTitle}</span>
+                    <span style={{ flex: 1, fontSize: '13px', color: textSecondary }}>{p.season}</span>
+                    <span style={{ flex: 1, fontSize: '13px', color: textSecondary }}>
+                      {p.performers.map(perf => `${perf.firstName} ${perf.lastName}`).join(', ') || '—'}
                     </span>
                   </div>
                 ))}
