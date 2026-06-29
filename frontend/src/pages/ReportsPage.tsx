@@ -14,12 +14,8 @@ const ReportsPage = () => {
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111' }}>
-
       <NavBar />
-
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-
-        <BreadCrumb path={[{ label: 'Archive', to: '/search' }]} current="Reports" />
 
         <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
           Reports
@@ -28,7 +24,6 @@ const ReportsPage = () => {
           Overview of the Calgary Opera Archive.
         </p>
 
-        {/* Archive Overview */}
         <SectionTitle>Archive Overview</SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           {stats.map((stat) => (
@@ -41,7 +36,6 @@ const ReportsPage = () => {
 
         <Divider />
 
-        {/* Productions by Season */}
         <SectionTitle>Productions by Season</SectionTitle>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
@@ -60,7 +54,6 @@ const ReportsPage = () => {
 
         <Divider />
 
-        {/* Most Performed Characters */}
         <SectionTitle>Most Performed Characters</SectionTitle>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
@@ -79,7 +72,6 @@ const ReportsPage = () => {
 
         <Divider />
 
-        {/* Person Milestones */}
         <SectionTitle>Person Milestones</SectionTitle>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>

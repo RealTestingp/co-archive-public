@@ -4,3 +4,86 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Dark mode global ── */
+[data-theme="dark"] body {
+  background-color: #111111;
+  color: #f9f9f9;
+}
+
+[data-theme="dark"] * {
+  border-color: #2a2a2a !important;
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] div,
+[data-theme="dark"] li,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] label,
+[data-theme="dark"] button:not([class*="red"]):not([style*="background: #9B1C1C"]):not([style*="background: rgb(155"]) {
+  color: inherit;
+}
+
+/* Page backgrounds */
+[data-theme="dark"] div[style*="background: #fff"],
+[data-theme="dark"] div[style*="background:#fff"],
+[data-theme="dark"] div[style*="background: white"],
+[data-theme="dark"] div[style*="background: rgb(255, 255, 255)"] {
+  background-color: #111111 !important;
+}
+
+[data-theme="dark"] div[style*="background: #f9fafb"],
+[data-theme="dark"] div[style*="background: rgb(249, 250, 251)"],
+[data-theme="dark"] div[style*="background: #ffffff"],
+[data-theme="dark"] div[style*="background: #f3f4f6"],
+[data-theme="dark"] div[style*="background: rgb(243, 244, 246)"] {
+  background-color: #1c1c1c !important;
+}
+
+/* Force text colours */
+[data-theme="dark"] *[style*="color: #111111"],
+[data-theme="dark"] *[style*="color: #111"],
+[data-theme="dark"] *[style*="color: rgb(17, 17, 17)"] {
+  color: #f9f9f9 !important;
+}
+
+[data-theme="dark"] *[style*="color: #374151"],
+[data-theme="dark"] *[style*="color: rgb(55, 65, 81)"] {
+  color: #d1d5db !important;
+}
+
+[data-theme="dark"] *[style*="color: #6b7280"],
+[data-theme="dark"] *[style*="color: rgb(107, 114, 128)"] {
+  color: #9ca3af !important;
+}
+
+/* Input fields */
+[data-theme="dark"] input[style],
+[data-theme="dark"] input {
+  background-color: #1c1c1c !important;
+  color: #f9f9f9 !important;
+  border-color: #2a2a2a !important;
+}
+
+[data-theme="dark"] input::placeholder {
+  color: #6b7280 !important;
+}
+
+/* Buttons — don't override red ones */
+[data-theme="dark"] button[style*="background: #fff"],
+[data-theme="dark"] button[style*="background: white"] {
+  background-color: #1c1c1c !important;
+  color: #d1d5db !important;
+  border-color: #2a2a2a !important;
+}
+
+/* Table rows hover */
+[data-theme="dark"] div[style*="background: #fafafa"] {
+  background-color: #1a1a1a !important;
+}
