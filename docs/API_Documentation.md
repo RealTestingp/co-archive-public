@@ -1,6 +1,7 @@
 # Calgary Opera Archive — API Documentation
 
 **Base URL (local development):** `https://localhost:7136`  
+**Chatbot Base URL (local development):** `http://localhost:5194`  
 **Format:** All requests and responses use JSON.  
 **Authentication:** Microsoft Entra ID (coming soon — currently open for development)
 
@@ -14,6 +15,7 @@
 4. [Appearances](#appearances)
 5. [Reports](#reports)
 6. [Lookup Endpoints](#lookup-endpoints)
+7. [AI Chatbot](#ai-chatbot)
 
 ---
 
@@ -578,13 +580,66 @@ Updates an existing opera including composers and librettists.
 
 ---
 
+## AI Chatbot
+
+The AI chatbot service is a separate microservice running on its own port. It uses Azure OpenAI (GPT-5.4-mini) via Azure AI Foundry to answer natural language questions about the Calgary Opera Archive.
+
+**Base URL (local development):** `http://localhost:5194`  
+**Authentication:** Azure CLI credential (local dev) / Managed Identity (deployed)  
+**Note:** The chatbot answers based on grounded knowledge from the archive. It will not invent or fabricate information not present in the archive data.
+
+---
+
+### POST /api/chat
+
+Sends a natural language message to the AI assistant and returns a response.
+
+**Request Body**
+
+```json
+{
+  "message": "Who sang the role of Violetta in La Traviata?"
+}
+```
+
+| Field     | Type   | Required | Description                              |
+| --------- | ------ | -------- | ---------------------------------------- |
+| `message` | string | Yes      | The natural language query from the user |
+
+**Response `200 OK`**
+
+```json
+{
+  "reply": "Based on the archive, the role of Violetta in La Traviata was performed by Jane Smith in the 2023-2024 season."
+}
+```
+
+**Response `400 Bad Request`** — Message is empty or missing.  
+**Response `500 Internal Server Error`** — Error communicating with Azure OpenAI.
+
+**Example questions the chatbot can handle:**
+
+- `"What productions did Calgary Opera stage in the 2019-2020 season?"`
+- `"Give me a summary of Jane Smith's career at Calgary Opera"`
+- `"Who was the stage director for Carmen?"`
+- `"Which productions has the character Figaro appeared in?"`
+
+**What the chatbot will not do:**
+
+- Add, edit, or delete archive records
+- Answer questions unrelated to the Calgary Opera Archive
+- Fabricate information not in the archive
+
+---
+
 ## Error Reference
 
-| Status Code       | Meaning                       |
-| ----------------- | ----------------------------- |
-| `200 OK`          | Request successful            |
-| `201 Created`     | Resource created successfully |
-| `204 No Content`  | Update or delete successful   |
-| `400 Bad Request` | Invalid input or ID mismatch  |
-| `404 Not Found`   | Resource does not exist       |
-| `409 Conflict`    | Duplicate resource detected   |
+| Status Code                 | Meaning                                   |
+| --------------------------- | ----------------------------------------- |
+| `200 OK`                    | Request successful                        |
+| `201 Created`               | Resource created successfully             |
+| `204 No Content`            | Update or delete successful               |
+| `400 Bad Request`           | Invalid input or ID mismatch              |
+| `404 Not Found`             | Resource does not exist                   |
+| `409 Conflict`              | Duplicate resource detected               |
+| `500 Internal Server Error` | Unexpected server error (chatbot service) |
