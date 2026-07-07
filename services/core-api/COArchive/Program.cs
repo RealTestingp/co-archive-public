@@ -11,16 +11,21 @@ builder.Services.AddControllers();
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null)));
 
-// Add CORS — allow React dev server
+// Add CORS â€” allow React dev server
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
     {
         policy.WithOrigins(
                 "http://localhost:3000",
-                "http://localhost:5173"  // Vite default, just in case
+                "http://localhost:5173"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -39,12 +44,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Apply CORS — must be before UseAuthorization and MapControllers
 app.UseCors("ReactFrontend");
 
 app.UseAuthorization();
 
 app.MapRazorPages();
-app.MapControllers(); // Wire up API controllers
+app.MapControllers();
 
 app.Run();

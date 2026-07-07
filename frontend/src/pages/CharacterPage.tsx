@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import NavBar from '../components/NavBar';
-import Breadcrumb from '../components/BreadCrumb';
-import PageHeader from '../components/PageHeader';
-import DetailRow from '../components/DetailRow';
-import SectionTitle from '../components/SectionTitle';
-import Divider from '../components/Divider';
-import LoadingSkeleton from '../components/LoadingSkeleton';
-import ErrorState from '../components/ErrorState';
-import { useTheme } from '../context/ThemeContext';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import NavBar from "../components/NavBar";
+import Breadcrumb from "../components/BreadCrumb";
+import PageHeader from "../components/PageHeader";
+import DetailRow from "../components/DetailRow";
+import SectionTitle from "../components/SectionTitle";
+import Divider from "../components/Divider";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import ErrorState from "../components/ErrorState";
+import { useTheme } from "../context/ThemeContext";
 
 interface Performer {
   firstName: string;
@@ -57,27 +57,42 @@ const CharacterPage = () => {
     fetchCharacter();
   }, [fetchCharacter]);
 
-  const details = character ? [
-    { label: 'Opera', value: character.opera ?? '—' },
-    { label: 'Productions', value: String(character.productionHistory.length) },
-  ] : [];
+  const details = character
+    ? [
+        { label: "Opera", value: character.opera ?? "—" },
+        {
+          label: "Productions",
+          value: String(character.productionHistory.length),
+        },
+      ]
+    : [];
 
-  const border = isDark ? '#2a2a2a' : '#e5e7eb';
-  const borderLight = isDark ? '#2a2a2a' : '#f3f4f6';
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const borderLight = isDark ? "#2a2a2a" : "#f3f4f6";
   const textPrimary = colors.textPrimary;
-  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
-  const textMuted = isDark ? '#6b7280' : '#9ca3af';
-  const surface = isDark ? '#1c1c1c' : '#fff';
-  const tableBg = isDark ? '#161616' : '#f9fafb';
-  const rowHover = isDark ? '#1e1e1e' : '#fafafa';
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const tableBg = isDark ? "#161616" : "#f9fafb";
+  const rowHover = isDark ? "#1e1e1e" : "#fafafa";
 
   return (
-    <div style={{ background: colors.background, minHeight: '100vh', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: textPrimary }}>
+    <div
+      style={{
+        background: colors.background,
+        minHeight: "100vh",
+        fontFamily: "Inter, sans-serif",
+        fontSize: "14px",
+        color: textPrimary,
+      }}
+    >
       <NavBar />
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem" }}>
         <Breadcrumb
-          path={[{ label: 'Archive', to: '/search' }, { label: 'Characters', to: '/search' }]}
-          current={character?.name ?? 'Character'}
+          path={[
+            { label: "Archive", to: "/search" },
+            { label: "Characters", to: "/search" },
+          ]}
+          current={character?.name ?? "Character"}
         />
 
         {hasError ? (
@@ -86,14 +101,21 @@ const CharacterPage = () => {
           <>
             {/* Header */}
             {isLoading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  marginBottom: "1.5rem",
+                }}
+              >
                 <LoadingSkeleton width="280px" height="26px" />
                 <LoadingSkeleton width="160px" height="14px" />
               </div>
             ) : (
               <PageHeader
                 title={character!.name}
-                subtitle={character!.opera ?? ''}
+                subtitle={character!.opera ?? ""}
                 editLabel="Edit Character"
               />
             )}
@@ -102,9 +124,18 @@ const CharacterPage = () => {
 
             {/* Details */}
             {isLoading ? (
-              <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
-                {[1, 2].map(i => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div
+                style={{ display: "flex", gap: "2rem", marginBottom: "1.5rem" }}
+              >
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
                     <LoadingSkeleton width="80px" height="10px" />
                     <LoadingSkeleton width="60px" height="14px" />
                   </div>
@@ -119,18 +150,58 @@ const CharacterPage = () => {
             {/* Production History */}
             <SectionTitle>Production History</SectionTitle>
             {isLoading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} style={{ padding: '12px 0', borderBottom: `1px solid ${borderLight}` }}>
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "12px 0",
+                    borderBottom: `1px solid ${borderLight}`,
+                  }}
+                >
                   <LoadingSkeleton width="200px" height="13px" />
                 </div>
               ))
             ) : !character || character.productionHistory.length === 0 ? (
-              <p style={{ fontSize: '13px', color: textMuted, marginBottom: '1.5rem' }}>No production history on record.</p>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: textMuted,
+                  marginBottom: "1.5rem",
+                }}
+              >
+                No production history on record.
+              </p>
             ) : (
-              <div style={{ border: `1px solid ${border}`, borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', padding: '8px 16px', background: tableBg, borderBottom: `1px solid ${border}` }}>
-                  {['Production', 'Season', 'Performers'].map(h => (
-                    <span key={h} style={{ flex: 1, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: textMuted }}>{h}</span>
+              <div
+                style={{
+                  border: `1px solid ${border}`,
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    padding: "8px 16px",
+                    background: tableBg,
+                    borderBottom: `1px solid ${border}`,
+                  }}
+                >
+                  {["Production", "Season", "Performers"].map((h) => (
+                    <span
+                      key={h}
+                      style={{
+                        flex: 1,
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        textTransform: "uppercase" as const,
+                        letterSpacing: "0.08em",
+                        color: textMuted,
+                      }}
+                    >
+                      {h}
+                    </span>
                   ))}
                 </div>
                 {character.productionHistory.map((p, i) => (
@@ -138,17 +209,52 @@ const CharacterPage = () => {
                     key={i}
                     onClick={() => navigate(`/productions/${p.productionId}`)}
                     style={{
-                      display: 'flex', alignItems: 'center', padding: '11px 16px',
-                      borderBottom: i < character.productionHistory.length - 1 ? `1px solid ${borderLight}` : 'none',
-                      cursor: 'pointer', transition: 'background 0.1s ease',
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "11px 16px",
+                      borderBottom:
+                        i < character.productionHistory.length - 1
+                          ? `1px solid ${borderLight}`
+                          : "none",
+                      cursor: "pointer",
+                      transition: "background 0.1s ease",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = rowHover)}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = rowHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                   >
-                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: textPrimary }}>{p.productionTitle}</span>
-                    <span style={{ flex: 1, fontSize: '13px', color: textSecondary }}>{p.season}</span>
-                    <span style={{ flex: 1, fontSize: '13px', color: textSecondary }}>
-                      {p.performers.map(perf => `${perf.firstName} ${perf.lastName}`).join(', ') || '—'}
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: "13px",
+                        fontWeight: 500,
+                        color: textPrimary,
+                      }}
+                    >
+                      {p.productionTitle}
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: "13px",
+                        color: textSecondary,
+                      }}
+                    >
+                      {p.season}
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: "13px",
+                        color: textSecondary,
+                      }}
+                    >
+                      {p.performers
+                        .map((perf) => `${perf.firstName} ${perf.lastName}`)
+                        .join(", ") || "—"}
                     </span>
                   </div>
                 ))}
