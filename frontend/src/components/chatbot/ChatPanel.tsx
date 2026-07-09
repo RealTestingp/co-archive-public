@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type SyntheticEvent } from "react";
+import ReactMarkdown from "react-markdown";
 import styles from "./ChatWidget.module.css";
 
 export interface ChatMessage {
@@ -11,9 +12,15 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   onSend: (text: string) => void;
   onClose: () => void;
+  isSending: boolean;
 }
 
-const ChatPanel = ({ messages, onSend, onClose }: ChatPanelProps) => {
+const ChatPanel = ({
+  messages,
+  onSend,
+  onClose,
+  isSending,
+}: ChatPanelProps) => {
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +34,7 @@ const ChatPanel = ({ messages, onSend, onClose }: ChatPanelProps) => {
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = draft.trim();
-    if (!trimmed) return;
+    if (!trimmed || isSending) return;
     onSend(trimmed);
     setDraft("");
   };
@@ -74,9 +81,14 @@ const ChatPanel = ({ messages, onSend, onClose }: ChatPanelProps) => {
               key={m.id}
               className={`${styles.message} ${m.role === "user" ? styles.messageUser : styles.messageAssistant}`}
             >
-              {m.content}
+              <ReactMarkdown>{m.content}</ReactMarkdown>
             </div>
           ))
+        )}
+        {isSending && (
+          <div className={`${styles.message} ${styles.messageAssistant}`}>
+            …
+          </div>
         )}
       </div>
 
@@ -88,11 +100,13 @@ const ChatPanel = ({ messages, onSend, onClose }: ChatPanelProps) => {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           aria-label="Chat message"
+          disabled={isSending}
         />
         <button
           className={styles.sendButton}
           type="submit"
           aria-label="Send message"
+          disabled={isSending}
         >
           <svg
             width="16"

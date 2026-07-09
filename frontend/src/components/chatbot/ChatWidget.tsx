@@ -6,22 +6,46 @@ import styles from "./ChatWidget.module.css";
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: text,
     };
     setMessages((prev) => [...prev, userMessage]);
+    setIsSending(true);
 
-    // Placeholder reply — COA-192 will wire this up to the real chatbot API
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (!res.ok)
+        throw new Error(`Chat request failed with status ${res.status}`);
+
+      const data: { reply: string } = await res.json();
+
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: "…" },
+        { id: crypto.randomUUID(), role: "assistant", content: data.reply },
       ]);
-    }, 500);
+    } catch (err) {
+      console.error("Chat request failed:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -31,6 +55,7 @@ const ChatWidget = () => {
           messages={messages}
           onSend={handleSend}
           onClose={() => setIsOpen(false)}
+          isSending={isSending}
         />
       )}
       <ChatBubble isOpen={isOpen} onClick={() => setIsOpen((o) => !o)} />

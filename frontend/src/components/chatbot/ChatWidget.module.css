@@ -219,3 +219,35 @@
 [data-theme="dark"] .sendButton:hover {
   background: #a5311f;
 }
+.messageAssistant :global(p) {
+  margin: 0 0 8px 0;
+}
+
+.messageAssistant :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.messageAssistant :global(ul),
+.messageAssistant :global(ol) {
+  margin: 4px 0 8px 0;
+  padding-left: 20px;
+}
+
+.messageAssistant :global(li) {
+  margin-bottom: 2px;
+}
+
+.messageAssistant :global(strong) {
+  font-weight: 700;
+}
+
+.messageAssistant :global(code) {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+[data-theme="dark"] .messageAssistant :global(code) {
+  background: rgba(255, 255, 255, 0.1);
+}
