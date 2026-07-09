@@ -1,4 +1,4 @@
-using Azure.Identity;
+using Azure;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using Microsoft.AspNetCore.Mvc;
@@ -29,11 +29,12 @@ namespace ChatbotService.Controllers
       {
         var endpoint = _config["AzureAI:Endpoint"]
             ?? throw new InvalidOperationException("AzureAI:Endpoint is not configured.");
+        var apiKey = _config["AzureAI:ApiKey"]
+            ?? throw new InvalidOperationException("AzureAI:ApiKey is not configured.");
         var modelDeployment = _config["AzureAI:ModelDeployment"]
             ?? throw new InvalidOperationException("AzureAI:ModelDeployment is not configured.");
 
-        var credential = new AzureCliCredential();
-        var azureOpenAIClient = new AzureOpenAIClient(new Uri(endpoint), credential);
+        var azureOpenAIClient = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
         var chatClient = azureOpenAIClient.GetChatClient(modelDeployment);
 
         var response = await chatClient.CompleteChatAsync(
