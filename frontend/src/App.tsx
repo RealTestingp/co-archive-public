@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import LoginPage from "./pages/LoginPage";
@@ -9,10 +15,14 @@ import ProductionPage from "./pages/ProductionPage";
 import ManageArchivePage from "./pages/ManageArchivePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ReportsPage from "./pages/ReportsPage";
+import ChatWidget from "./components/chatbot/ChatWidget";
 
-function App() {
+const AppRoutes = () => {
+  const { pathname } = useLocation();
+  const hideChatWidget = pathname === "/login" || pathname === "/404";
+
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -21,11 +31,46 @@ function App() {
         <Route path="/" element={<Navigate to="/search" replace />} />
 
         {/* Protected */}
-        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-        <Route path="/persons/:id" element={<ProtectedRoute><PersonPage /></ProtectedRoute>} />
-        <Route path="/productions/:id" element={<ProtectedRoute><ProductionPage /></ProtectedRoute>} />
-        <Route path="/characters/:id" element={<ProtectedRoute><CharacterPage /></ProtectedRoute>} />
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute>
+              <SearchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/persons/:id"
+          element={
+            <ProtectedRoute>
+              <PersonPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/productions/:id"
+          element={
+            <ProtectedRoute>
+              <ProductionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/characters/:id"
+          element={
+            <ProtectedRoute>
+              <CharacterPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin only */}
         <Route
@@ -41,6 +86,16 @@ function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+
+      {!hideChatWidget && <ChatWidget />}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
