@@ -2,7 +2,6 @@
 using COArchive.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 namespace COArchive.API.Controllers
 {
     [ApiController]
@@ -10,12 +9,28 @@ namespace COArchive.API.Controllers
     public class ReportsQueryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-
         public ReportsQueryController(ApplicationDbContext context)
         {
             _context = context;
         }
-        
+
+        [HttpGet("fields")]
+        public IActionResult GetAvailableFields()
+        {
+            var fields = new
+            {
+                Season = true,
+                ContributorType = true,
+                Position = true,
+                Character = true,
+                Production = true,
+                EventType = true,
+                VoiceType = true,
+                Nationality = true
+            };
+            return Ok(fields);
+        }
+
         [HttpPost("query")]
         public async Task<ActionResult<ReportQueryResultDto>> Query(
             [FromBody] ReportQueryRequestDto request)
@@ -31,34 +46,35 @@ namespace COArchive.API.Controllers
                 .Include(a => a.Production)
                     .ThenInclude(p => p.Season)
                 .AsQueryable();
-
             if (request.SeasonId.HasValue)
                 query = query.Where(a => a.Production.SeasonId == request.SeasonId);
-
             if (request.ContributorTypeId.HasValue)
                 query = query.Where(a => a.ContributorTypeId == request.ContributorTypeId);
-
             if (request.PositionId.HasValue)
                 query = query.Where(a => a.PositionId == request.PositionId);
-
             if (request.CharacterId.HasValue)
                 query = query.Where(a => a.CharacterId == request.CharacterId);
-
             if (request.ProductionId.HasValue)
                 query = query.Where(a => a.ProductionId == request.ProductionId);
-
             if (request.EventTypeId.HasValue)
                 query = query.Where(a => a.Production.EventTypeId == request.EventTypeId);
-
             if (request.VoiceTypeId.HasValue)
                 query = query.Where(a => a.Person.VoiceTypeId == request.VoiceTypeId);
-
             if (request.NationalityId.HasValue)
                 query = query.Where(a =>
                     a.Person.Nationalities.Any(n => n.Id == request.NationalityId));
 
-            var appearances = await query.ToListAsync();
+            if (request.Mode == ReportMode.Count)
+            {
+                var count = await query.CountAsync();
+                return Ok(new ReportQueryResultDto
+                {
+                    Rows = new List<ReportRowDto>(),
+                    TotalCount = count
+                });
+            }
 
+            var appearances = await query.ToListAsync();
             var rows = appearances.Select(a => new ReportRowDto
             {
                 FullName = a.Person.FullName,
@@ -72,7 +88,6 @@ namespace COArchive.API.Controllers
                     .FirstOrDefault()?.Name,
                 VoiceType = a.Person.VoiceType?.Name
             }).ToList();
-
             return Ok(new ReportQueryResultDto
             {
                 Rows = rows,
