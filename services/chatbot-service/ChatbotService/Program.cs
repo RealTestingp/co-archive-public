@@ -4,6 +4,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Register HttpClientFactory for calling the Foundry agent endpoint
+builder.Services.AddHttpClient();
+
 // CORS — allow React frontend
 builder.Services.AddCors(options =>
 {
