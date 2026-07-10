@@ -1,7 +1,10 @@
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Search.Documents;
+using Azure.Search.Documents.Models;
 using OpenAI.Chat;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace ChatbotService.Controllers
 {
@@ -12,14 +15,12 @@ namespace ChatbotService.Controllers
     private readonly IConfiguration _config;
     private readonly ILogger<ChatController> _logger;
 
-    private const string SystemPrompt =
-        "You are the Calgary Opera Archive Assistant. You only answer questions using " +
-        "information from the Calgary Opera archive database. You do not have access to " +
-        "that database yet in this version of the assistant. " +
-        "If asked about specific productions, people, characters, seasons, or any other " +
-        "archive data, respond with: \"I don't have access to the archive database yet, " +
-        "so I can't answer that accurately.\" Do not guess, invent, or use general " +
-        "knowledge to answer archive-related questions, even if you believe it might be correct.";
+    private const string SystemPromptTemplate =
+        "You are the Calgary Opera Archive Assistant. You answer questions using ONLY " +
+        "the archive data provided below in the 'Archive data' section. " +
+        "If the answer isn't in the provided data, say: \"I don't have that information " +
+        "in the archive.\" Do not guess or use general knowledge about opera or Calgary Opera. " +
+        "\n\nArchive data:\n{0}";
 
     public ChatController(IConfiguration config, ILogger<ChatController> logger)
     {
@@ -36,6 +37,39 @@ namespace ChatbotService.Controllers
 
       try
       {
+        // --- Step 1: Search Azure AI Search for relevant archive data ---
+        var searchEndpoint = _config["AzureSearch:Endpoint"]
+            ?? throw new InvalidOperationException("AzureSearch:Endpoint is not configured.");
+        var searchApiKey = _config["AzureSearch:ApiKey"]
+            ?? throw new InvalidOperationException("AzureSearch:ApiKey is not configured.");
+        var indexName = _config["AzureSearch:IndexName"]
+            ?? throw new InvalidOperationException("AzureSearch:IndexName is not configured.");
+
+        var searchClient = new SearchClient(
+            new Uri(searchEndpoint),
+            indexName,
+            new AzureKeyCredential(searchApiKey)
+        );
+
+        var searchOptions = new SearchOptions { Size = 20 };
+        var searchResults = await searchClient.SearchAsync<SearchDocument>(request.Message, searchOptions);
+
+        var contextBuilder = new StringBuilder();
+        await foreach (var result in searchResults.Value.GetResultsAsync())
+        {
+          foreach (var field in result.Document)
+          {
+            if (field.Key.EndsWith("_vector")) continue; // skip raw vector data, not useful as text context
+            contextBuilder.Append($"{field.Key}: {field.Value}, ");
+          }
+          contextBuilder.AppendLine();
+        }
+
+        var archiveContext = contextBuilder.Length > 0
+            ? contextBuilder.ToString()
+            : "No matching records found.";
+
+        // --- Step 2: Send the message + retrieved context to the model ---
         var endpoint = _config["AzureAI:Endpoint"]
             ?? throw new InvalidOperationException("AzureAI:Endpoint is not configured.");
         var apiKey = _config["AzureAI:ApiKey"]
@@ -46,8 +80,10 @@ namespace ChatbotService.Controllers
         var azureOpenAIClient = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
         var chatClient = azureOpenAIClient.GetChatClient(modelDeployment);
 
+        var systemPrompt = string.Format(SystemPromptTemplate, archiveContext);
+
         var response = await chatClient.CompleteChatAsync(
-            new SystemChatMessage(SystemPrompt),
+            new SystemChatMessage(systemPrompt),
             new UserChatMessage(request.Message)
         );
 
