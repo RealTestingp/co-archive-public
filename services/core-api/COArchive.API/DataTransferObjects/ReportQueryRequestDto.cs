@@ -2,6 +2,7 @@
 {
     public class ReportQueryRequestDto
     {
+        public ReportMode Mode { get; set; } = ReportMode.List;
         public int? SeasonId { get; set; }
         public int? NationalityId { get; set; }
         public int? ContributorTypeId { get; set; }
