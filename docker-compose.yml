@@ -44,6 +44,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - CoreApi__BaseUrl=http://core-api:8080
 
   chatbot-service:
     build:
