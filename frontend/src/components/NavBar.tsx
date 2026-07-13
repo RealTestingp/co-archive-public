@@ -43,7 +43,10 @@ const NavBar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -60,14 +63,23 @@ const NavBar = () => {
       </div>
 
       <div className={styles.links}>
-        <Link to="/search" className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}>
+        <Link
+          to="/search"
+          className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}
+        >
           Search
         </Link>
-        <Link to="/reports" className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}>
+        <Link
+          to="/reports"
+          className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}
+        >
           Reports
         </Link>
         {isAdmin && (
-          <Link to="/manage" className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}>
+          <Link
+            to="/manage"
+            className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}
+          >
             Manage Archive
           </Link>
         )}
@@ -76,7 +88,18 @@ const NavBar = () => {
       <div className={styles.right}>
         <div className={styles.searchWrap}>
           <div className={styles.searchInputWrap}>
-            <svg className={styles.searchIcon} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className={styles.searchIcon}
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -90,8 +113,22 @@ const NavBar = () => {
               aria-label="Search archive"
             />
           </div>
-          <Link to="/search" className={styles.searchIconBtn} aria-label="Go to search">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <Link
+            to="/search"
+            className={styles.searchIconBtn}
+            aria-label="Go to search"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -117,7 +154,17 @@ const NavBar = () => {
               </div>
               <button className={styles.dropdownItem} onClick={toggleTheme}>
                 {isDark ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <circle cx="12" cy="12" r="5" />
                     <line x1="12" y1="1" x2="12" y2="3" />
                     <line x1="12" y1="21" x2="12" y2="23" />
@@ -129,14 +176,34 @@ const NavBar = () => {
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                   </svg>
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
-                {isDark ? 'Light mode' : 'Dark mode'}
+                {isDark ? "Light mode" : "Dark mode"}
               </button>
               <button className={styles.dropdownItem} onClick={handleLogout}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
