@@ -93,11 +93,11 @@ const DeletePersonModal = ({
                 marginBottom: "4px",
               }}
             >
-              Delete {personName}?
+              {isBlocked ? `Can't delete ${personName}` : `Delete ${personName}?`}
             </h2>
             <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5 }}>
               {isBlocked
-                ? `${personName} can't be deleted while they have production history on record.`
+                ? "This person cannot be deleted because they have production history on record. Remove their appearances first, or mark them as inactive instead."
                 : `This will permanently delete ${personName} from the archive. This action cannot be undone.`}
             </p>
           </div>
@@ -116,8 +116,7 @@ const DeletePersonModal = ({
             }}
           >
             {personName} has {productionCount} production credit
-            {productionCount === 1 ? "" : "s"} on record. Remove or
-            reassign their appearances first, then try deleting again.
+            {productionCount === 1 ? "" : "s"} on record.
           </div>
         )}
 
