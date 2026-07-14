@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../api";
+import { api, uploadFile } from "../api";
 
 // UpdateProductionDto (backend) only touches these fields — performances,
 // cast, creative, crew, orchestra, and chorus are NOT editable through this
@@ -116,6 +116,9 @@ const labelStyle: React.CSSProperties = {
 
 const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
+const MAX_PDF_BYTES = 50 * 1024 * 1024;
+const ACCEPTED_PDF_TYPE = "application/pdf";
+
 const EditProductionModal = ({
   isOpen,
   onClose,
@@ -134,8 +137,16 @@ const EditProductionModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Program PDF
+  const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    // Clear any leftover selection from a previous time this modal was open
+    setProgramPdfFile(null);
+    setPdfError(null);
 
     const fetchLookupsAndPrefill = async () => {
       setLoadingLookups(true);
@@ -211,6 +222,22 @@ const EditProductionModal = ({
     ) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== ACCEPTED_PDF_TYPE) {
+      setPdfError("Please select a PDF file.");
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfError("PDF must be under 50MB.");
+      return;
+    }
+    setPdfError(null);
+    setProgramPdfFile(file);
+    e.target.value = "";
+  };
+
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.seasonId || !form.eventTypeId || !form.venueId) {
       setError("Title, season, event type, and venue are required.");
@@ -224,7 +251,8 @@ const EditProductionModal = ({
       // Update requires `id` in the body (UpdateProductionDto), same as
       // persons — the controller 400s if it doesn't match the route id.
       // Also passing programPdfUrl through unchanged, since this modal
-      // doesn't support editing it and Update overwrites it unconditionally.
+      // doesn't support editing it directly via this endpoint — a new
+      // upload (below) is what actually updates ProgramPdfUrl.
       const res = await api.put(`/api/productions/${production.id}`, {
         id: production.id,
         title: form.title.trim(),
@@ -245,6 +273,35 @@ const EditProductionModal = ({
 
       if (!res.ok) throw new Error("Failed to update production.");
 
+      // Upload the new program PDF, if one was selected. Awaited since the
+      // user is looking at this production's page right now and expects
+      // to see the new PDF link once the modal closes.
+      // TODO: endpoint/response shape unconfirmed — no UploadsController
+      // exists in the backend yet as of 2026-07-14. Swap this in once
+      // Dylan's endpoint is built and confirmed.
+      if (programPdfFile) {
+        try {
+          const uploadRes = await uploadFile(
+            `/api/uploads/program-pdf/${production.id}`,
+            programPdfFile,
+            "file",
+          );
+          if (!uploadRes.ok) {
+            setError(
+              "Production was updated, but the new PDF failed to upload. Try editing again to retry the PDF.",
+            );
+            setSubmitting(false);
+            return;
+          }
+        } catch {
+          setError(
+            "Production was updated, but the new PDF failed to upload. Try editing again to retry the PDF.",
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
       handleClose();
       onSuccess?.();
     } catch {
@@ -256,6 +313,8 @@ const EditProductionModal = ({
 
   const handleClose = () => {
     setError(null);
+    setProgramPdfFile(null);
+    setPdfError(null);
     onClose();
   };
 
@@ -474,6 +533,93 @@ const EditProductionModal = ({
                 value={form.notes}
                 onChange={set("notes")}
               />
+            </div>
+
+            {/* Program PDF */}
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Program PDF</label>
+              {programPdfFile ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                    color: "#374151",
+                  }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    📄 {programPdfFile.name}
+                  </span>
+                  <button
+                    onClick={() => setProgramPdfFile(null)}
+                    style={{
+                      fontSize: "12px",
+                      color: "#9ca3af",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {production.programPdfUrl && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Current:{" "}
+                      <a
+                        href={production.programPdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#9B1C1C" }}
+                      >
+                        View existing PDF
+                      </a>
+                    </div>
+                  )}
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px dashed #d1d5db",
+                      borderRadius: "6px",
+                      padding: "10px 12px",
+                      fontSize: "13px",
+                      color: "#9ca3af",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {production.programPdfUrl
+                      ? "Click to replace PDF (max 50MB)"
+                      : "Click to upload program PDF (optional, max 50MB)"}
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      style={{ display: "none" }}
+                      onChange={handlePdfChange}
+                    />
+                  </label>
+                </>
+              )}
+              {pdfError && (
+                <div
+                  style={{ fontSize: "12px", color: "#9B1C1C", marginTop: "4px" }}
+                >
+                  {pdfError}
+                </div>
+              )}
             </div>
 
             {error && (

@@ -306,6 +306,31 @@ const ProductionPage = () => {
               <DetailRow details={details} />
             )}
 
+            {/* Program PDF */}
+            {!isLoading && production && production.programPdfUrl && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <a
+                  href={production.programPdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#9B1C1C",
+                    textDecoration: "none",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
+                  }}
+                >
+                  📄 View Program PDF
+                </a>
+              </div>
+            )}
+
             {/* Performance Dates */}
             {!isLoading && production && production.performances.length > 0 && (
               <>

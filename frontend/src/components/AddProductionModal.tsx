@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../api";
+import { api, uploadFile } from "../api";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -137,6 +137,9 @@ const newId = () => Math.random().toString(36).slice(2);
 
 const STEPS = ["Opera", "Details", "Characters", "Cast & Crew", "Review"];
 
+const MAX_PDF_BYTES = 50 * 1024 * 1024;
+const ACCEPTED_PDF_TYPE = "application/pdf";
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
@@ -166,6 +169,10 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [productionError, setProductionError] = useState<string | null>(null);
 
+  // Step 1 — Program PDF
+  const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   // Step 2 — Characters
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>(
@@ -187,6 +194,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   // Save
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pdfUploadWarning, setPdfUploadWarning] = useState<string | null>(
+    null,
+  );
   const [done, setDone] = useState(false);
 
   const makeCrewRow = (): CrewRow => ({
@@ -312,6 +322,23 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       setForm((prev) => ({ ...prev, title: opera.title }));
   };
 
+  // ── Step 1: Program PDF ──
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== ACCEPTED_PDF_TYPE) {
+      setPdfError("Please select a PDF file.");
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfError("PDF must be under 50MB.");
+      return;
+    }
+    setPdfError(null);
+    setProgramPdfFile(file);
+    e.target.value = "";
+  };
+
   // ── Step 2: Characters ──
   const toggleCharacter = (id: number) => {
     setSelectedCharacterIds((prev) =>
@@ -433,6 +460,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const handleSave = async () => {
     setSubmitting(true);
     setSubmitError(null);
+    setPdfUploadWarning(null);
     try {
       const prodRes = await api.post("/api/productions", {
         title: form.title.trim(),
@@ -477,6 +505,30 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
         );
 
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
+
+      // Upload the program PDF, if one was selected.
+      // TODO: endpoint/response shape unconfirmed — no UploadsController
+      // exists in the backend yet as of 2026-07-14. Swap this in once
+      // Dylan's endpoint is built and confirmed.
+      if (programPdfFile) {
+        try {
+          const uploadRes = await uploadFile(
+            `/api/uploads/program-pdf/${created.id}`,
+            programPdfFile,
+            "file",
+          );
+          if (!uploadRes.ok) {
+            setPdfUploadWarning(
+              "Production was saved, but the program PDF failed to upload. You can add it later from Edit Production.",
+            );
+          }
+        } catch {
+          setPdfUploadWarning(
+            "Production was saved, but the program PDF failed to upload. You can add it later from Edit Production.",
+          );
+        }
+      }
+
       setDone(true);
     } catch (e: any) {
       setSubmitError(e.message ?? "Something went wrong.");
@@ -491,11 +543,14 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setShowAddOpera(false);
     setNewOpera({ title: "", composer: "", librettist: "" });
     setForm(EMPTY_PRODUCTION);
+    setProgramPdfFile(null);
+    setPdfError(null);
     setSelectedCharacterIds([]);
     setCastRows([]);
     setCrewRows([makeCrewRow()]);
     setPersonResults({});
     setSubmitError(null);
+    setPdfUploadWarning(null);
     setDone(false);
     setOperaError(null);
     setProductionError(null);
@@ -1066,6 +1121,71 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 }
               />
             </div>
+
+            {/* Program PDF */}
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Program PDF</label>
+              {programPdfFile ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                    color: "#374151",
+                  }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    📄 {programPdfFile.name}
+                  </span>
+                  <button
+                    onClick={() => setProgramPdfFile(null)}
+                    style={{
+                      fontSize: "12px",
+                      color: "#9ca3af",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px dashed #d1d5db",
+                    borderRadius: "6px",
+                    padding: "10px 12px",
+                    fontSize: "13px",
+                    color: "#9ca3af",
+                    cursor: "pointer",
+                  }}
+                >
+                  Click to upload program PDF (optional, max 50MB)
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    style={{ display: "none" }}
+                    onChange={handlePdfChange}
+                  />
+                </label>
+              )}
+              {pdfError && (
+                <div
+                  style={{ fontSize: "12px", color: "#9B1C1C", marginTop: "4px" }}
+                >
+                  {pdfError}
+                </div>
+              )}
+            </div>
+
             {productionError && (
               <div
                 style={{
@@ -1628,6 +1748,22 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               >
                 {form.title} has been added to the archive.
               </p>
+              {pdfUploadWarning && (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#9B1C1C",
+                    marginBottom: "1rem",
+                    padding: "8px 12px",
+                    background: "#fef2f2",
+                    borderRadius: "6px",
+                    border: "1px solid #fecaca",
+                    textAlign: "left",
+                  }}
+                >
+                  {pdfUploadWarning}
+                </div>
+              )}
               <button
                 onClick={handleDone}
                 style={{
@@ -1705,6 +1841,17 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       }}
                     >
                       Opera: {selectedOpera.title}
+                    </div>
+                  )}
+                  {programPdfFile && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#9ca3af",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Program PDF: {programPdfFile.name}
                     </div>
                   )}
                 </div>
