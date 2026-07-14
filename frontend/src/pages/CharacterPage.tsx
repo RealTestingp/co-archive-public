@@ -9,6 +9,7 @@ import Divider from "../components/Divider";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
 import { useTheme } from "../context/ThemeContext";
+import { api } from "../api";
 
 interface Performer {
   firstName: string;
@@ -43,7 +44,7 @@ const CharacterPage = () => {
     setIsLoading(true);
     setHasError(false);
     try {
-      const res = await fetch(`/api/characters/${id}`);
+      const res = await api.get(`/api/characters/${id}`);
       if (!res.ok) throw new Error();
       setCharacter(await res.json());
     } catch {

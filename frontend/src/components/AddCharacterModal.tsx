@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-
-const BASE_URL = 'http://localhost:5166';
+import { useState, useEffect } from "react";
+import { api } from "../api";
 
 interface LookupItem {
   id: number;
@@ -12,7 +11,7 @@ interface FormState {
   operaId: string;
 }
 
-const EMPTY_FORM: FormState = { name: '', operaId: '' };
+const EMPTY_FORM: FormState = { name: "", operaId: "" };
 
 interface Props {
   isOpen: boolean;
@@ -21,40 +20,40 @@ interface Props {
 }
 
 const inputStyle = {
-  width: '100%',
-  padding: '8px 12px',
-  fontSize: '13px',
-  fontFamily: 'Inter, sans-serif',
-  border: '1px solid #e5e7eb',
-  borderRadius: '6px',
-  outline: 'none',
-  boxSizing: 'border-box' as const,
-  color: '#111',
+  width: "100%",
+  padding: "8px 12px",
+  fontSize: "13px",
+  fontFamily: "Inter, sans-serif",
+  border: "1px solid #e5e7eb",
+  borderRadius: "6px",
+  outline: "none",
+  boxSizing: "border-box" as const,
+  color: "#111",
 };
 
 const selectStyle = {
   ...inputStyle,
-  background: '#fff',
-  color: '#374151',
-  cursor: 'pointer',
-  appearance: 'none' as const,
+  background: "#fff",
+  color: "#374151",
+  cursor: "pointer",
+  appearance: "none" as const,
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 12px center',
-  paddingRight: '32px',
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  paddingRight: "32px",
 };
 
 const labelStyle = {
-  fontSize: '10px',
+  fontSize: "10px",
   fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.08em',
-  color: '#6b7280',
-  marginBottom: '5px',
-  display: 'block',
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.08em",
+  color: "#6b7280",
+  marginBottom: "5px",
+  display: "block",
 };
 
-const fieldWrap = { marginBottom: '1.1rem' };
+const fieldWrap = { marginBottom: "1.1rem" };
 
 const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -68,11 +67,11 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
     const fetchLookups = async () => {
       setLoadingLookups(true);
       try {
-        const res = await fetch(`${BASE_URL}/api/operas`);
+        const res = await api.get("/api/operas");
         if (!res.ok) throw new Error();
         setOperas(await res.json());
       } catch {
-        setError('Failed to load form options. Is the API running?');
+        setError("Failed to load form options. Is the API running?");
       } finally {
         setLoadingLookups(false);
       }
@@ -80,13 +79,14 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
     fetchLookups();
   }, [isOpen]);
 
-  const set = (field: keyof FormState) =>
+  const set =
+    (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      setError('Character name is required.');
+      setError("Character name is required.");
       return;
     }
 
@@ -94,13 +94,9 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setError(null);
 
     try {
-      const res = await fetch(`${BASE_URL}/api/characters`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          operaId: form.operaId ? Number(form.operaId) : null,
-        }),
+      const res = await api.post("/api/characters", {
+        name: form.name.trim(),
+        operaId: form.operaId ? Number(form.operaId) : null,
       });
 
       if (!res.ok) throw new Error();
@@ -109,7 +105,7 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
       onSuccess?.();
       onClose();
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -124,49 +120,159 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ background: '#fff', borderRadius: '10px', padding: '2rem', width: '100%', maxWidth: '480px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
-
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "10px",
+          padding: "2rem",
+          width: "100%",
+          maxWidth: "480px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}
+      >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111' }}>Add Character</h2>
-          <button onClick={handleClose} style={{ fontSize: '18px', color: '#9ca3af', cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+            Add Character
+          </h2>
+          <button
+            onClick={handleClose}
+            style={{
+              fontSize: "18px",
+              color: "#9ca3af",
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+            }}
+          >
+            ✕
+          </button>
         </div>
 
         {loadingLookups ? (
-          <div style={{ textAlign: 'center', padding: '2rem 0', fontSize: '13px', color: '#6b7280' }}>Loading form options...</div>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "2rem 0",
+              fontSize: "13px",
+              color: "#6b7280",
+            }}
+          >
+            Loading form options...
+          </div>
         ) : (
           <>
             {/* Character Name */}
             <div style={fieldWrap}>
-              <label style={labelStyle}>Character Name <span style={{ color: '#9B1C1C' }}>*</span></label>
-              <input type="text" placeholder="e.g. Violetta" style={inputStyle} value={form.name} onChange={set('name')} />
+              <label style={labelStyle}>
+                Character Name <span style={{ color: "#9B1C1C" }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Violetta"
+                style={inputStyle}
+                value={form.name}
+                onChange={set("name")}
+              />
             </div>
 
             {/* Opera */}
             <div style={fieldWrap}>
               <label style={labelStyle}>Opera</label>
-              <select style={selectStyle} value={form.operaId} onChange={set('operaId')}>
+              <select
+                style={selectStyle}
+                value={form.operaId}
+                onChange={set("operaId")}
+              >
                 <option value="">Select opera</option>
-                {operas.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
+                {operas.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
               </select>
             </div>
 
             {error && (
-              <div style={{ fontSize: '12px', color: '#9B1C1C', marginBottom: '1rem', padding: '8px 12px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#9B1C1C",
+                  marginBottom: "1rem",
+                  padding: "8px 12px",
+                  background: "#fef2f2",
+                  borderRadius: "6px",
+                  border: "1px solid #fecaca",
+                }}
+              >
                 {error}
               </div>
             )}
 
             {/* Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
-              <span style={{ fontSize: '11px', color: '#9ca3af' }}><span style={{ color: '#9B1C1C' }}>*</span> Required fields</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleClose} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151' }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "1.5rem",
+              }}
+            >
+              <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                <span style={{ color: "#9B1C1C" }}>*</span> Required fields
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={handleClose}
+                  disabled={submitting}
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    border: "1px solid #e5e7eb",
+                    background: "#fff",
+                    color: "#374151",
+                  }}
+                >
                   Cancel
                 </button>
-                <button onClick={handleSubmit} disabled={submitting} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: submitting ? '#c85a5a' : '#9B1C1C', color: '#fff' }}>
-                  {submitting ? 'Saving...' : 'Add Character'}
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    border: "1px solid #9B1C1C",
+                    background: submitting ? "#c85a5a" : "#9B1C1C",
+                    color: "#fff",
+                  }}
+                >
+                  {submitting ? "Saving..." : "Add Character"}
                 </button>
               </div>
             </div>

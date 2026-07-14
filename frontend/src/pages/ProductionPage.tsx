@@ -9,6 +9,7 @@ import Divider from "../components/Divider";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
 import { useTheme } from "../context/ThemeContext";
+import { api } from "../api";
 
 interface Performance {
   id: number;
@@ -62,7 +63,7 @@ const ProductionPage = () => {
     setIsLoading(true);
     setHasError(false);
     try {
-      const res = await fetch(`/api/productions/${id}`);
+      const res = await api.get(`/api/productions/${id}`);
       if (!res.ok) throw new Error();
       setProduction(await res.json());
     } catch {

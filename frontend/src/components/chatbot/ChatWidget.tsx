@@ -2,6 +2,7 @@ import { useState } from "react";
 import ChatBubble from "./ChatBubble";
 import ChatPanel, { type ChatMessage } from "./ChatPanel";
 import styles from "./ChatWidget.module.css";
+import { api } from "../../api";
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,11 +19,7 @@ const ChatWidget = () => {
     setIsSending(true);
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
+      const res = await api.post("/api/chat", { message: text });
 
       if (!res.ok)
         throw new Error(`Chat request failed with status ${res.status}`);

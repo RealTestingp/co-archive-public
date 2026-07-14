@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { api } from "../api";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -77,14 +78,14 @@ interface ProductionForm {
 }
 
 const EMPTY_PRODUCTION: ProductionForm = {
-  title: '',
-  seasonId: '',
-  eventTypeId: '',
-  venueId: '',
-  writtenLanguageId: '',
-  sungLanguageId: '',
-  runtimeMinutes: '',
-  notes: '',
+  title: "",
+  seasonId: "",
+  eventTypeId: "",
+  venueId: "",
+  writtenLanguageId: "",
+  sungLanguageId: "",
+  runtimeMinutes: "",
+  notes: "",
 };
 
 interface Props {
@@ -96,45 +97,45 @@ interface Props {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  fontSize: '13px',
-  fontFamily: 'Inter, sans-serif',
-  border: '1px solid #e5e7eb',
-  borderRadius: '6px',
-  outline: 'none',
-  boxSizing: 'border-box',
-  color: '#111',
-  background: '#fff',
+  width: "100%",
+  padding: "8px 12px",
+  fontSize: "13px",
+  fontFamily: "Inter, sans-serif",
+  border: "1px solid #e5e7eb",
+  borderRadius: "6px",
+  outline: "none",
+  boxSizing: "border-box",
+  color: "#111",
+  background: "#fff",
 };
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
-  color: '#374151',
-  cursor: 'pointer',
-  appearance: 'none',
+  color: "#374151",
+  cursor: "pointer",
+  appearance: "none",
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 12px center',
-  backgroundSize: '12px',
-  paddingRight: '32px',
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  backgroundSize: "12px",
+  paddingRight: "32px",
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: '10px',
+  fontSize: "10px",
   fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color: '#6b7280',
-  marginBottom: '5px',
-  display: 'block',
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  color: "#6b7280",
+  marginBottom: "5px",
+  display: "block",
 };
 
-const fieldWrap: React.CSSProperties = { marginBottom: '1.1rem' };
+const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
 const newId = () => Math.random().toString(36).slice(2);
 
-const STEPS = ['Opera', 'Details', 'Characters', 'Cast & Crew', 'Review'];
+const STEPS = ["Opera", "Details", "Characters", "Cast & Crew", "Review"];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -145,28 +146,42 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [operas, setOperas] = useState<Opera[]>([]);
   const [selectedOperaId, setSelectedOperaId] = useState<number | null>(null);
   const [showAddOpera, setShowAddOpera] = useState(false);
-  const [newOpera, setNewOpera] = useState({ title: '', composer: '', librettist: '' });
+  const [newOpera, setNewOpera] = useState({
+    title: "",
+    composer: "",
+    librettist: "",
+  });
   const [savingOpera, setSavingOpera] = useState(false);
   const [operaError, setOperaError] = useState<string | null>(null);
 
   // Step 1 — Production details
   const [form, setForm] = useState<ProductionForm>(EMPTY_PRODUCTION);
-  const [lookups, setLookups] = useState<Lookups>({ seasons: [], venues: [], eventTypes: [], languages: [], contributorTypes: [] });
+  const [lookups, setLookups] = useState<Lookups>({
+    seasons: [],
+    venues: [],
+    eventTypes: [],
+    languages: [],
+    contributorTypes: [],
+  });
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [productionError, setProductionError] = useState<string | null>(null);
 
   // Step 2 — Characters
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>(
+    [],
+  );
   const [showAddCharacter, setShowAddCharacter] = useState(false);
-  const [newCharacterName, setNewCharacterName] = useState('');
+  const [newCharacterName, setNewCharacterName] = useState("");
   const [savingCharacter, setSavingCharacter] = useState(false);
   const [characterError, setCharacterError] = useState<string | null>(null);
 
   // Step 3 — Cast & Crew
   const [castRows, setCastRows] = useState<CastRow[]>([]);
   const [crewRows, setCrewRows] = useState<CrewRow[]>([]);
-  const [personResults, setPersonResults] = useState<Record<string, PersonSearchResult[]>>({});
+  const [personResults, setPersonResults] = useState<
+    Record<string, PersonSearchResult[]>
+  >({});
   const [positions, setPositions] = useState<Position[]>([]);
 
   // Save
@@ -174,15 +189,84 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const makeCrewRow = (): CrewRow => ({ id: newId(), personSearch: '', personId: '', personName: '', contributorTypeId: '', positionId: '' });
+  const makeCrewRow = (): CrewRow => ({
+    id: newId(),
+    personSearch: "",
+    personId: "",
+    personName: "",
+    contributorTypeId: "",
+    positionId: "",
+  });
 
   // ── Derived ──
-  const selectedEventType = lookups.eventTypes.find(e => String(e.id) === form.eventTypeId);
-  const requiresOpera = selectedEventType ? selectedEventType.trackMilestones : true;
-  const selectedOpera = operas.find(o => o.id === selectedOperaId);
-  const operaCharacters = allCharacters.filter(c => c.operaId === selectedOperaId);
-  const selectedCharacters = operaCharacters.filter(c => selectedCharacterIds.includes(c.id));
-  const canAdvanceStep2 = !!(form.title.trim() && form.seasonId && form.eventTypeId && form.venueId);
+  const selectedEventType = lookups.eventTypes.find(
+    (e) => String(e.id) === form.eventTypeId,
+  );
+  const requiresOpera = selectedEventType
+    ? selectedEventType.trackMilestones
+    : true;
+  const selectedOpera = operas.find((o) => o.id === selectedOperaId);
+  const operaCharacters = allCharacters.filter(
+    (c) => c.operaId === selectedOperaId,
+  );
+  const selectedCharacters = operaCharacters.filter((c) =>
+    selectedCharacterIds.includes(c.id),
+  );
+  const canAdvanceStep2 = !!(
+    form.title.trim() &&
+    form.seasonId &&
+    form.eventTypeId &&
+    form.venueId
+  );
+
+  const fetchOperas = async () => {
+    try {
+      const res = await api.get("/api/operas");
+      if (res.ok) setOperas(await res.json());
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const fetchLookups = async () => {
+    setLoadingLookups(true);
+    try {
+      const [seasons, venues, eventTypes, languages, contributorTypes] =
+        await Promise.all([
+          api.get("/api/seasons").then((r) => r.json()),
+          api.get("/api/venues").then((r) => r.json()),
+          api.get("/api/eventtypes").then((r) => r.json()),
+          api.get("/api/languages").then((r) => r.json()),
+          api.get("/api/contributortypes").then((r) => r.json()),
+        ]);
+      setLookups({ seasons, venues, eventTypes, languages, contributorTypes });
+    } catch {
+      setProductionError("Failed to load form options.");
+    } finally {
+      setLoadingLookups(false);
+    }
+  };
+
+  const fetchAllCharacters = async () => {
+    try {
+      const res = await api.get("/api/characters");
+      if (res.ok) setAllCharacters(await res.json());
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const fetchPositions = async (contributorTypeId: string) => {
+    if (!contributorTypeId) return;
+    try {
+      const res = await api.get(
+        `/api/positions?contributorTypeId=${contributorTypeId}`,
+      );
+      if (res.ok) setPositions(await res.json());
+    } catch {
+      /* ignore */
+    }
+  };
 
   // ── Fetch on open ──
   useEffect(() => {
@@ -193,66 +277,29 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setCrewRows([makeCrewRow()]);
   }, [isOpen]);
 
-  const fetchOperas = async () => {
-    try {
-      const res = await fetch('/api/operas');
-      if (res.ok) setOperas(await res.json());
-    } catch { /* ignore */ }
-  };
-
-  const fetchLookups = async () => {
-    setLoadingLookups(true);
-    try {
-      const [seasons, venues, eventTypes, languages, contributorTypes] = await Promise.all([
-        fetch('/api/seasons').then(r => r.json()),
-        fetch('/api/venues').then(r => r.json()),
-        fetch('/api/eventtypes').then(r => r.json()),
-        fetch('/api/languages').then(r => r.json()),
-        fetch('/api/contributortypes').then(r => r.json()),
-      ]);
-      setLookups({ seasons, venues, eventTypes, languages, contributorTypes });
-    } catch {
-      setProductionError('Failed to load form options.');
-    } finally {
-      setLoadingLookups(false);
-    }
-  };
-
-  const fetchAllCharacters = async () => {
-    try {
-      const res = await fetch('/api/characters');
-      if (res.ok) setAllCharacters(await res.json());
-    } catch { /* ignore */ }
-  };
-
-  const fetchPositions = async (contributorTypeId: string) => {
-    if (!contributorTypeId) return;
-    try {
-      const res = await fetch(`/api/positions?contributorTypeId=${contributorTypeId}`);
-      if (res.ok) setPositions(await res.json());
-    } catch { /* ignore */ }
-  };
-
   // ── Step 0: Opera ──
   const handleSaveNewOpera = async () => {
-    if (!newOpera.title.trim()) { setOperaError('Title is required.'); return; }
+    if (!newOpera.title.trim()) {
+      setOperaError("Title is required.");
+      return;
+    }
     setSavingOpera(true);
     setOperaError(null);
     try {
-      const res = await fetch('/api/operas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newOpera.title.trim(), composer: newOpera.composer.trim() || null, librettist: newOpera.librettist.trim() || null }),
+      const res = await api.post("/api/operas", {
+        title: newOpera.title.trim(),
+        composer: newOpera.composer.trim() || null,
+        librettist: newOpera.librettist.trim() || null,
       });
       if (!res.ok) throw new Error();
       const created = await res.json();
-      setOperas(prev => [...prev, created]);
+      setOperas((prev) => [...prev, created]);
       setSelectedOperaId(created.id);
-      setForm(prev => ({ ...prev, title: created.title }));
+      setForm((prev) => ({ ...prev, title: created.title }));
       setShowAddOpera(false);
-      setNewOpera({ title: '', composer: '', librettist: '' });
+      setNewOpera({ title: "", composer: "", librettist: "" });
     } catch {
-      setOperaError('Failed to save opera. Is the API running?');
+      setOperaError("Failed to save opera. Is the API running?");
     } finally {
       setSavingOpera(false);
     }
@@ -260,65 +307,126 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
 
   const handleOperaSelect = (operaId: number) => {
     setSelectedOperaId(operaId);
-    const opera = operas.find(o => o.id === operaId);
-    if (opera && !form.title) setForm(prev => ({ ...prev, title: opera.title }));
+    const opera = operas.find((o) => o.id === operaId);
+    if (opera && !form.title)
+      setForm((prev) => ({ ...prev, title: opera.title }));
   };
 
   // ── Step 2: Characters ──
   const toggleCharacter = (id: number) => {
-    setSelectedCharacterIds(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+    setSelectedCharacterIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
   };
 
   const handleSaveNewCharacter = async () => {
-    if (!newCharacterName.trim()) { setCharacterError('Name is required.'); return; }
-    if (!selectedOperaId) { setCharacterError('Select an opera first.'); return; }
+    if (!newCharacterName.trim()) {
+      setCharacterError("Name is required.");
+      return;
+    }
+    if (!selectedOperaId) {
+      setCharacterError("Select an opera first.");
+      return;
+    }
     setSavingCharacter(true);
     setCharacterError(null);
     try {
-      const res = await fetch('/api/characters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCharacterName.trim(), operaId: selectedOperaId }),
+      const res = await api.post("/api/characters", {
+        name: newCharacterName.trim(),
+        operaId: selectedOperaId,
       });
       if (!res.ok) throw new Error();
       const created = await res.json();
-      setAllCharacters(prev => [...prev, created]);
-      setSelectedCharacterIds(prev => [...prev, created.id]);
-      setNewCharacterName('');
+      setAllCharacters((prev) => [...prev, created]);
+      setSelectedCharacterIds((prev) => [...prev, created.id]);
+      setNewCharacterName("");
       setShowAddCharacter(false);
     } catch {
-      setCharacterError('Failed to save character.');
+      setCharacterError("Failed to save character.");
     } finally {
       setSavingCharacter(false);
     }
   };
 
   const initCastRows = () => {
-    setCastRows(selectedCharacters.map(c => ({
-      id: newId(), characterId: c.id, characterName: c.name,
-      personSearch: '', personId: '', personName: '',
-    })));
+    setCastRows(
+      selectedCharacters.map((c) => ({
+        id: newId(),
+        characterId: c.id,
+        characterName: c.name,
+        personSearch: "",
+        personId: "",
+        personName: "",
+      })),
+    );
   };
 
   // ── Step 3: Person search ──
   const searchPersons = async (rowId: string, q: string, isCast: boolean) => {
-    if (isCast) setCastRows(prev => prev.map(r => r.id === rowId ? { ...r, personSearch: q, personId: '', personName: '' } : r));
-    else setCrewRows(prev => prev.map(r => r.id === rowId ? { ...r, personSearch: q, personId: '', personName: '' } : r));
-    if (q.trim().length < 2) { setPersonResults(prev => ({ ...prev, [rowId]: [] })); return; }
+    if (isCast)
+      setCastRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? { ...r, personSearch: q, personId: "", personName: "" }
+            : r,
+        ),
+      );
+    else
+      setCrewRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? { ...r, personSearch: q, personId: "", personName: "" }
+            : r,
+        ),
+      );
+    if (q.trim().length < 2) {
+      setPersonResults((prev) => ({ ...prev, [rowId]: [] }));
+      return;
+    }
     try {
-      const res = await fetch(`/api/persons?search=${encodeURIComponent(q)}`);
+      const res = await api.get(`/api/persons?search=${encodeURIComponent(q)}`);
       if (res.ok) {
         const data = await res.json();
-        setPersonResults(prev => ({ ...prev, [rowId]: data }));
+        setPersonResults((prev) => ({ ...prev, [rowId]: data }));
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
-  const selectPerson = (rowId: string, person: PersonSearchResult, isCast: boolean) => {
+  const selectPerson = (
+    rowId: string,
+    person: PersonSearchResult,
+    isCast: boolean,
+  ) => {
     const name = `${person.firstName} ${person.lastName}`;
-    if (isCast) setCastRows(prev => prev.map(r => r.id === rowId ? { ...r, personId: String(person.id), personName: name, personSearch: name } : r));
-    else setCrewRows(prev => prev.map(r => r.id === rowId ? { ...r, personId: String(person.id), personName: name, personSearch: name } : r));
-    setPersonResults(prev => ({ ...prev, [rowId]: [] }));
+    if (isCast)
+      setCastRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? {
+                ...r,
+                personId: String(person.id),
+                personName: name,
+                personSearch: name,
+              }
+            : r,
+        ),
+      );
+    else
+      setCrewRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? {
+                ...r,
+                personId: String(person.id),
+                personName: name,
+                personSearch: name,
+              }
+            : r,
+        ),
+      );
+    setPersonResults((prev) => ({ ...prev, [rowId]: [] }));
   };
 
   // ── Step 4: Save ──
@@ -326,100 +434,278 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const prodRes = await fetch('/api/productions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          seasonId: Number(form.seasonId),
-          eventTypeId: Number(form.eventTypeId),
-          venueId: Number(form.venueId),
-          operaId: selectedOperaId ?? null,
-          writtenLanguageId: form.writtenLanguageId ? Number(form.writtenLanguageId) : null,
-          sungLanguageId: form.sungLanguageId ? Number(form.sungLanguageId) : null,
-          runtimeMinutes: form.runtimeMinutes ? Number(form.runtimeMinutes) : null,
-          notes: form.notes.trim() || null,
-          programPdfUrl: null,
-        }),
+      const prodRes = await api.post("/api/productions", {
+        title: form.title.trim(),
+        seasonId: Number(form.seasonId),
+        eventTypeId: Number(form.eventTypeId),
+        venueId: Number(form.venueId),
+        operaId: selectedOperaId ?? null,
+        writtenLanguageId: form.writtenLanguageId
+          ? Number(form.writtenLanguageId)
+          : null,
+        sungLanguageId: form.sungLanguageId
+          ? Number(form.sungLanguageId)
+          : null,
+        runtimeMinutes: form.runtimeMinutes
+          ? Number(form.runtimeMinutes)
+          : null,
+        notes: form.notes.trim() || null,
+        programPdfUrl: null,
       });
-      if (!prodRes.ok) throw new Error('Failed to create production.');
+      if (!prodRes.ok) throw new Error("Failed to create production.");
       const created = await prodRes.json();
 
-      const castAppearances = castRows.filter(r => r.personId).map(r =>
-        fetch('/api/appearances', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productionId: created.id, personId: Number(r.personId), characterId: r.characterId }),
-        })
-      );
+      const castAppearances = castRows
+        .filter((r) => r.personId)
+        .map((r) =>
+          api.post("/api/appearances", {
+            productionId: created.id,
+            personId: Number(r.personId),
+            characterId: r.characterId,
+          }),
+        );
 
-      const crewAppearances = crewRows.filter(r => r.personId && r.contributorTypeId).map(r =>
-        fetch('/api/appearances', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productionId: created.id, personId: Number(r.personId), contributorTypeId: Number(r.contributorTypeId), positionId: r.positionId ? Number(r.positionId) : null }),
-        })
-      );
+      const crewAppearances = crewRows
+        .filter((r) => r.personId && r.contributorTypeId)
+        .map((r) =>
+          api.post("/api/appearances", {
+            productionId: created.id,
+            personId: Number(r.personId),
+            contributorTypeId: Number(r.contributorTypeId),
+            positionId: r.positionId ? Number(r.positionId) : null,
+          }),
+        );
 
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
       setDone(true);
     } catch (e: any) {
-      setSubmitError(e.message ?? 'Something went wrong.');
+      setSubmitError(e.message ?? "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setStep(0); setSelectedOperaId(null); setShowAddOpera(false);
-    setNewOpera({ title: '', composer: '', librettist: '' });
-    setForm(EMPTY_PRODUCTION); setSelectedCharacterIds([]);
-    setCastRows([]); setCrewRows([makeCrewRow()]);
-    setPersonResults({}); setSubmitError(null); setDone(false);
-    setOperaError(null); setProductionError(null); setCharacterError(null);
+    setStep(0);
+    setSelectedOperaId(null);
+    setShowAddOpera(false);
+    setNewOpera({ title: "", composer: "", librettist: "" });
+    setForm(EMPTY_PRODUCTION);
+    setSelectedCharacterIds([]);
+    setCastRows([]);
+    setCrewRows([makeCrewRow()]);
+    setPersonResults({});
+    setSubmitError(null);
+    setDone(false);
+    setOperaError(null);
+    setProductionError(null);
+    setCharacterError(null);
     onClose();
   };
 
-  const handleDone = () => { onSuccess?.(); handleClose(); };
+  const handleDone = () => {
+    onSuccess?.();
+    handleClose();
+  };
 
   if (!isOpen) return null;
 
   // ── Sub-components ──
   const StepIndicator = () => (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.75rem', marginTop: '4px' }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        marginBottom: "1.75rem",
+        marginTop: "4px",
+      }}
+    >
       {STEPS.map((label, i) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: i <= step ? '#9B1C1C' : '#e5e7eb', color: i <= step ? '#fff' : '#9ca3af', fontSize: '10px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {i < step ? '✓' : i + 1}
+        <div
+          key={label}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flex: i < STEPS.length - 1 ? 1 : 0,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <div
+              style={{
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                background: i <= step ? "#9B1C1C" : "#e5e7eb",
+                color: i <= step ? "#fff" : "#9ca3af",
+                fontSize: "10px",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {i < step ? "✓" : i + 1}
             </div>
-            <span style={{ fontSize: '10px', color: i === step ? '#9B1C1C' : '#9ca3af', fontWeight: i === step ? 600 : 400, whiteSpace: 'nowrap' }}>{label}</span>
+            <span
+              style={{
+                fontSize: "10px",
+                color: i === step ? "#9B1C1C" : "#9ca3af",
+                fontWeight: i === step ? 600 : 400,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {label}
+            </span>
           </div>
-          {i < STEPS.length - 1 && <div style={{ flex: 1, height: '1px', background: i < step ? '#9B1C1C' : '#e5e7eb', margin: '0 6px', marginBottom: '16px' }} />}
+          {i < STEPS.length - 1 && (
+            <div
+              style={{
+                flex: 1,
+                height: "1px",
+                background: i < step ? "#9B1C1C" : "#e5e7eb",
+                margin: "0 6px",
+                marginBottom: "16px",
+              }}
+            />
+          )}
         </div>
       ))}
     </div>
   );
 
-  const Footer = ({ onBack, onNext, nextLabel = 'Next →', nextDisabled = false, nextLoading = false }: { onBack?: () => void; onNext: () => void; nextLabel?: string; nextDisabled?: boolean; nextLoading?: boolean }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.75rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
-      <div>{onBack && <button onClick={onBack} style={{ fontSize: '12px', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>← Back</button>}</div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={handleClose} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontFamily: 'Inter, sans-serif' }}>Cancel</button>
-        <button onClick={onNext} disabled={nextDisabled || nextLoading} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 16px', borderRadius: '6px', cursor: nextDisabled ? 'not-allowed' : 'pointer', border: '1px solid #9B1C1C', background: nextDisabled ? '#f3f4f6' : '#9B1C1C', color: nextDisabled ? '#9ca3af' : '#fff', fontFamily: 'Inter, sans-serif' }}>
-          {nextLoading ? 'Saving...' : nextLabel}
+  const Footer = ({
+    onBack,
+    onNext,
+    nextLabel = "Next →",
+    nextDisabled = false,
+    nextLoading = false,
+  }: {
+    onBack?: () => void;
+    onNext: () => void;
+    nextLabel?: string;
+    nextDisabled?: boolean;
+    nextLoading?: boolean;
+  }) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: "1.75rem",
+        paddingTop: "1rem",
+        borderTop: "1px solid #f3f4f6",
+      }}
+    >
+      <div>
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{
+              fontSize: "12px",
+              color: "#6b7280",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            ← Back
+          </button>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <button
+          onClick={handleClose}
+          style={{
+            fontSize: "12px",
+            fontWeight: 500,
+            padding: "8px 14px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#374151",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onNext}
+          disabled={nextDisabled || nextLoading}
+          style={{
+            fontSize: "12px",
+            fontWeight: 500,
+            padding: "8px 16px",
+            borderRadius: "6px",
+            cursor: nextDisabled ? "not-allowed" : "pointer",
+            border: "1px solid #9B1C1C",
+            background: nextDisabled ? "#f3f4f6" : "#9B1C1C",
+            color: nextDisabled ? "#9ca3af" : "#fff",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          {nextLoading ? "Saving..." : nextLabel}
         </button>
       </div>
     </div>
   );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ background: '#fff', borderRadius: '10px', padding: '2rem', width: '100%', maxWidth: '580px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111' }}>Add Production</h2>
-          <button onClick={handleClose} style={{ fontSize: '18px', color: '#9ca3af', cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "10px",
+          padding: "2rem",
+          width: "100%",
+          maxWidth: "580px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+            Add Production
+          </h2>
+          <button
+            onClick={handleClose}
+            style={{
+              fontSize: "18px",
+              color: "#9ca3af",
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+            }}
+          >
+            ✕
+          </button>
         </div>
 
         <StepIndicator />
@@ -429,55 +715,201 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
           <>
             {!loadingLookups && (
               <div style={fieldWrap}>
-                <label style={labelStyle}>Event Type <span style={{ color: '#9B1C1C' }}>*</span></label>
-                <select style={selectStyle} value={form.eventTypeId} onChange={e => setForm(p => ({ ...p, eventTypeId: e.target.value }))}>
+                <label style={labelStyle}>
+                  Event Type <span style={{ color: "#9B1C1C" }}>*</span>
+                </label>
+                <select
+                  style={selectStyle}
+                  value={form.eventTypeId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, eventTypeId: e.target.value }))
+                  }
+                >
                   <option value="">Select type</option>
-                  {lookups.eventTypes.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  {lookups.eventTypes.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
             <div style={fieldWrap}>
               <label style={labelStyle}>
-                Opera {requiresOpera ? <span style={{ color: '#9B1C1C' }}>*</span> : <span style={{ color: '#9ca3af', fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: '11px' }}> — optional for this event type</span>}
+                Opera{" "}
+                {requiresOpera ? (
+                  <span style={{ color: "#9B1C1C" }}>*</span>
+                ) : (
+                  <span
+                    style={{
+                      color: "#9ca3af",
+                      fontWeight: 400,
+                      textTransform: "none",
+                      letterSpacing: 0,
+                      fontSize: "11px",
+                    }}
+                  >
+                    {" "}
+                    — optional for this event type
+                  </span>
+                )}
               </label>
-              <select style={selectStyle} value={selectedOperaId ?? ''} onChange={e => handleOperaSelect(Number(e.target.value))}>
+              <select
+                style={selectStyle}
+                value={selectedOperaId ?? ""}
+                onChange={(e) => handleOperaSelect(Number(e.target.value))}
+              >
                 <option value="">Select opera</option>
-                {operas.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
+                {operas.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
               </select>
             </div>
 
             {!showAddOpera ? (
-              <button onClick={() => setShowAddOpera(true)} style={{ fontSize: '12px', color: '#9B1C1C', background: 'none', border: '1px dashed #fca5a5', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '1rem' }}>
+              <button
+                onClick={() => setShowAddOpera(true)}
+                style={{
+                  fontSize: "12px",
+                  color: "#9B1C1C",
+                  background: "none",
+                  border: "1px dashed #fca5a5",
+                  borderRadius: "6px",
+                  padding: "7px 14px",
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  marginBottom: "1rem",
+                }}
+              >
                 + Add new opera
               </button>
             ) : (
-              <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#111' }}>New Opera</span>
-                  <button onClick={() => { setShowAddOpera(false); setOperaError(null); }} style={{ fontSize: '12px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+              <div
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "1rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  <span
+                    style={{ fontSize: "12px", fontWeight: 600, color: "#111" }}
+                  >
+                    New Opera
+                  </span>
+                  <button
+                    onClick={() => {
+                      setShowAddOpera(false);
+                      setOperaError(null);
+                    }}
+                    style={{
+                      fontSize: "12px",
+                      color: "#9ca3af",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
                 <div style={fieldWrap}>
-                  <label style={labelStyle}>Title <span style={{ color: '#9B1C1C' }}>*</span></label>
-                  <input type="text" placeholder="e.g. La Traviata" style={inputStyle} value={newOpera.title} onChange={e => setNewOpera(p => ({ ...p, title: e.target.value }))} />
+                  <label style={labelStyle}>
+                    Title <span style={{ color: "#9B1C1C" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. La Traviata"
+                    style={inputStyle}
+                    value={newOpera.title}
+                    onChange={(e) =>
+                      setNewOpera((p) => ({ ...p, title: e.target.value }))
+                    }
+                  />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1rem",
+                    marginBottom: "0.75rem",
+                  }}
+                >
                   <div>
                     <label style={labelStyle}>Composer</label>
-                    <input type="text" placeholder="e.g. Verdi" style={inputStyle} value={newOpera.composer} onChange={e => setNewOpera(p => ({ ...p, composer: e.target.value }))} />
+                    <input
+                      type="text"
+                      placeholder="e.g. Verdi"
+                      style={inputStyle}
+                      value={newOpera.composer}
+                      onChange={(e) =>
+                        setNewOpera((p) => ({ ...p, composer: e.target.value }))
+                      }
+                    />
                   </div>
                   <div>
                     <label style={labelStyle}>Librettist</label>
-                    <input type="text" placeholder="e.g. Piave" style={inputStyle} value={newOpera.librettist} onChange={e => setNewOpera(p => ({ ...p, librettist: e.target.value }))} />
+                    <input
+                      type="text"
+                      placeholder="e.g. Piave"
+                      style={inputStyle}
+                      value={newOpera.librettist}
+                      onChange={(e) =>
+                        setNewOpera((p) => ({
+                          ...p,
+                          librettist: e.target.value,
+                        }))
+                      }
+                    />
                   </div>
                 </div>
-                {operaError && <div style={{ fontSize: '12px', color: '#9B1C1C', marginBottom: '0.5rem' }}>{operaError}</div>}
-                <button onClick={handleSaveNewOpera} disabled={savingOpera} style={{ fontSize: '12px', fontWeight: 500, padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
-                  {savingOpera ? 'Saving...' : 'Save Opera'}
+                {operaError && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#9B1C1C",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    {operaError}
+                  </div>
+                )}
+                <button
+                  onClick={handleSaveNewOpera}
+                  disabled={savingOpera}
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    padding: "7px 14px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    border: "1px solid #9B1C1C",
+                    background: "#9B1C1C",
+                    color: "#fff",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
+                  {savingOpera ? "Saving..." : "Save Opera"}
                 </button>
               </div>
             )}
 
-            <Footer onNext={() => setStep(1)} nextLabel="Next: Details →" nextDisabled={!form.eventTypeId || (requiresOpera && !selectedOperaId)} />
+            <Footer
+              onNext={() => setStep(1)}
+              nextLabel="Next: Details →"
+              nextDisabled={
+                !form.eventTypeId || (requiresOpera && !selectedOperaId)
+              }
+            />
           </>
         )}
 
@@ -485,56 +917,179 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
         {step === 1 && (
           <>
             <div style={fieldWrap}>
-              <label style={labelStyle}>Production Title <span style={{ color: '#9B1C1C' }}>*</span></label>
-              <input type="text" placeholder="e.g. Tosca" style={inputStyle} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} />
+              <label style={labelStyle}>
+                Production Title <span style={{ color: "#9B1C1C" }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Tosca"
+                style={inputStyle}
+                value={form.title}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
+              />
               {selectedOpera && form.title !== selectedOpera.title && (
-                <button onClick={() => setForm(p => ({ ...p, title: selectedOpera!.title }))} style={{ fontSize: '11px', color: '#9B1C1C', background: 'none', border: 'none', cursor: 'pointer', marginTop: '4px', padding: 0, fontFamily: 'Inter, sans-serif' }}>
+                <button
+                  onClick={() =>
+                    setForm((p) => ({ ...p, title: selectedOpera!.title }))
+                  }
+                  style={{
+                    fontSize: "11px",
+                    color: "#9B1C1C",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    marginTop: "4px",
+                    padding: 0,
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Reset to "{selectedOpera.title}"
                 </button>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.1rem' }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+                marginBottom: "1.1rem",
+              }}
+            >
               <div>
-                <label style={labelStyle}>Season <span style={{ color: '#9B1C1C' }}>*</span></label>
-                <select style={selectStyle} value={form.seasonId} onChange={e => setForm(p => ({ ...p, seasonId: e.target.value }))}>
+                <label style={labelStyle}>
+                  Season <span style={{ color: "#9B1C1C" }}>*</span>
+                </label>
+                <select
+                  style={selectStyle}
+                  value={form.seasonId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, seasonId: e.target.value }))
+                  }
+                >
                   <option value="">Select season</option>
-                  {lookups.seasons.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                  {lookups.seasons.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Venue <span style={{ color: '#9B1C1C' }}>*</span></label>
-                <select style={selectStyle} value={form.venueId} onChange={e => setForm(p => ({ ...p, venueId: e.target.value }))}>
+                <label style={labelStyle}>
+                  Venue <span style={{ color: "#9B1C1C" }}>*</span>
+                </label>
+                <select
+                  style={selectStyle}
+                  value={form.venueId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, venueId: e.target.value }))
+                  }
+                >
                   <option value="">Select venue</option>
-                  {lookups.venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                  {lookups.venues.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.1rem' }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+                marginBottom: "1.1rem",
+              }}
+            >
               <div>
                 <label style={labelStyle}>Written Language</label>
-                <select style={selectStyle} value={form.writtenLanguageId} onChange={e => setForm(p => ({ ...p, writtenLanguageId: e.target.value }))}>
+                <select
+                  style={selectStyle}
+                  value={form.writtenLanguageId}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      writtenLanguageId: e.target.value,
+                    }))
+                  }
+                >
                   <option value="">Select</option>
-                  {lookups.languages.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  {lookups.languages.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label style={labelStyle}>Sung Language</label>
-                <select style={selectStyle} value={form.sungLanguageId} onChange={e => setForm(p => ({ ...p, sungLanguageId: e.target.value }))}>
+                <select
+                  style={selectStyle}
+                  value={form.sungLanguageId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, sungLanguageId: e.target.value }))
+                  }
+                >
                   <option value="">Select</option>
-                  {lookups.languages.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  {lookups.languages.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             <div style={fieldWrap}>
               <label style={labelStyle}>Runtime (minutes)</label>
-              <input type="number" placeholder="e.g. 150" style={inputStyle} value={form.runtimeMinutes} onChange={e => setForm(p => ({ ...p, runtimeMinutes: e.target.value }))} min={0} />
+              <input
+                type="number"
+                placeholder="e.g. 150"
+                style={inputStyle}
+                value={form.runtimeMinutes}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, runtimeMinutes: e.target.value }))
+                }
+                min={0}
+              />
             </div>
             <div style={fieldWrap}>
               <label style={labelStyle}>Notes</label>
-              <textarea placeholder="Any additional notes..." style={{ ...inputStyle, resize: 'vertical', minHeight: '68px' }} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+              <textarea
+                placeholder="Any additional notes..."
+                style={{ ...inputStyle, resize: "vertical", minHeight: "68px" }}
+                value={form.notes}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, notes: e.target.value }))
+                }
+              />
             </div>
-            {productionError && <div style={{ fontSize: '12px', color: '#9B1C1C', marginBottom: '0.75rem' }}>{productionError}</div>}
-            <Footer onBack={() => setStep(0)} onNext={() => { if (!canAdvanceStep2) { setProductionError('Please fill in all required fields.'); return; } setProductionError(null); setStep(2); }} nextLabel="Next: Characters →" nextDisabled={!canAdvanceStep2} />
+            {productionError && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#9B1C1C",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {productionError}
+              </div>
+            )}
+            <Footer
+              onBack={() => setStep(0)}
+              onNext={() => {
+                if (!canAdvanceStep2) {
+                  setProductionError("Please fill in all required fields.");
+                  return;
+                }
+                setProductionError(null);
+                setStep(2);
+              }}
+              nextLabel="Next: Characters →"
+              nextDisabled={!canAdvanceStep2}
+            />
           </>
         )}
 
@@ -542,50 +1097,215 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
         {step === 2 && (
           <>
             {!selectedOperaId ? (
-              <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '1rem' }}>No opera selected — you can skip this step.</p>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                  marginBottom: "1rem",
+                }}
+              >
+                No opera selected — you can skip this step.
+              </p>
             ) : (
               <>
-                <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '1rem' }}>
-                  Select characters from <strong>{selectedOpera?.title}</strong> that appear in this production.
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "#6b7280",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  Select characters from <strong>{selectedOpera?.title}</strong>{" "}
+                  that appear in this production.
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1rem', maxHeight: '260px', overflowY: 'auto' }}>
-                  {operaCharacters.length === 0
-                    ? <p style={{ fontSize: '13px', color: '#9ca3af' }}>No characters found for this opera.</p>
-                    : operaCharacters.map(c => {
-                        const selected = selectedCharacterIds.includes(c.id);
-                        return (
-                          <div key={c.id} onClick={() => toggleCharacter(c.id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${selected ? '#9B1C1C' : '#e5e7eb'}`, background: selected ? '#fef2f2' : '#fff', transition: 'all 0.1s ease' }}>
-                            <div style={{ width: '16px', height: '16px', borderRadius: '3px', flexShrink: 0, border: `1.5px solid ${selected ? '#9B1C1C' : '#d1d5db'}`, background: selected ? '#9B1C1C' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {selected && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                            </div>
-                            <span style={{ fontSize: '13px', color: selected ? '#9B1C1C' : '#111', fontWeight: selected ? 500 : 400 }}>{c.name}</span>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    marginBottom: "1rem",
+                    maxHeight: "260px",
+                    overflowY: "auto",
+                  }}
+                >
+                  {operaCharacters.length === 0 ? (
+                    <p style={{ fontSize: "13px", color: "#9ca3af" }}>
+                      No characters found for this opera.
+                    </p>
+                  ) : (
+                    operaCharacters.map((c) => {
+                      const selected = selectedCharacterIds.includes(c.id);
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => toggleCharacter(c.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            border: `1px solid ${selected ? "#9B1C1C" : "#e5e7eb"}`,
+                            background: selected ? "#fef2f2" : "#fff",
+                            transition: "all 0.1s ease",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              borderRadius: "3px",
+                              flexShrink: 0,
+                              border: `1.5px solid ${selected ? "#9B1C1C" : "#d1d5db"}`,
+                              background: selected ? "#9B1C1C" : "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {selected && (
+                              <svg
+                                width="10"
+                                height="8"
+                                viewBox="0 0 10 8"
+                                fill="none"
+                              >
+                                <path
+                                  d="M1 4l3 3 5-6"
+                                  stroke="#fff"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
                           </div>
-                        );
-                      })
-                  }
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              color: selected ? "#9B1C1C" : "#111",
+                              fontWeight: selected ? 500 : 400,
+                            }}
+                          >
+                            {c.name}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
                 {!showAddCharacter ? (
-                  <button onClick={() => setShowAddCharacter(true)} style={{ fontSize: '12px', color: '#9B1C1C', background: 'none', border: '1px dashed #fca5a5', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '0.5rem' }}>
+                  <button
+                    onClick={() => setShowAddCharacter(true)}
+                    style={{
+                      fontSize: "12px",
+                      color: "#9B1C1C",
+                      background: "none",
+                      border: "1px dashed #fca5a5",
+                      borderRadius: "6px",
+                      padding: "7px 14px",
+                      cursor: "pointer",
+                      fontFamily: "Inter, sans-serif",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
                     + Add missing character
                   </button>
                 ) : (
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                  <div
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "0.75rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "flex-end",
+                      }}
+                    >
                       <div style={{ flex: 1 }}>
                         <label style={labelStyle}>Character Name</label>
-                        <input type="text" placeholder="e.g. Violetta" style={inputStyle} value={newCharacterName} onChange={e => setNewCharacterName(e.target.value)} />
+                        <input
+                          type="text"
+                          placeholder="e.g. Violetta"
+                          style={inputStyle}
+                          value={newCharacterName}
+                          onChange={(e) => setNewCharacterName(e.target.value)}
+                        />
                       </div>
-                      <button onClick={handleSaveNewCharacter} disabled={savingCharacter} style={{ fontSize: '12px', fontWeight: 500, padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff', fontFamily: 'Inter, sans-serif', marginBottom: '1.1rem' }}>{savingCharacter ? '...' : 'Add'}</button>
-                      <button onClick={() => { setShowAddCharacter(false); setNewCharacterName(''); }} style={{ fontSize: '12px', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontFamily: 'Inter, sans-serif', marginBottom: '1.1rem' }}>Cancel</button>
+                      <button
+                        onClick={handleSaveNewCharacter}
+                        disabled={savingCharacter}
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 500,
+                          padding: "8px 14px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          border: "1px solid #9B1C1C",
+                          background: "#9B1C1C",
+                          color: "#fff",
+                          fontFamily: "Inter, sans-serif",
+                          marginBottom: "1.1rem",
+                        }}
+                      >
+                        {savingCharacter ? "..." : "Add"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowAddCharacter(false);
+                          setNewCharacterName("");
+                        }}
+                        style={{
+                          fontSize: "12px",
+                          padding: "8px 10px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          border: "1px solid #e5e7eb",
+                          background: "#fff",
+                          color: "#6b7280",
+                          fontFamily: "Inter, sans-serif",
+                          marginBottom: "1.1rem",
+                        }}
+                      >
+                        Cancel
+                      </button>
                     </div>
-                    {characterError && <div style={{ fontSize: '12px', color: '#9B1C1C' }}>{characterError}</div>}
+                    {characterError && (
+                      <div style={{ fontSize: "12px", color: "#9B1C1C" }}>
+                        {characterError}
+                      </div>
+                    )}
                   </div>
                 )}
-                {selectedCharacterIds.length > 0 && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>{selectedCharacterIds.length} character{selectedCharacterIds.length !== 1 ? 's' : ''} selected</div>}
+                {selectedCharacterIds.length > 0 && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {selectedCharacterIds.length} character
+                    {selectedCharacterIds.length !== 1 ? "s" : ""} selected
+                  </div>
+                )}
               </>
             )}
-            <Footer onBack={() => setStep(1)} onNext={() => { initCastRows(); setStep(3); }} nextLabel="Next: Cast & Crew →" />
+            <Footer
+              onBack={() => setStep(1)}
+              onNext={() => {
+                initCastRows();
+                setStep(3);
+              }}
+              nextLabel="Next: Cast & Crew →"
+            />
           </>
         )}
 
@@ -594,17 +1314,80 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
           <>
             {castRows.length > 0 && (
               <>
-                <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.75rem' }}>Cast</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
-                  {castRows.map(row => (
-                    <div key={row.id} style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-                      <div style={{ flex: 1, position: 'relative' }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "#9ca3af",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Cast
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    marginBottom: "1.25rem",
+                  }}
+                >
+                  {castRows.map((row) => (
+                    <div
+                      key={row.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-end",
+                        gap: "10px",
+                      }}
+                    >
+                      <div style={{ flex: 1, position: "relative" }}>
                         <label style={labelStyle}>{row.characterName}</label>
-                        <input type="text" placeholder="Search person…" style={inputStyle} value={row.personSearch} onChange={e => searchPersons(row.id, e.target.value, true)} />
+                        <input
+                          type="text"
+                          placeholder="Search person…"
+                          style={inputStyle}
+                          value={row.personSearch}
+                          onChange={(e) =>
+                            searchPersons(row.id, e.target.value, true)
+                          }
+                        />
                         {(personResults[row.id]?.length ?? 0) > 0 && (
-                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: '140px', overflowY: 'auto' }}>
-                            {personResults[row.id].map(p => (
-                              <div key={p.id} onClick={() => selectPerson(row.id, p, true)} style={{ padding: '7px 12px', fontSize: '13px', cursor: 'pointer', color: '#111' }} onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              background: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "6px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                              zIndex: 10,
+                              maxHeight: "140px",
+                              overflowY: "auto",
+                            }}
+                          >
+                            {personResults[row.id].map((p) => (
+                              <div
+                                key={p.id}
+                                onClick={() => selectPerson(row.id, p, true)}
+                                style={{
+                                  padding: "7px 12px",
+                                  fontSize: "13px",
+                                  cursor: "pointer",
+                                  color: "#111",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#f9fafb")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background =
+                                    "transparent")
+                                }
+                              >
                                 {p.firstName} {p.lastName}
                               </div>
                             ))}
@@ -617,22 +1400,116 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               </>
             )}
 
-            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.75rem' }}>Creative / Crew</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '0.75rem' }}>
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "#9ca3af",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Creative / Crew
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                marginBottom: "0.75rem",
+              }}
+            >
               {crewRows.map((row, idx) => (
-                <div key={row.id} style={{ border: '1px solid #f3f4f6', borderRadius: '8px', padding: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>Member {idx + 1}</span>
-                    {crewRows.length > 1 && <button onClick={() => setCrewRows(prev => prev.filter(r => r.id !== row.id))} style={{ fontSize: '11px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>}
+                <div
+                  key={row.id}
+                  style={{
+                    border: "1px solid #f3f4f6",
+                    borderRadius: "8px",
+                    padding: "0.75rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                      Member {idx + 1}
+                    </span>
+                    {crewRows.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setCrewRows((prev) =>
+                            prev.filter((r) => r.id !== row.id),
+                          )
+                        }
+                        style={{
+                          fontSize: "11px",
+                          color: "#9ca3af",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                    <div style={{ position: 'relative' }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: "8px",
+                    }}
+                  >
+                    <div style={{ position: "relative" }}>
                       <label style={labelStyle}>Person</label>
-                      <input type="text" placeholder="Search…" style={inputStyle} value={row.personSearch} onChange={e => searchPersons(row.id, e.target.value, false)} />
+                      <input
+                        type="text"
+                        placeholder="Search…"
+                        style={inputStyle}
+                        value={row.personSearch}
+                        onChange={(e) =>
+                          searchPersons(row.id, e.target.value, false)
+                        }
+                      />
                       {(personResults[row.id]?.length ?? 0) > 0 && (
-                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: '120px', overflowY: 'auto' }}>
-                          {personResults[row.id].map(p => (
-                            <div key={p.id} onClick={() => selectPerson(row.id, p, false)} style={{ padding: '7px 12px', fontSize: '13px', cursor: 'pointer', color: '#111' }} onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            background: "#fff",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            zIndex: 10,
+                            maxHeight: "120px",
+                            overflowY: "auto",
+                          }}
+                        >
+                          {personResults[row.id].map((p) => (
+                            <div
+                              key={p.id}
+                              onClick={() => selectPerson(row.id, p, false)}
+                              style={{
+                                padding: "7px 12px",
+                                fontSize: "13px",
+                                cursor: "pointer",
+                                color: "#111",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#f9fafb")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background =
+                                  "transparent")
+                              }
+                            >
                               {p.firstName} {p.lastName}
                             </div>
                           ))}
@@ -641,71 +1518,324 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     </div>
                     <div>
                       <label style={labelStyle}>Type</label>
-                      <select style={selectStyle} value={row.contributorTypeId} onChange={e => { setCrewRows(prev => prev.map(r => r.id === row.id ? { ...r, contributorTypeId: e.target.value, positionId: '' } : r)); fetchPositions(e.target.value); }}>
+                      <select
+                        style={selectStyle}
+                        value={row.contributorTypeId}
+                        onChange={(e) => {
+                          setCrewRows((prev) =>
+                            prev.map((r) =>
+                              r.id === row.id
+                                ? {
+                                    ...r,
+                                    contributorTypeId: e.target.value,
+                                    positionId: "",
+                                  }
+                                : r,
+                            ),
+                          );
+                          fetchPositions(e.target.value);
+                        }}
+                      >
                         <option value="">Select</option>
-                        {lookups.contributorTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        {lookups.contributorTypes.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
                       <label style={labelStyle}>Position</label>
-                      <select style={selectStyle} value={row.positionId} onChange={e => setCrewRows(prev => prev.map(r => r.id === row.id ? { ...r, positionId: e.target.value } : r))} disabled={!row.contributorTypeId}>
+                      <select
+                        style={selectStyle}
+                        value={row.positionId}
+                        onChange={(e) =>
+                          setCrewRows((prev) =>
+                            prev.map((r) =>
+                              r.id === row.id
+                                ? { ...r, positionId: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        disabled={!row.contributorTypeId}
+                      >
                         <option value="">Select</option>
-                        {positions.filter(p => !row.contributorTypeId || p.contributorTypeId === Number(row.contributorTypeId)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        {positions
+                          .filter(
+                            (p) =>
+                              !row.contributorTypeId ||
+                              p.contributorTypeId ===
+                                Number(row.contributorTypeId),
+                          )
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <button onClick={() => setCrewRows(prev => [...prev, makeCrewRow()])} style={{ fontSize: '12px', color: '#9B1C1C', background: 'none', border: '1px dashed #fca5a5', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', width: '100%', marginBottom: '0.5rem' }}>
+            <button
+              onClick={() => setCrewRows((prev) => [...prev, makeCrewRow()])}
+              style={{
+                fontSize: "12px",
+                color: "#9B1C1C",
+                background: "none",
+                border: "1px dashed #fca5a5",
+                borderRadius: "6px",
+                padding: "7px 14px",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                width: "100%",
+                marginBottom: "0.5rem",
+              }}
+            >
               + Add crew member
             </button>
-            <Footer onBack={() => setStep(2)} onNext={() => setStep(4)} nextLabel="Next: Review →" />
+            <Footer
+              onBack={() => setStep(2)}
+              onNext={() => setStep(4)}
+              nextLabel="Next: Review →"
+            />
           </>
         )}
 
         {/* ── Step 4: Review & Save ── */}
-        {step === 4 && (
-          done ? (
-            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <div style={{ fontSize: '40px', marginBottom: '0.75rem' }}>✓</div>
-              <p style={{ fontSize: '15px', fontWeight: 600, color: '#111', marginBottom: '4px' }}>Production saved!</p>
-              <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '1.5rem' }}>{form.title} has been added to the archive.</p>
-              <button onClick={handleDone} style={{ fontSize: '13px', fontWeight: 500, padding: '9px 20px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #9B1C1C', background: '#9B1C1C', color: '#fff', fontFamily: 'Inter, sans-serif' }}>Done</button>
+        {step === 4 &&
+          (done ? (
+            <div style={{ textAlign: "center", padding: "2rem 0" }}>
+              <div style={{ fontSize: "40px", marginBottom: "0.75rem" }}>✓</div>
+              <p
+                style={{
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#111",
+                  marginBottom: "4px",
+                }}
+              >
+                Production saved!
+              </p>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                {form.title} has been added to the archive.
+              </p>
+              <button
+                onClick={handleDone}
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  padding: "9px 20px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  border: "1px solid #9B1C1C",
+                  background: "#9B1C1C",
+                  color: "#fff",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                Done
+              </button>
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.25rem' }}>
-                <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.5rem' }}>Production</div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#111', marginBottom: '2px' }}>{form.title}</div>
-                  <div style={{ fontSize: '13px', color: '#6b7280' }}>{[lookups.seasons.find(s => String(s.id) === form.seasonId)?.label, selectedEventType?.name, lookups.venues.find(v => String(v.id) === form.venueId)?.name].filter(Boolean).join(' · ')}</div>
-                  {selectedOpera && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>Opera: {selectedOpera.title}</div>}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <div
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#9ca3af",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    Production
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#111",
+                      marginBottom: "2px",
+                    }}
+                  >
+                    {form.title}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#6b7280" }}>
+                    {[
+                      lookups.seasons.find(
+                        (s) => String(s.id) === form.seasonId,
+                      )?.label,
+                      selectedEventType?.name,
+                      lookups.venues.find((v) => String(v.id) === form.venueId)
+                        ?.name,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                  {selectedOpera && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#9ca3af",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Opera: {selectedOpera.title}
+                    </div>
+                  )}
                 </div>
                 {selectedCharacters.length > 0 && (
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.5rem' }}>Characters ({selectedCharacters.length})</div>
-                    <div style={{ fontSize: '13px', color: '#374151' }}>{selectedCharacters.map(c => c.name).join(', ')}</div>
+                  <div
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: "#9ca3af",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Characters ({selectedCharacters.length})
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#374151" }}>
+                      {selectedCharacters.map((c) => c.name).join(", ")}
+                    </div>
                   </div>
                 )}
-                {castRows.filter(r => r.personId).length > 0 && (
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.5rem' }}>Cast</div>
-                    {castRows.filter(r => r.personId).map(r => <div key={r.id} style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}><span style={{ fontWeight: 500 }}>{r.personName}</span> — {r.characterName}</div>)}
+                {castRows.filter((r) => r.personId).length > 0 && (
+                  <div
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: "#9ca3af",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Cast
+                    </div>
+                    {castRows
+                      .filter((r) => r.personId)
+                      .map((r) => (
+                        <div
+                          key={r.id}
+                          style={{
+                            fontSize: "13px",
+                            color: "#374151",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>
+                            {r.personName}
+                          </span>{" "}
+                          — {r.characterName}
+                        </div>
+                      ))}
                   </div>
                 )}
-                {crewRows.filter(r => r.personId).length > 0 && (
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '0.5rem' }}>Crew</div>
-                    {crewRows.filter(r => r.personId).map(r => <div key={r.id} style={{ fontSize: '13px', color: '#374151', marginBottom: '2px' }}><span style={{ fontWeight: 500 }}>{r.personName}</span>{r.contributorTypeId && ` — ${lookups.contributorTypes.find(t => String(t.id) === r.contributorTypeId)?.name ?? ''}`}</div>)}
+                {crewRows.filter((r) => r.personId).length > 0 && (
+                  <div
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: "#9ca3af",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Crew
+                    </div>
+                    {crewRows
+                      .filter((r) => r.personId)
+                      .map((r) => (
+                        <div
+                          key={r.id}
+                          style={{
+                            fontSize: "13px",
+                            color: "#374151",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>
+                            {r.personName}
+                          </span>
+                          {r.contributorTypeId &&
+                            ` — ${lookups.contributorTypes.find((t) => String(t.id) === r.contributorTypeId)?.name ?? ""}`}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
-              {submitError && <div style={{ fontSize: '12px', color: '#9B1C1C', marginBottom: '1rem', padding: '8px 12px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>{submitError}</div>}
-              <Footer onBack={() => setStep(3)} onNext={handleSave} nextLabel="Save Production" nextLoading={submitting} />
+              {submitError && (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#9B1C1C",
+                    marginBottom: "1rem",
+                    padding: "8px 12px",
+                    background: "#fef2f2",
+                    borderRadius: "6px",
+                    border: "1px solid #fecaca",
+                  }}
+                >
+                  {submitError}
+                </div>
+              )}
+              <Footer
+                onBack={() => setStep(3)}
+                onNext={handleSave}
+                nextLabel="Save Production"
+                nextLoading={submitting}
+              />
             </>
-          )
-        )}
+          ))}
       </div>
     </div>
   );
