@@ -1,4 +1,4 @@
-﻿namespace ReportsService.Core.Models
+namespace ReportsService.Core.Models
 {
     public class ReportRequest
     {

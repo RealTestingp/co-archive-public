@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using ReportsService.Core.Models;
 using System.Drawing;
 

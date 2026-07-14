@@ -1,4 +1,4 @@
-﻿using ReportsService.Core.Models;
+using ReportsService.Core.Models;
 
 namespace ReportsService.Core.HttpClients
 {

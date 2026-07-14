@@ -1,4 +1,4 @@
-﻿using ReportsService.Core.Exporters;
+using ReportsService.Core.Exporters;
 using ReportsService.Core.HttpClients;
 using ReportsService.Core.Models;
 
