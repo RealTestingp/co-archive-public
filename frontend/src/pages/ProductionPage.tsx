@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Breadcrumb from "../components/BreadCrumb";
 import PageHeader from "../components/PageHeader";
@@ -8,6 +8,8 @@ import SectionTitle from "../components/SectionTitle";
 import Divider from "../components/Divider";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
+import EditProductionModal from "../components/EditProductionModal";
+import DeleteProductionModal from "../components/DeleteProductionModal";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 
@@ -54,10 +56,16 @@ interface Production {
 
 const ProductionPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isDark, colors } = useTheme();
   const [production, setProduction] = useState<Production | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchProduction = async () => {
     setIsLoading(true);
@@ -76,6 +84,34 @@ const ProductionPage = () => {
   useEffect(() => {
     fetchProduction();
   }, [id]);
+
+  const handleDeleteConfirm = async () => {
+    if (!production) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await api.delete(`/api/productions/${production.id}`);
+      if (!res.ok) {
+        let message = "Failed to delete this production. Please try again.";
+        try {
+          const body = await res.json();
+          if (body?.message) message = body.message;
+        } catch {
+          // not JSON — keep generic message
+        }
+        throw new Error(message);
+      }
+      navigate("/search");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this production. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Theme tokens
   const border = isDark ? "#2a2a2a" : "#e5e7eb";
@@ -107,6 +143,15 @@ const ProductionPage = () => {
         { label: "Season", value: production.season },
       ]
     : [];
+
+  const personnelCount = production
+    ? production.cast.length +
+      production.creative.length +
+      production.crew.length +
+      production.orchestra.length +
+      production.chorus.length
+    : 0;
+  const performanceCount = production ? production.performances.length : 0;
 
   const headerCell: React.CSSProperties = {
     flex: 1,
@@ -227,6 +272,8 @@ const ProductionPage = () => {
                 title={production!.title}
                 subtitle={`${production!.season} · ${production!.eventType}`}
                 editLabel="Edit Production"
+                onEdit={() => setShowEditModal(true)}
+                onDelete={() => setShowDeleteModal(true)}
               />
             )}
 
@@ -360,6 +407,33 @@ const ProductionPage = () => {
           </>
         )}
       </div>
+
+      {production && (
+        <>
+          <EditProductionModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            production={production}
+            onSuccess={() => {
+              setShowEditModal(false);
+              fetchProduction();
+            }}
+          />
+          <DeleteProductionModal
+            isOpen={showDeleteModal}
+            productionTitle={production.title}
+            performanceCount={performanceCount}
+            personnelCount={personnelCount}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setDeleteError(null);
+            }}
+            onConfirm={handleDeleteConfirm}
+            isDeleting={isDeleting}
+            error={deleteError}
+          />
+        </>
+      )}
     </div>
   );
 };
