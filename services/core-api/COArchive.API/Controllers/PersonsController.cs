@@ -34,9 +34,18 @@ namespace COArchive.API.Controllers
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(p =>
-                    p.FirstName.Contains(search) ||
-                    p.LastName.Contains(search));
+            {
+                var terms = search
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var term in terms)
+                {
+                    var t = term;
+                    query = query.Where(p =>
+                        p.FirstName.Contains(t) ||
+                        p.LastName.Contains(t) ||
+                        (p.MiddleName != null && p.MiddleName.Contains(t)));
+                }
+            }
 
             var results = await query
                 .OrderBy(p => p.LastName)
