@@ -21,6 +21,21 @@ namespace COArchive.API.Controllers
                 .OrderByDescending(s => s.Label)
                 .Select(s => new { s.Id, s.Label })
                 .ToListAsync());
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateLookupDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Label))
+                return BadRequest("Label (e.g. 2025-2026) is required.");
+
+            if (await _db.Seasons.AnyAsync(s => s.Label == dto.Label))
+                return Conflict("A season with this label already exists.");
+
+            var season = new Season { Label = dto.Label };
+            _db.Seasons.Add(season);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = season.Id }, new { season.Id, season.Label });
+        }
     }
 
     [ApiController]
@@ -32,10 +47,44 @@ namespace COArchive.API.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetAll() =>
-            Ok(await _db.Venues
-                .OrderBy(v => v.Name)
-                .Select(v => new { v.Id, v.Name })
-                .ToListAsync());
+        Ok(await _db.Venues
+        .OrderBy(v => v.Name)
+        .Select(v => new
+        {
+            v.Id,
+            v.Name,
+            v.StreetAddress,
+            v.City,
+            v.Province,
+            v.PostalCode,
+            v.Country
+        })
+        .ToListAsync());
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateVenueDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Name is required.");
+
+            if (await _db.Venues.AnyAsync(v => v.Name == dto.Name))
+                return Conflict("A venue with this name already exists.");
+
+            var venue = new Venue
+            {
+                Name = dto.Name,
+                StreetAddress = dto.StreetAddress,
+                City = dto.City,
+                Province = dto.Province,
+                PostalCode = dto.PostalCode,
+                Country = dto.Country,
+            };
+
+            _db.Venues.Add(venue);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = venue.Id }, new { venue.Id, venue.Name });
+        }
+
     }
 
     [ApiController]
@@ -201,6 +250,21 @@ namespace COArchive.API.Controllers
                 .OrderBy(l => l.Name)
                 .Select(l => new { l.Id, l.Name })
                 .ToListAsync());
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateLookupDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Name is required.");
+
+            if (await _db.Languages.AnyAsync(l => l.Name == dto.Name))
+                return Conflict("A language with this name already exists.");
+
+            var language = new Language { Name = dto.Name };
+            _db.Languages.Add(language);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = language.Id }, new { language.Id, language.Name });
+        }
     }
 
     [ApiController]
