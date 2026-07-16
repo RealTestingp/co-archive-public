@@ -77,6 +77,15 @@ interface ProductionForm {
   notes: string;
 }
 
+interface NewVenue {
+  name: string;
+  streetAddress: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+}
+
 const EMPTY_PRODUCTION: ProductionForm = {
   title: "",
   seasonId: "",
@@ -86,6 +95,15 @@ const EMPTY_PRODUCTION: ProductionForm = {
   sungLanguageId: "",
   runtimeMinutes: "",
   notes: "",
+};
+
+const EMPTY_VENUE: NewVenue = {
+  name: "",
+  streetAddress: "",
+  city: "",
+  province: "",
+  postalCode: "",
+  country: "",
 };
 
 interface Props {
@@ -133,6 +151,63 @@ const labelStyle: React.CSSProperties = {
 
 const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
+// Shared styles for the inline "add new lookup" accordions (season/venue/language)
+const addLookupBtnStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "#9B1C1C",
+  background: "none",
+  border: "1px dashed #fca5a5",
+  borderRadius: "6px",
+  padding: "7px 14px",
+  cursor: "pointer",
+  fontFamily: "Inter, sans-serif",
+};
+
+const accordionBoxStyle: React.CSSProperties = {
+  border: "1px solid #e5e7eb",
+  borderRadius: "8px",
+  padding: "1rem",
+  marginBottom: "1.1rem",
+};
+
+const accordionHeadStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: "0.75rem",
+};
+
+const accordionTitleStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "#111",
+};
+
+const accordionCancelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "#9ca3af",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+};
+
+const accordionErrStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "#9B1C1C",
+  marginBottom: "0.5rem",
+};
+
+const accordionSaveStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 500,
+  padding: "7px 14px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  border: "1px solid #9B1C1C",
+  background: "#9B1C1C",
+  color: "#fff",
+  fontFamily: "Inter, sans-serif",
+};
+
 const newId = () => Math.random().toString(36).slice(2);
 
 const STEPS = ["Opera", "Details", "Characters", "Cast & Crew", "Review"];
@@ -168,6 +243,22 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   });
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [productionError, setProductionError] = useState<string | null>(null);
+
+  // Step 1 — Inline lookup creation (season / venue / language)
+  const [showAddSeason, setShowAddSeason] = useState(false);
+  const [newSeasonLabel, setNewSeasonLabel] = useState("");
+  const [savingSeason, setSavingSeason] = useState(false);
+  const [seasonError, setSeasonError] = useState<string | null>(null);
+
+  const [showAddVenue, setShowAddVenue] = useState(false);
+  const [newVenue, setNewVenue] = useState<NewVenue>(EMPTY_VENUE);
+  const [savingVenue, setSavingVenue] = useState(false);
+  const [venueError, setVenueError] = useState<string | null>(null);
+
+  const [showAddLanguage, setShowAddLanguage] = useState(false);
+  const [newLanguageName, setNewLanguageName] = useState("");
+  const [savingLanguage, setSavingLanguage] = useState(false);
+  const [languageError, setLanguageError] = useState<string | null>(null);
 
   // Step 1 — Program PDF
   const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
@@ -320,6 +411,96 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     const opera = operas.find((o) => o.id === operaId);
     if (opera && !form.title)
       setForm((prev) => ({ ...prev, title: opera.title }));
+  };
+
+  // ── Step 1: Inline lookup creation ──
+  const handleSaveNewSeason = async () => {
+    if (!newSeasonLabel.trim()) {
+      setSeasonError("Label is required.");
+      return;
+    }
+    setSavingSeason(true);
+    setSeasonError(null);
+    try {
+      const res = await api.post("/api/seasons", {
+        label: newSeasonLabel.trim(),
+      });
+      if (res.status === 409) {
+        setSeasonError("A season with this label already exists.");
+        return;
+      }
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setLookups((prev) => ({
+        ...prev,
+        seasons: [...prev.seasons, created],
+      }));
+      setForm((prev) => ({ ...prev, seasonId: String(created.id) }));
+      setNewSeasonLabel("");
+      setShowAddSeason(false);
+    } catch {
+      setSeasonError("Failed to save season. Is the API running?");
+    } finally {
+      setSavingSeason(false);
+    }
+  };
+
+  const handleSaveNewVenue = async () => {
+    if (!newVenue.name.trim()) {
+      setVenueError("Venue name is required.");
+      return;
+    }
+    setSavingVenue(true);
+    setVenueError(null);
+    try {
+      const res = await api.post("/api/venues", {
+        name: newVenue.name.trim(),
+        streetAddress: newVenue.streetAddress.trim() || null,
+        city: newVenue.city.trim() || null,
+        province: newVenue.province.trim() || null,
+        postalCode: newVenue.postalCode.trim() || null,
+        country: newVenue.country.trim() || null,
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setLookups((prev) => ({
+        ...prev,
+        venues: [...prev.venues, created],
+      }));
+      setForm((prev) => ({ ...prev, venueId: String(created.id) }));
+      setNewVenue(EMPTY_VENUE);
+      setShowAddVenue(false);
+    } catch {
+      setVenueError("Failed to save venue. Is the API running?");
+    } finally {
+      setSavingVenue(false);
+    }
+  };
+
+  const handleSaveNewLanguage = async () => {
+    if (!newLanguageName.trim()) {
+      setLanguageError("Language name is required.");
+      return;
+    }
+    setSavingLanguage(true);
+    setLanguageError(null);
+    try {
+      const res = await api.post("/api/languages", {
+        name: newLanguageName.trim(),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setLookups((prev) => ({
+        ...prev,
+        languages: [...prev.languages, created],
+      }));
+      setNewLanguageName("");
+      setShowAddLanguage(false);
+    } catch {
+      setLanguageError("Failed to save language. Is the API running?");
+    } finally {
+      setSavingLanguage(false);
+    }
   };
 
   // ── Step 1: Program PDF ──
@@ -541,6 +722,15 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setShowAddOpera(false);
     setNewOpera({ title: "", composer: "", librettist: "" });
     setForm(EMPTY_PRODUCTION);
+    setShowAddSeason(false);
+    setNewSeasonLabel("");
+    setSeasonError(null);
+    setShowAddVenue(false);
+    setNewVenue(EMPTY_VENUE);
+    setVenueError(null);
+    setShowAddLanguage(false);
+    setNewLanguageName("");
+    setLanguageError(null);
     setProgramPdfFile(null);
     setPdfError(null);
     setSelectedCharacterIds([]);
@@ -1049,6 +1239,196 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 </select>
               </div>
             </div>
+
+            {/* Inline add: season / venue */}
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "1.1rem",
+                flexWrap: "wrap",
+              }}
+            >
+              {!showAddSeason && (
+                <button
+                  onClick={() => setShowAddSeason(true)}
+                  style={addLookupBtnStyle}
+                >
+                  + Add new season
+                </button>
+              )}
+              {!showAddVenue && (
+                <button
+                  onClick={() => setShowAddVenue(true)}
+                  style={addLookupBtnStyle}
+                >
+                  + Add new venue
+                </button>
+              )}
+            </div>
+
+            {showAddSeason && (
+              <div style={accordionBoxStyle}>
+                <div style={accordionHeadStyle}>
+                  <span style={accordionTitleStyle}>New Season</span>
+                  <button
+                    onClick={() => {
+                      setShowAddSeason(false);
+                      setSeasonError(null);
+                    }}
+                    style={accordionCancelStyle}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>
+                    Label <span style={{ color: "#9B1C1C" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 2026-2027"
+                    style={inputStyle}
+                    value={newSeasonLabel}
+                    onChange={(e) => setNewSeasonLabel(e.target.value)}
+                  />
+                </div>
+                {seasonError && (
+                  <div style={accordionErrStyle}>{seasonError}</div>
+                )}
+                <button
+                  onClick={handleSaveNewSeason}
+                  disabled={savingSeason}
+                  style={accordionSaveStyle}
+                >
+                  {savingSeason ? "Saving..." : "Save Season"}
+                </button>
+              </div>
+            )}
+
+            {showAddVenue && (
+              <div style={accordionBoxStyle}>
+                <div style={accordionHeadStyle}>
+                  <span style={accordionTitleStyle}>New Venue</span>
+                  <button
+                    onClick={() => {
+                      setShowAddVenue(false);
+                      setVenueError(null);
+                    }}
+                    style={accordionCancelStyle}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>
+                    Name <span style={{ color: "#9B1C1C" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Southern Alberta Jubilee Auditorium"
+                    style={inputStyle}
+                    value={newVenue.name}
+                    onChange={(e) =>
+                      setNewVenue((p) => ({ ...p, name: e.target.value }))
+                    }
+                  />
+                </div>
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>Street Address</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1415 14 Ave NW"
+                    style={inputStyle}
+                    value={newVenue.streetAddress}
+                    onChange={(e) =>
+                      setNewVenue((p) => ({
+                        ...p,
+                        streetAddress: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1rem",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  <div>
+                    <label style={labelStyle}>City</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Calgary"
+                      style={inputStyle}
+                      value={newVenue.city}
+                      onChange={(e) =>
+                        setNewVenue((p) => ({ ...p, city: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Province</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. AB"
+                      style={inputStyle}
+                      value={newVenue.province}
+                      onChange={(e) =>
+                        setNewVenue((p) => ({ ...p, province: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1rem",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  <div>
+                    <label style={labelStyle}>Postal Code</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. T2N 1M4"
+                      style={inputStyle}
+                      value={newVenue.postalCode}
+                      onChange={(e) =>
+                        setNewVenue((p) => ({
+                          ...p,
+                          postalCode: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Country</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Canada"
+                      style={inputStyle}
+                      value={newVenue.country}
+                      onChange={(e) =>
+                        setNewVenue((p) => ({ ...p, country: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                {venueError && <div style={accordionErrStyle}>{venueError}</div>}
+                <button
+                  onClick={handleSaveNewVenue}
+                  disabled={savingVenue}
+                  style={accordionSaveStyle}
+                >
+                  {savingVenue ? "Saving..." : "Save Venue"}
+                </button>
+              </div>
+            )}
+
             <div
               style={{
                 display: "grid",
@@ -1095,6 +1475,65 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 </select>
               </div>
             </div>
+
+            {/* Inline add: language */}
+            {!showAddLanguage ? (
+              <button
+                onClick={() => setShowAddLanguage(true)}
+                style={{ ...addLookupBtnStyle, marginBottom: "1.1rem" }}
+              >
+                + Add new language
+              </button>
+            ) : (
+              <div style={accordionBoxStyle}>
+                <div style={accordionHeadStyle}>
+                  <span style={accordionTitleStyle}>New Language</span>
+                  <button
+                    onClick={() => {
+                      setShowAddLanguage(false);
+                      setLanguageError(null);
+                    }}
+                    style={accordionCancelStyle}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>
+                    Name <span style={{ color: "#9B1C1C" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Italian"
+                    style={inputStyle}
+                    value={newLanguageName}
+                    onChange={(e) => setNewLanguageName(e.target.value)}
+                  />
+                </div>
+                {languageError && (
+                  <div style={accordionErrStyle}>{languageError}</div>
+                )}
+                <button
+                  onClick={handleSaveNewLanguage}
+                  disabled={savingLanguage}
+                  style={accordionSaveStyle}
+                >
+                  {savingLanguage ? "Saving..." : "Save Language"}
+                </button>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "#9ca3af",
+                    marginTop: "0.5rem",
+                    marginBottom: 0,
+                  }}
+                >
+                  New languages become available in both the Written and Sung
+                  dropdowns above.
+                </p>
+              </div>
+            )}
+
             <div style={fieldWrap}>
               <label style={labelStyle}>Runtime (minutes)</label>
               <input
