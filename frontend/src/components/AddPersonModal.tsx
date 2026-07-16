@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { api, BASE_URL } from "../api";
+import { api, uploadFile } from "../api";
 
 interface LookupItem {
   id: number;
@@ -69,6 +69,9 @@ const labelStyle: React.CSSProperties = {
 
 const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -122,14 +125,15 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setError("Please select a JPEG, PNG, or WebP image.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_IMAGE_BYTES) {
       setError("Image must be under 5MB.");
       return;
     }
+    setError(null);
     setImageFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setImagePreview(ev.target?.result as string);
@@ -169,16 +173,15 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
       const created = await res.json();
 
       // 2. Upload image if one was selected
+      // Endpoint/field name/response confirmed against Dylan's
+      // UploadsController.
       if (imageFile && created.id) {
-        const formData = new FormData();
-        formData.append("image", imageFile);
         // Fire and forget — don't block on image upload failure
-        // Uses raw fetch + BASE_URL directly since FormData needs its own
-        // multipart Content-Type (set automatically by the browser), not JSON.
-        fetch(`${BASE_URL}/api/persons/${created.id}/image`, {
-          method: "POST",
-          body: formData,
-        }).catch(() => {
+        uploadFile(
+          `/api/uploads/profile-image/${created.id}`,
+          imageFile,
+          "file",
+        ).catch(() => {
           // Image upload failed silently; person is still created
         });
       }
@@ -374,7 +377,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   style={{ display: "none" }}
                   onChange={handleImageChange}
                 />
