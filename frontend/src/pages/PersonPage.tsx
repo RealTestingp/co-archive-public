@@ -7,6 +7,8 @@ import SectionTitle from "../components/SectionTitle";
 import Divider from "../components/Divider";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
+import EditPersonModal from "../components/EditPersonModal";
+import DeletePersonModal from "../components/DeletePersonModal";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 
@@ -26,6 +28,11 @@ interface Person {
   id: number;
   firstName: string;
   lastName: string;
+  // NOTE: added so the edit modal can pre-fill it. Confirm GET
+  // /api/persons/{id} actually returns this field — AddPersonModal already
+  // sends middleName on create, so the backend model very likely has it,
+  // this just wasn't declared on the detail-page type before now.
+  middleName: string | null;
   email: string | null;
   isActive: boolean;
   profileImageUrl: string | null;
@@ -46,6 +53,11 @@ const PersonPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const fetchPerson = useCallback(async () => {
     setIsLoading(true);
     setHasError(false);
@@ -63,6 +75,37 @@ const PersonPage = () => {
   useEffect(() => {
     fetchPerson();
   }, [fetchPerson]);
+
+  const handleDeleteConfirm = async () => {
+    if (!person) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await api.delete(`/api/persons/${person.id}`);
+      if (!res.ok) {
+        // Surface whatever message the backend sends (e.g. a 409 if the
+        // person can't be deleted because they have production credits),
+        // falling back to a generic message if the response isn't JSON.
+        let message = "Failed to delete this person. Please try again.";
+        try {
+          const body = await res.json();
+          if (body?.message) message = body.message;
+        } catch {
+          // not JSON — keep generic message
+        }
+        throw new Error(message);
+      }
+      navigate("/search");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete this person. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const fullName = person ? `${person.firstName} ${person.lastName}` : "Person";
   const initials = person
@@ -103,6 +146,7 @@ const PersonPage = () => {
   const rowHover = isDark ? "#1e1e1e" : "#fafafa";
   const metricBg = isDark ? "#1c1c1c" : "#fff";
   const metricDivider = isDark ? "#2a2a2a" : "#e5e7eb";
+  const deleteBorder = isDark ? "#4a2020" : "#fecaca";
 
   return (
     <div
@@ -231,19 +275,40 @@ const PersonPage = () => {
                   View History
                 </button>
                 <button
+                  onClick={() => setShowEditModal(true)}
+                  disabled={!person}
                   style={{
                     fontSize: "12px",
                     fontWeight: 500,
                     padding: "7px 14px",
                     borderRadius: "6px",
-                    cursor: "pointer",
+                    cursor: person ? "pointer" : "default",
                     border: "1px solid #9B1C1C",
                     background: "#9B1C1C",
                     color: "#fff",
                     fontFamily: "Inter, sans-serif",
+                    opacity: person ? 1 : 0.6,
                   }}
                 >
                   Edit Profile
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={!person}
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    padding: "7px 14px",
+                    borderRadius: "6px",
+                    cursor: person ? "pointer" : "default",
+                    border: `1px solid ${deleteBorder}`,
+                    background: surface,
+                    color: "#9B1C1C",
+                    fontFamily: "Inter, sans-serif",
+                    opacity: person ? 1 : 0.6,
+                  }}
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -474,6 +539,32 @@ const PersonPage = () => {
           </>
         )}
       </div>
+
+      {person && (
+        <>
+          <EditPersonModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            person={person}
+            onSuccess={() => {
+              setShowEditModal(false);
+              fetchPerson();
+            }}
+          />
+          <DeletePersonModal
+            isOpen={showDeleteModal}
+            personName={fullName}
+            productionCount={person.mainStageProductionCount}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setDeleteError(null);
+            }}
+            onConfirm={handleDeleteConfirm}
+            isDeleting={isDeleting}
+            error={deleteError}
+          />
+        </>
+      )}
     </div>
   );
 };
