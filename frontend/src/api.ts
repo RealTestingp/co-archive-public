@@ -29,11 +29,7 @@ export const api = {
 // can include the correct multipart boundary string). Do not add a
 // Content-Type header to this call.
 //
-// Confirmed against UploadsController.cs (Dylan): field name "file" matches
-// the IFormFile parameter name, endpoints are POST /api/uploads/
-// profile-image/{personId} and POST /api/uploads/program-pdf/{productionId},
-// response is { url }. The backend already persists the URL to the DB on
-// success, so callers can just refetch rather than parse the response body.
+
 export async function uploadFile(
   path: string,
   file: File,

@@ -173,8 +173,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
       const created = await res.json();
 
       // 2. Upload image if one was selected
-      // Endpoint/field name/response confirmed against Dylan's
-      // UploadsController.
+
       if (imageFile && created.id) {
         // Fire and forget — don't block on image upload failure
         uploadFile(

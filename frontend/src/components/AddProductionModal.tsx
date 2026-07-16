@@ -507,8 +507,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
 
       // Upload the program PDF, if one was selected.
-      // Endpoint/field name/response confirmed against Dylan's
-      // UploadsController.
+
       if (programPdfFile) {
         try {
           const uploadRes = await uploadFile(
