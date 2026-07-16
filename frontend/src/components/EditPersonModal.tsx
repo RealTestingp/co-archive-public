@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { api } from "../api";
+import { useState, useEffect, useRef } from "react";
+import { api, uploadFile } from "../api";
 
 interface LookupItem {
   id: number;
@@ -84,7 +84,11 @@ const emptyForm: FormState = {
   isActive: true,
 };
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [voiceTypes, setVoiceTypes] = useState<LookupItem[]>([]);
   const [nationalities, setNationalities] = useState<LookupItem[]>([]);
@@ -92,8 +96,17 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Image state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [avatarHovered, setAvatarHovered] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    // Clear any leftover selection from a previous time this modal was open
+    setImageFile(null);
+    setImagePreview(null);
 
     const fetchLookupsAndPrefill = async () => {
       setLoadingLookups(true);
@@ -153,6 +166,32 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
     }));
   };
 
+  const handleImageClick = () => fileInputRef.current?.click();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setError("Please select a JPEG, PNG, or WebP image.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError("Image must be under 5MB.");
+      return;
+    }
+    setError(null);
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const previewInitials = [person.firstName[0], person.lastName[0]]
+    .filter(Boolean)
+    .join("")
+    .toUpperCase();
+
   const handleSubmit = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError("First name and last name are required.");
@@ -166,8 +205,9 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
       // Update requires `id` in the body (UpdatePersonDto) — the controller
       // 400s if it doesn't match the route id. It also unconditionally
       // overwrites ProfileImageUrl from the DTO, so we must pass the
-      // person's existing image URL through unchanged since this modal
-      // doesn't support editing the photo.
+      // person's existing image URL through unchanged — the actual new
+      // image (if any) is uploaded separately below via the uploads
+      // endpoint, which is responsible for updating ProfileImageUrl itself.
       const res = await api.put(`/api/persons/${person.id}`, {
         id: person.id,
         firstName: form.firstName.trim(),
@@ -182,6 +222,35 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
 
       if (!res.ok) throw new Error("Failed to update person.");
 
+      // Upload the new photo, if one was selected. Awaited (unlike
+      // AddPersonModal's fire-and-forget) since the user is looking at
+      // this person's page right now and expects to see the new photo
+      // once the modal closes.
+      // Endpoint/field name/response confirmed against Dylan's
+      // UploadsController.
+      if (imageFile) {
+        try {
+          const uploadRes = await uploadFile(
+            `/api/uploads/profile-image/${person.id}`,
+            imageFile,
+            "file",
+          );
+          if (!uploadRes.ok) {
+            setError(
+              "Person was updated, but the new photo failed to upload. Try editing again to retry the photo.",
+            );
+            setSubmitting(false);
+            return;
+          }
+        } catch {
+          setError(
+            "Person was updated, but the new photo failed to upload. Try editing again to retry the photo.",
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
       handleClose();
       onSuccess?.();
     } catch {
@@ -193,6 +262,8 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
 
   const handleClose = () => {
     setError(null);
+    setImageFile(null);
+    setImagePreview(null);
     onClose();
   };
 
@@ -261,6 +332,131 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
           </div>
         ) : (
           <>
+            {/* Avatar picker */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <div
+                  onClick={handleImageClick}
+                  onMouseEnter={() => setAvatarHovered(true)}
+                  onMouseLeave={() => setAvatarHovered(false)}
+                  title="Click to change photo"
+                  style={{
+                    width: "64px",
+                    height: "64px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: `1.5px ${imagePreview || avatarHovered ? "solid #9B1C1C" : "dashed #d1d5db"}`,
+                    cursor: "pointer",
+                    position: "relative",
+                    background: "#f3e8e8",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "border-color 0.15s ease",
+                  }}
+                >
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : person.profileImageUrl ? (
+                    <img
+                      src={person.profileImageUrl}
+                      alt="Current"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : previewInitials ? (
+                    <span
+                      style={{
+                        fontSize: "18px",
+                        color: "#9B1C1C",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {previewInitials}
+                    </span>
+                  ) : (
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#9ca3af"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  )}
+
+                  {avatarHovered && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "50%",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                  {imageFile ? imageFile.name : "Click photo to replace"}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: "none" }}
+                  onChange={handleImageChange}
+                />
+              </div>
+            </div>
+
             {/* First + Last Name */}
             <div
               style={{
