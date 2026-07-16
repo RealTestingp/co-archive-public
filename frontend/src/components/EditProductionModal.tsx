@@ -276,9 +276,7 @@ const EditProductionModal = ({
       // Upload the new program PDF, if one was selected. Awaited since the
       // user is looking at this production's page right now and expects
       // to see the new PDF link once the modal closes.
-      // TODO: endpoint/response shape unconfirmed — no UploadsController
-      // exists in the backend yet as of 2026-07-14. Swap this in once
-      // Dylan's endpoint is built and confirmed.
+
       if (programPdfFile) {
         try {
           const uploadRes = await uploadFile(

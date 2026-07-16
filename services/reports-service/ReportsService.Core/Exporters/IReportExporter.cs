@@ -1,4 +1,4 @@
-﻿namespace ReportsService.Core.Exporters
+namespace ReportsService.Core.Exporters
 {
     public interface IReportExporter
     {

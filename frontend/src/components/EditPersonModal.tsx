@@ -226,9 +226,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
       // AddPersonModal's fire-and-forget) since the user is looking at
       // this person's page right now and expects to see the new photo
       // once the modal closes.
-      // TODO: endpoint/response shape unconfirmed — no UploadsController
-      // exists in the backend yet as of 2026-07-14. Swap this in once
-      // Dylan's endpoint is built and confirmed.
+
       if (imageFile) {
         try {
           const uploadRes = await uploadFile(
