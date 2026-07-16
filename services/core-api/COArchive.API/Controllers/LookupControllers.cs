@@ -23,7 +23,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateLookupDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateSeasonDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Label))
                 return BadRequest("Label (e.g. 2025-2026) is required.");
@@ -252,7 +252,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateLookupDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateLanguageDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
                 return BadRequest("Name is required.");
