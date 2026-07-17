@@ -16,13 +16,15 @@ import ManageArchivePage from "./pages/ManageArchivePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ReportsPage from "./pages/ReportsPage";
 import ChatWidget from "./components/chatbot/ChatWidget";
+import { NotificationsProvider } from "./context/NotificationsContext";
+import NotificationToast from "./components/NotificationToast";
 
 const AppRoutes = () => {
   const { pathname } = useLocation();
   const hideChatWidget = pathname === "/login" || pathname === "/404";
 
   return (
-    <>
+    <NotificationsProvider>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -88,7 +90,8 @@ const AppRoutes = () => {
       </Routes>
 
       {!hideChatWidget && <ChatWidget />}
-    </>
+      {!hideChatWidget && <NotificationToast />}
+    </NotificationsProvider>
   );
 };
 
