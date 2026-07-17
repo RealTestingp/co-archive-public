@@ -344,6 +344,53 @@ const ManageArchivePage = () => {
     Characters: ["Name", "Opera", ""],
   };
 
+  // Skeleton rows mirror the real row layout: same flex weights per column
+  // (first data column flex: 2, the rest flex: 1) and the same right-aligned
+  // 100px actions container, so nothing shifts when data loads in.
+  const renderSkeletonRows = () =>
+    [0, 1, 2].map((row) => (
+      <div
+        key={row}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "12px 16px",
+          borderBottom: row < 2 ? `1px solid ${borderLight}` : "none",
+        }}
+      >
+        {tableHeaders[activeTab].map((h, i) =>
+          h === "" ? (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: "6px",
+                minWidth: "100px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <LoadingSkeleton width="40px" height="26px" borderRadius="4px" />
+              <LoadingSkeleton width="40px" height="26px" borderRadius="4px" />
+            </div>
+          ) : (
+            <span
+              key={i}
+              style={{
+                flex: i === 0 ? 2 : 1,
+                paddingRight: "16px",
+                boxSizing: "border-box",
+              }}
+            >
+              <LoadingSkeleton
+                width={i === 0 ? "70%" : "55%"}
+                height="13px"
+              />
+            </span>
+          ),
+        )}
+      </div>
+    ));
+
   const emptyMessage = {
     Persons: "No persons found.",
     Productions: "No productions found.",
@@ -582,41 +629,7 @@ const ManageArchivePage = () => {
               </div>
 
               {isLoading ? (
-                [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      padding: "12px 16px",
-                      borderBottom: i < 3 ? `1px solid ${borderLight}` : "none",
-                    }}
-                  >
-                    <LoadingSkeleton width="100%" height="13px" />
-                    <LoadingSkeleton width="100%" height="13px" />
-                    <LoadingSkeleton width="100%" height="13px" />
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "6px",
-                        minWidth: "100px",
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <LoadingSkeleton
-                        width="40px"
-                        height="26px"
-                        borderRadius="4px"
-                      />
-                      <LoadingSkeleton
-                        width="40px"
-                        height="26px"
-                        borderRadius="4px"
-                      />
-                    </div>
-                  </div>
-                ))
+                renderSkeletonRows()
               ) : pagedList.length === 0 ? (
                 <div
                   style={{
