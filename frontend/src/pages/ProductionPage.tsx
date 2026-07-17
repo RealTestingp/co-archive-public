@@ -19,6 +19,7 @@ interface Performance {
 }
 
 interface CastMember {
+  personId?: number;
   firstName: string;
   lastName: string;
   contributorType: string;
@@ -27,9 +28,16 @@ interface CastMember {
 }
 
 interface CrewMember {
+  personId?: number;
   firstName: string;
   lastName: string;
   position: string | null;
+}
+
+interface EnsembleMember {
+  personId?: number;
+  firstName: string;
+  lastName: string;
 }
 
 interface Production {
@@ -50,8 +58,8 @@ interface Production {
   cast: CastMember[];
   creative: CrewMember[];
   crew: CrewMember[];
-  orchestra: { firstName: string; lastName: string }[];
-  chorus: { firstName: string; lastName: string }[];
+  orchestra: EnsembleMember[];
+  chorus: EnsembleMember[];
 }
 
 const ProductionPage = () => {
@@ -164,6 +172,7 @@ const ProductionPage = () => {
 
   const renderPersonTable = (
     members: {
+      personId?: number;
       firstName: string;
       lastName: string;
       position?: string | null;
@@ -198,35 +207,68 @@ const ProductionPage = () => {
           None listed.
         </div>
       ) : (
-        members.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "11px 16px",
-              borderBottom:
-                i < members.length - 1 ? `1px solid ${borderLight}` : "none",
-              background: "transparent",
-            }}
-          >
-            <span
+        members.map((m, i) => {
+          const isLinkable = m.personId != null;
+          return (
+            <div
+              key={i}
               style={{
-                flex: 1,
-                fontSize: "13px",
-                fontWeight: 500,
-                color: textPrimary,
+                display: "flex",
+                alignItems: "center",
+                padding: "11px 16px",
+                borderBottom:
+                  i < members.length - 1 ? `1px solid ${borderLight}` : "none",
+                background: "transparent",
               }}
             >
-              {m.lastName}, {m.firstName}
-            </span>
-            {showRole && (
-              <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-                {m.character ?? m.position ?? "—"}
-              </span>
-            )}
-          </div>
-        ))
+              {isLinkable ? (
+                <span
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigate(`/persons/${m.personId}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/persons/${m.personId}`);
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = "underline";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = "none";
+                  }}
+                  style={{
+                    flex: 1,
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#9B1C1C",
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  {m.lastName}, {m.firstName}
+                </span>
+              ) : (
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: textPrimary,
+                  }}
+                >
+                  {m.lastName}, {m.firstName}
+                </span>
+              )}
+              {showRole && (
+                <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
+                  {m.character ?? m.position ?? "—"}
+                </span>
+              )}
+            </div>
+          );
+        })
       )}
     </div>
   );
