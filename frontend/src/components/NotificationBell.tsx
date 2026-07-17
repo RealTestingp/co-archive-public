@@ -107,20 +107,21 @@ const NotificationBell = () => {
           <span
             style={{
               position: "absolute",
-              top: "3px",
-              right: "3px",
-              minWidth: "16px",
-              height: "16px",
+              top: "-3px",
+              right: "-3px",
+              minWidth: "15px",
+              height: "15px",
               padding: "0 4px",
               boxSizing: "border-box",
               borderRadius: "8px",
               background: "#9B1C1C",
               color: "#fff",
-              fontSize: "10px",
+              fontSize: "9px",
               fontWeight: 600,
-              lineHeight: "16px",
+              lineHeight: "15px",
               textAlign: "center",
-              border: `1.5px solid ${colors.background}`,
+              border: `2px solid ${colors.background}`,
+              pointerEvents: "none",
             }}
           >
             {count > 9 ? "9+" : count}
