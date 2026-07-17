@@ -106,6 +106,7 @@ namespace COArchive.API.Controllers
                              || a.ContributorType.Name == "McPhee")
                     .Select(a => new
                     {
+                        PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
                         ContributorType = a.ContributorType.Name,
@@ -118,6 +119,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Creative")
                     .Select(a => new
                     {
+                        PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
                         Position = a.Position?.Name,
@@ -128,6 +130,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Crew")
                     .Select(a => new
                     {
+                        PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
                         Position = a.Position?.Name,
@@ -138,6 +141,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Orchestra")
                     .Select(a => new
                     {
+                        PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
                     })
@@ -147,6 +151,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Chorus")
                     .Select(a => new
                     {
+                        PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
                     })
