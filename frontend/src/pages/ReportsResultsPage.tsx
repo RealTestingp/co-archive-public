@@ -6,7 +6,7 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
-import { exportToPdf, exportToXlsx } from "../utils/reportExport";
+import { exportToPdf, exportToXlsx } from "../utils/ReportExport";
 
 interface ReportRow {
   fullName: string;
