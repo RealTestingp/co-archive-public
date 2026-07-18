@@ -107,6 +107,10 @@ namespace COArchive.API.Controllers
 
             _db.Appearances.Add(appearance);
             await _db.SaveChangesAsync();
+
+            // Check for milestones
+            await CheckMilestoneAsync(dto.PersonId, dto.ProductionId);
+
             return CreatedAtAction(nameof(GetAll), new { personId = dto.PersonId }, new { appearance.Id });
         }
 
@@ -120,6 +124,118 @@ namespace COArchive.API.Controllers
             _db.Appearances.Remove(appearance);
             await _db.SaveChangesAsync();
             return NoContent();
+        }
+
+        // Milestone Notifications
+
+        private async Task CheckMilestoneAsync(int personId, int productionId)
+        {
+            var person = await _db.Persons
+                .Include(p => p.Appearances)
+                    .ThenInclude(a => a.ContributorType)
+                .FirstOrDefaultAsync(p => p.Id == personId);
+
+            if (person == null) return;
+
+            // Check if the production has a performance within the next 7 days
+            var upcomingPerformance = await _db.Performances
+                .Where(p => p.ProductionId == productionId
+                         && p.Date >= DateTime.UtcNow
+                         && p.Date <= DateTime.UtcNow.AddDays(7))
+                .AnyAsync();
+
+            if (!upcomingPerformance) return;
+
+            // MainStage Production Milestone
+            var mainStageProductionCount = await _db.Appearances
+                .Where(a => a.PersonId == personId
+                         && a.Production.EventType.TrackMilestones == true)
+                .Select(a => a.ProductionId)
+                .Distinct()
+                .CountAsync();
+
+            if (mainStageProductionCount > 0 && mainStageProductionCount % 5 == 0)
+            {
+                var exists = await _db.Notifications
+                    .AnyAsync(n => n.PersonId == personId
+                                && n.MilestoneCount == mainStageProductionCount
+                                && n.MilestoneType == "Production");
+
+                if (!exists)
+                {
+                    _db.Notifications.Add(new Notification
+                    {
+                        PersonId = personId,
+                        MilestoneType = "Production",
+                        MilestoneCount = mainStageProductionCount,
+                        Message = $"{person.FirstName} {person.LastName}'s {mainStageProductionCount}{GetOrdinalSuffix(mainStageProductionCount)} MainStage production is coming up this week — consider arranging a card or gift!",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false,
+                        EmailSent = false,
+                    });
+                    await _db.SaveChangesAsync();
+                }
+            }
+
+            // Performance Milestone (equity members only)
+            // Only check if this person's contributor type tracks performances
+            var tracksPerformances = await _db.Appearances
+                .Where(a => a.PersonId == personId
+                         && a.ContributorType.TrackPerformances == true)
+                .AnyAsync();
+
+            if (tracksPerformances)
+            {
+                // Count total performances across all tracked productions
+                var performanceCount = await _db.Appearances
+                    .Where(a => a.PersonId == personId
+                             && a.ContributorType.TrackPerformances == true
+                             && a.Production.EventType.TrackMilestones == true)
+                    .Join(_db.Performances,
+                        a => a.ProductionId,
+                        p => p.ProductionId,
+                        (a, p) => p)
+                    .CountAsync();
+
+                if (performanceCount > 0 && performanceCount % 5 == 0)
+                {
+                    var exists = await _db.Notifications
+                        .AnyAsync(n => n.PersonId == personId
+                                    && n.MilestoneCount == performanceCount
+                                    && n.MilestoneType == "Performance");
+
+                    if (!exists)
+                    {
+                        _db.Notifications.Add(new Notification
+                        {
+                            PersonId = personId,
+                            MilestoneType = "Performance",
+                            MilestoneCount = performanceCount,
+                            Message = $"{person.FirstName} {person.LastName}'s {performanceCount}{GetOrdinalSuffix(performanceCount)} performance is coming up this week — consider arranging a card or gift!",
+                            CreatedAt = DateTime.UtcNow,
+                            IsRead = false,
+                            EmailSent = false,
+                        });
+                        await _db.SaveChangesAsync();
+                    }
+                }
+            }
+        }
+
+        // Helper — turns 5 into "5th", 10 into "10th" etc.
+        private static string GetOrdinalSuffix(int number)
+        {
+            return (number % 100) switch
+            {
+                11 or 12 or 13 => "th",
+                _ => (number % 10) switch
+                {
+                    1 => "st",
+                    2 => "nd",
+                    3 => "rd",
+                    _ => "th"
+                }
+            };
         }
     }
 }
