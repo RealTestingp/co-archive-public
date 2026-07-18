@@ -49,7 +49,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("ReactFrontend");
-app.UseAuthentication(); // ← added
+//Entra not ready yet - delete this and uncomment the next line when ready
+//app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
