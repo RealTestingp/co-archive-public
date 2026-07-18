@@ -15,6 +15,7 @@ import ProductionPage from "./pages/ProductionPage";
 import ManageArchivePage from "./pages/ManageArchivePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ReportsPage from "./pages/ReportsPage";
+import ReportResultsPage from "./pages/ReportsResultsPage";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import { NotificationsProvider } from "./context/NotificationsContext";
 import NotificationToast from "./components/NotificationToast";
@@ -46,6 +47,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports/results"
+          element={
+            <ProtectedRoute>
+              <ReportResultsPage />
             </ProtectedRoute>
           }
         />

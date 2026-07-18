@@ -66,12 +66,14 @@ const NavBar = () => {
       <div className={styles.links}>
         <Link
           to="/search"
+          data-text="Search"
           className={`${styles.link} ${isActive("/search") ? styles.linkActive : ""}`}
         >
           Search
         </Link>
         <Link
           to="/reports"
+          data-text="Reports"
           className={`${styles.link} ${isActive("/reports") ? styles.linkActive : ""}`}
         >
           Reports
@@ -79,6 +81,7 @@ const NavBar = () => {
         {isAdmin && (
           <Link
             to="/manage"
+            data-text="Manage Archive"
             className={`${styles.link} ${isActive("/manage") ? styles.linkActive : ""}`}
           >
             Manage Archive

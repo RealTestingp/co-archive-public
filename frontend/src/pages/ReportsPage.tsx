@@ -1,23 +1,168 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SectionTitle from "../components/SectionTitle";
 import Divider from "../components/Divider";
+import { useTheme } from "../context/ThemeContext";
+import { api } from "../api";
+
+// Normalized lookup option — backends return name / label / title, so we flatten.
+interface Option {
+  id: number;
+  name: string;
+}
+
+type ReportMode = "List" | "Count";
+
+// Maps each request-DTO key to its label + lookup endpoint.
+const FILTERS: {
+  key: keyof Selected;
+  label: string;
+  endpoint: string;
+}[] = [
+  { key: "SeasonId", label: "Season", endpoint: "/api/seasons" },
+  {
+    key: "ContributorTypeId",
+    label: "Contributor Type",
+    endpoint: "/api/contributortypes",
+  },
+  { key: "NationalityId", label: "Nationality", endpoint: "/api/nationalities" },
+  { key: "PositionId", label: "Position", endpoint: "/api/positions" },
+  { key: "CharacterId", label: "Character", endpoint: "/api/characters" },
+  { key: "ProductionId", label: "Production", endpoint: "/api/productions" },
+  { key: "EventTypeId", label: "Event Type", endpoint: "/api/eventtypes" },
+  { key: "VoiceTypeId", label: "Voice Type", endpoint: "/api/voicetypes" },
+];
+
+interface Selected {
+  SeasonId: string;
+  ContributorTypeId: string;
+  NationalityId: string;
+  PositionId: string;
+  CharacterId: string;
+  ProductionId: string;
+  EventTypeId: string;
+  VoiceTypeId: string;
+}
+
+const EMPTY_SELECTED: Selected = {
+  SeasonId: "",
+  ContributorTypeId: "",
+  NationalityId: "",
+  PositionId: "",
+  CharacterId: "",
+  ProductionId: "",
+  EventTypeId: "",
+  VoiceTypeId: "",
+};
+
+const normalize = (item: Record<string, unknown>): Option => ({
+  id: Number(item.id),
+  name: String(item.name ?? item.label ?? item.title ?? item.id),
+});
 
 const ReportsPage = () => {
-  const stats = [
-    { label: "Persons", value: "—" },
-    { label: "Productions", value: "—" },
-    { label: "Characters", value: "—" },
-    { label: "Seasons", value: "—" },
-  ];
+  const navigate = useNavigate();
+  const { isDark, colors } = useTheme();
+
+  const [options, setOptions] = useState<Record<string, Option[]>>({});
+  const [selected, setSelected] = useState<Selected>(EMPTY_SELECTED);
+  const [mode, setMode] = useState<ReportMode>("List");
+
+  // Fetch every lookup in parallel; any endpoint that 404s just yields an empty
+  // dropdown rather than breaking the page.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const entries = await Promise.all(
+        FILTERS.map(async (f) => {
+          try {
+            const res = await api.get(f.endpoint);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : (data.items ?? []);
+            return [f.key, list.map(normalize)] as const;
+          } catch {
+            return [f.key, [] as Option[]] as const;
+          }
+        }),
+      );
+      if (!cancelled) setOptions(Object.fromEntries(entries));
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setField = (key: keyof Selected, value: string) =>
+    setSelected((s) => ({ ...s, [key]: value }));
+
+  const activeFilterCount = Object.values(selected).filter(Boolean).length;
+
+  const handleRun = () => {
+    // Build the request DTO: "" -> undefined, otherwise numeric id.
+    const request: Record<string, unknown> = { mode };
+    for (const f of FILTERS) {
+      const v = selected[f.key];
+      if (v) request[f.key.charAt(0).toLowerCase() + f.key.slice(1)] = Number(v);
+    }
+
+    // Human-readable summary of the chosen criteria for the results screen.
+    const summary = FILTERS.filter((f) => selected[f.key]).map((f) => {
+      const opt = options[f.key]?.find(
+        (o) => o.id === Number(selected[f.key]),
+      );
+      return { label: f.label, value: opt?.name ?? selected[f.key] };
+    });
+
+    navigate("/reports/results", { state: { request, summary, mode } });
+  };
+
+  const handleClear = () => {
+    setSelected(EMPTY_SELECTED);
+    setMode("List");
+  };
+
+  // ── Theme tokens ──
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+
+  const selectStyle: React.CSSProperties = {
+    width: "100%",
+    height: "38px",
+    padding: "0 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    background: surface,
+    color: textPrimary,
+    outline: "none",
+    cursor: "pointer",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textMuted,
+    marginBottom: "6px",
+  };
 
   return (
     <div
       style={{
-        background: "#fff",
+        background: colors.background,
         minHeight: "100vh",
         fontFamily: "Inter, sans-serif",
         fontSize: "14px",
-        color: "#111",
+        color: textPrimary,
       }}
     >
       <NavBar />
@@ -26,242 +171,123 @@ const ReportsPage = () => {
           style={{
             fontSize: "26px",
             fontWeight: 600,
-            color: "#111",
+            color: textPrimary,
             letterSpacing: "-0.02em",
             marginBottom: "0.25rem",
           }}
         >
           Reports
         </h1>
-        <p style={{ fontSize: "13px", color: "#9ca3af", marginBottom: "2rem" }}>
-          Overview of the Calgary Opera Archive.
+        <p style={{ fontSize: "13px", color: textMuted, marginBottom: "2rem" }}>
+          Build a custom report by choosing any combination of criteria below.
         </p>
 
-        <SectionTitle>Archive Overview</SectionTitle>
+        <SectionTitle>Criteria</SectionTitle>
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "1px",
-            background: "#e5e7eb",
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            overflow: "hidden",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "1rem 1.25rem",
             marginBottom: "1.5rem",
           }}
         >
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              style={{ background: "#fff", padding: "1.25rem" }}
-            >
-              <div
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 600,
-                  color: "#d1d5db",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1,
-                  marginBottom: "4px",
-                }}
+          {FILTERS.map((f) => (
+            <div key={f.key}>
+              <label style={labelStyle}>{f.label}</label>
+              <select
+                value={selected[f.key]}
+                onChange={(e) => setField(f.key, e.target.value)}
+                style={selectStyle}
               >
-                {stat.value}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#9ca3af",
-                }}
-              >
-                {stat.label}
-              </div>
+                <option value="">Any</option>
+                {(options[f.key] ?? []).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
         </div>
 
         <Divider />
 
-        <SectionTitle>Productions by Season</SectionTitle>
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            overflow: "hidden",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              padding: "8px 16px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
-            }}
-          >
-            {["Season", "Productions", "Persons"].map((h) => (
-              <span
-                key={h}
+        <SectionTitle>Output</SectionTitle>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "1.5rem" }}>
+          {(["List", "Count"] as ReportMode[]).map((m) => {
+            const active = mode === m;
+            return (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
                 style={{
-                  flex: 1,
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#9ca3af",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  border: `1px solid ${active ? "#9B1C1C" : border}`,
+                  background: active ? "#9B1C1C" : surface,
+                  color: active ? "#fff" : textSecondary,
                 }}
               >
-                {h}
-              </span>
-            ))}
-          </div>
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "11px 16px",
-                borderBottom: i < 3 ? "1px solid #f3f4f6" : "none",
-              }}
-            >
-              {["—", "—", "—"].map((v, j) => (
-                <span
-                  key={j}
-                  style={{ flex: 1, fontSize: "13px", color: "#d1d5db" }}
-                >
-                  {v}
-                </span>
-              ))}
-            </div>
-          ))}
+                {m === "List" ? "List results" : "Count only"}
+              </button>
+            );
+          })}
         </div>
 
         <Divider />
 
-        <SectionTitle>Most Performed Characters</SectionTitle>
         <div
           style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            overflow: "hidden",
-            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            paddingTop: "0.5rem",
           }}
         >
-          <div
+          <button
+            onClick={handleRun}
             style={{
-              display: "flex",
-              padding: "8px 16px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              fontSize: "13px",
+              fontWeight: 600,
+              padding: "10px 20px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              border: "1px solid #9B1C1C",
+              background: "#9B1C1C",
+              color: "#fff",
+              fontFamily: "Inter, sans-serif",
             }}
           >
-            {["Character", "Production", "Times Performed"].map((h) => (
-              <span
-                key={h}
-                style={{
-                  flex: 1,
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#9ca3af",
-                }}
-              >
-                {h}
-              </span>
-            ))}
-          </div>
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
+            Run Report →
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={handleClear}
               style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "11px 16px",
-                borderBottom: i < 3 ? "1px solid #f3f4f6" : "none",
+                fontSize: "13px",
+                fontWeight: 500,
+                padding: "10px 16px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                border: `1px solid ${border}`,
+                background: surface,
+                color: textSecondary,
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              {["—", "—", "—"].map((v, j) => (
-                <span
-                  key={j}
-                  style={{ flex: 1, fontSize: "13px", color: "#d1d5db" }}
-                >
-                  {v}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <Divider />
-
-        <SectionTitle>Person Milestones</SectionTitle>
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              padding: "8px 16px",
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
-            }}
-          >
-            {["Person", "Milestone"].map((h) => (
-              <span
-                key={h}
-                style={{
-                  flex: 1,
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#9ca3af",
-                }}
-              >
-                {h}
-              </span>
-            ))}
-          </div>
-          {[
-            { name: "Person Name", badge: "50th Performance" },
-            { name: "Person Name", badge: "10 Year Anniversary" },
-            { name: "Person Name", badge: "25th Production" },
-          ].map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "11px 16px",
-                borderBottom: i < 2 ? "1px solid #f3f4f6" : "none",
-              }}
-            >
-              <span style={{ flex: 1, fontSize: "13px", color: "#d1d5db" }}>
-                {item.name}
-              </span>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  padding: "3px 8px",
-                  borderRadius: "3px",
-                  background: "#9B1C1C",
-                  color: "#fff",
-                }}
-              >
-                {item.badge}
-              </span>
-            </div>
-          ))}
+              Clear
+            </button>
+          )}
+          <span style={{ fontSize: "12px", color: textMuted }}>
+            {activeFilterCount === 0
+              ? "No filters — report will include all records."
+              : `${activeFilterCount} filter${activeFilterCount !== 1 ? "s" : ""} applied.`}
+          </span>
         </div>
       </div>
     </div>
