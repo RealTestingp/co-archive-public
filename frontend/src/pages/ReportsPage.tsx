@@ -61,6 +61,34 @@ const normalize = (item: Record<string, unknown>): Option => ({
   name: String(item.name ?? item.label ?? item.title ?? item.id),
 });
 
+// Filters that only make sense for certain contributor types.
+const CONDITIONAL_KEYS: (keyof Selected)[] = [
+  "CharacterId",
+  "VoiceTypeId",
+  "PositionId",
+];
+
+// Given a contributor-type name, which conditional filters apply?
+// Keyword-matched so it works regardless of exact DB naming; unknown names
+// keep everything enabled so nothing valid is hidden.
+const applicableFields = (typeName: string): Set<keyof Selected> => {
+  const n = typeName.toLowerCase();
+  const fields = new Set<keyof Selected>();
+  if (/artist|mcphee|cast|principal|soloist/.test(n)) {
+    fields.add("CharacterId");
+    fields.add("VoiceTypeId");
+  } else if (/chorus|choir/.test(n)) {
+    fields.add("VoiceTypeId");
+  } else if (/orchestra|musician|instrument/.test(n)) {
+    // instrumentalists — no character, voice type, or crew position
+  } else if (/creative|crew|staff|board|director|design|manage|technical/.test(n)) {
+    fields.add("PositionId");
+  } else {
+    CONDITIONAL_KEYS.forEach((k) => fields.add(k)); // unknown → don't restrict
+  }
+  return fields;
+};
+
 const ReportsPage = () => {
   const navigate = useNavigate();
   const { isDark, colors } = useTheme();
@@ -100,9 +128,40 @@ const ReportsPage = () => {
 
   const activeFilterCount = Object.values(selected).filter(Boolean).length;
 
+  // Which conditional filters apply, based on the chosen contributor type.
+  const contributorName = options.ContributorTypeId?.find(
+    (o) => o.id === Number(selected.ContributorTypeId),
+  )?.name;
+  const supported =
+    selected.ContributorTypeId && contributorName
+      ? applicableFields(contributorName)
+      : null;
+  const isDisabled = (key: keyof Selected) =>
+    supported != null && CONDITIONAL_KEYS.includes(key) && !supported.has(key);
+
+  // Clear any now-irrelevant filter when the contributor type changes.
+  useEffect(() => {
+    if (!supported) return;
+    setSelected((s) => {
+      let changed = false;
+      const next = { ...s };
+      for (const k of CONDITIONAL_KEYS) {
+        if (!supported.has(k) && next[k]) {
+          next[k] = "";
+          changed = true;
+        }
+      }
+      return changed ? next : s;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected.ContributorTypeId, options]);
+
   const handleRun = () => {
     // Build the request DTO: "" -> undefined, otherwise numeric id.
-    const request: Record<string, unknown> = { mode };
+    // Omit mode for List (the DTO defaults to List) so it works without the
+    // string-enum converter; only send it explicitly for Count.
+    const request: Record<string, unknown> = {};
+    if (mode === "Count") request.mode = "Count";
     for (const f of FILTERS) {
       const v = selected[f.key];
       if (v) request[f.key.charAt(0).toLowerCase() + f.key.slice(1)] = Number(v);
@@ -192,23 +251,35 @@ const ReportsPage = () => {
             marginBottom: "1.5rem",
           }}
         >
-          {FILTERS.map((f) => (
-            <div key={f.key}>
-              <label style={labelStyle}>{f.label}</label>
-              <select
-                value={selected[f.key]}
-                onChange={(e) => setField(f.key, e.target.value)}
-                style={selectStyle}
-              >
-                <option value="">Any</option>
-                {(options[f.key] ?? []).map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+          {FILTERS.map((f) => {
+            const disabled = isDisabled(f.key);
+            return (
+              <div key={f.key} style={{ opacity: disabled ? 0.45 : 1 }}>
+                <label style={labelStyle}>{f.label}</label>
+                <select
+                  value={selected[f.key]}
+                  onChange={(e) => setField(f.key, e.target.value)}
+                  disabled={disabled}
+                  title={
+                    disabled
+                      ? "Not applicable for the selected contributor type"
+                      : undefined
+                  }
+                  style={{
+                    ...selectStyle,
+                    cursor: disabled ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <option value="">{disabled ? "N/A" : "Any"}</option>
+                  {(options[f.key] ?? []).map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
         </div>
 
         <Divider />
