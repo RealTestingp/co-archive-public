@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useTheme } from "../context/ThemeContext";
-import { useNotifications } from "../context/NotificationsContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useNotifications } from "../../context/NotificationsContext";
 
 // ISO week key like "2026-W29" so the toast shows at most once per week.
 const isoWeekKey = (d = new Date()) => {

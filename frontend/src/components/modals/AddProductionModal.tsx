@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api, uploadFile } from "../api";
+import { api, uploadFile } from "../../api";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

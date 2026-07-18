@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
-import { useNotifications } from "../context/NotificationsContext";
-import type { AppNotification } from "../context/NotificationsContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useNotifications } from "../../context/NotificationsContext";
+import type { AppNotification } from "../../context/NotificationsContext";
 
 // "Today" / "Tomorrow" / weekday label for a milestone date.
 const relativeLabel = (iso: string) => {

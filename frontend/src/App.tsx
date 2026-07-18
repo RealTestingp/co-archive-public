@@ -18,7 +18,7 @@ import ReportsPage from "./pages/ReportsPage";
 import ReportResultsPage from "./pages/ReportsResultsPage";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import { NotificationsProvider } from "./context/NotificationsContext";
-import NotificationToast from "./components/NotificationToast";
+import NotificationToast from "./components/notifications/NotificationToast";
 
 const AppRoutes = () => {
   const { pathname } = useLocation();

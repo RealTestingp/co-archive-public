@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api, uploadFile } from "../api";
+import { api, uploadFile } from "../../api";
 
 // UpdateProductionDto (backend) only touches these fields — performances,
 // cast, creative, crew, orchestra, and chorus are NOT editable through this

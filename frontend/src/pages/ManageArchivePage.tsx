@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import Breadcrumb from "../components/BreadCrumb";
-import LoadingSkeleton from "../components/LoadingSkeleton";
-import ErrorState from "../components/ErrorState";
-import AddPersonModal from "../components/AddPersonModal";
-import AddProductionModal from "../components/AddProductionModal";
-import AddCharacterModal from "../components/AddCharacterModal";
+import Breadcrumb from "../components/ui/BreadCrumb";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton";
+import ErrorState from "../components/ui/ErrorState";
+import AddPersonModal from "../components/modals/AddPersonModal";
+import AddProductionModal from "../components/modals/AddProductionModal";
+import AddCharacterModal from "../components/modals/AddCharacterModal";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 

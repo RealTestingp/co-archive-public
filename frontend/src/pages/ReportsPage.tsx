@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import SectionTitle from "../components/SectionTitle";
-import Divider from "../components/Divider";
+import SectionTitle from "../components/ui/SectionTitle";
+import Divider from "../components/ui/Divider";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 

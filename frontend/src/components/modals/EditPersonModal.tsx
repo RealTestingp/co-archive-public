@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { api, uploadFile } from "../api";
+import { api, uploadFile } from "../../api";
 
 interface LookupItem {
   id: number;
