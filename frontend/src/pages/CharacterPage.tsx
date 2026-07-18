@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import Breadcrumb from "../components/BreadCrumb";
-import PageHeader from "../components/PageHeader";
-import DetailRow from "../components/DetailRow";
-import SectionTitle from "../components/SectionTitle";
-import Divider from "../components/Divider";
-import LoadingSkeleton from "../components/LoadingSkeleton";
-import ErrorState from "../components/ErrorState";
+import Breadcrumb from "../components/ui/BreadCrumb";
+import PageHeader from "../components/ui/PageHeader";
+import DetailRow from "../components/ui/DetailRow";
+import SectionTitle from "../components/ui/SectionTitle";
+import Divider from "../components/ui/Divider";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton";
+import ErrorState from "../components/ui/ErrorState";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 

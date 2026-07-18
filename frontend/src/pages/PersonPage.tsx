@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import Breadcrumb from "../components/BreadCrumb";
-import DetailRow from "../components/DetailRow";
-import SectionTitle from "../components/SectionTitle";
-import Divider from "../components/Divider";
-import LoadingSkeleton from "../components/LoadingSkeleton";
-import ErrorState from "../components/ErrorState";
-import EditPersonModal from "../components/EditPersonModal";
-import DeletePersonModal from "../components/DeletePersonModal";
+import Breadcrumb from "../components/ui/BreadCrumb";
+import DetailRow from "../components/ui/DetailRow";
+import SectionTitle from "../components/ui/SectionTitle";
+import Divider from "../components/ui/Divider";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton";
+import ErrorState from "../components/ui/ErrorState";
+import EditPersonModal from "../components/modals/EditPersonModal";
+import DeletePersonModal from "../components/modals/DeletePersonModal";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 

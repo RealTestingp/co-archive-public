@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import NotificationBell from "./NotificationBell";
+import NotificationBell from "./notifications/NotificationBell";
 import styles from "./NavBar.module.css";
 
 // ── TEMP: mock auth while EntraID is disabled ──────────────────────────────
