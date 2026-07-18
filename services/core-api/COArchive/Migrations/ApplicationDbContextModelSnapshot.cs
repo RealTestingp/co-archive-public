@@ -251,6 +251,14 @@ namespace COArchive.Migrations
                     b.Property<bool>("EmailSent")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("MilestoneCount")
                         .HasColumnType("int");
 

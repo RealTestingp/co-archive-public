@@ -13,6 +13,11 @@ namespace COArchive.Models
 
         public int MilestoneCount { get; set; }
 
+        [MaxLength(500)]
+        public string Message { get; set; } = string.Empty;
+
+        public bool IsRead { get; set; } = false;
+
         public DateTime CreatedAt { get; set; }
 
         public bool EmailSent { get; set; } = false;
