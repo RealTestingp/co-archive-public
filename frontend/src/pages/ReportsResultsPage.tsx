@@ -6,6 +6,7 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import ErrorState from "../components/ErrorState";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
+import { exportToPdf, exportToXlsx } from "../utils/reportExport";
 
 interface ReportRow {
   fullName: string;
@@ -94,8 +95,16 @@ const ReportResultsPage = () => {
       : COLUMNS;
 
   const handleExport = (format: "pdf" | "xlsx") => {
-    // Export endpoint is a separate work item (Dylan/Jenna). Stubbed for now.
-    alert(`${format.toUpperCase()} export is coming soon.`);
+    if (!result) return;
+    const payload = {
+      columns: visibleColumns.map((c) => ({ key: c.key, label: c.label })),
+      rows: result.rows as unknown as Record<string, unknown>[],
+      summary: state.summary,
+      totalCount: result.totalCount,
+      mode: state.mode,
+    };
+    if (format === "pdf") exportToPdf(payload);
+    else exportToXlsx(payload);
   };
 
   const exportBtnStyle: React.CSSProperties = {
@@ -166,10 +175,18 @@ const ReportResultsPage = () => {
 
           {/* Export */}
           <div style={{ display: "flex", gap: "8px" }}>
-            <button style={exportBtnStyle} onClick={() => handleExport("pdf")}>
+            <button
+              style={{ ...exportBtnStyle, opacity: result ? 1 : 0.4 }}
+              onClick={() => handleExport("pdf")}
+              disabled={!result}
+            >
               Export PDF
             </button>
-            <button style={exportBtnStyle} onClick={() => handleExport("xlsx")}>
+            <button
+              style={{ ...exportBtnStyle, opacity: result ? 1 : 0.4 }}
+              onClick={() => handleExport("xlsx")}
+              disabled={!result}
+            >
               Export XLSX
             </button>
           </div>
