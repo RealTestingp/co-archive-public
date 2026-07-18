@@ -51,7 +51,7 @@ app.UseHttpsRedirection();
 app.UseCors("ReactFrontend");
 //Entra ID is not ready - uncomment the below lines once authentication is configured
 //app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthorization();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
