@@ -124,15 +124,16 @@ const ReportResultsPage = () => {
         disabled={!enabled}
         onMouseEnter={(e) => {
           if (!enabled) return;
+          // Fill solid accent red on hover so it reads as clearly clickable.
           e.currentTarget.style.borderColor = "#9B1C1C";
-          e.currentTarget.style.color = "#9B1C1C";
-          e.currentTarget.style.background = isDark ? "#2a1414" : "#fef2f2";
+          e.currentTarget.style.background = "#9B1C1C";
+          e.currentTarget.style.color = "#fff";
         }}
         onMouseLeave={(e) => {
           if (!enabled) return;
           e.currentTarget.style.borderColor = border;
-          e.currentTarget.style.color = textPrimary;
           e.currentTarget.style.background = surface;
+          e.currentTarget.style.color = textPrimary;
         }}
         style={{
           display: "inline-flex",
@@ -216,7 +217,7 @@ const ReportResultsPage = () => {
           <div style={{ display: "flex", gap: "8px" }}>
             <ExportButton
               format="pdf"
-              label="PDF"
+              label="Export PDF"
               icon={
                 <svg
                   width="14"
@@ -238,7 +239,7 @@ const ReportResultsPage = () => {
             />
             <ExportButton
               format="xlsx"
-              label="Excel"
+              label="Export Excel"
               icon={
                 <svg
                   width="14"
