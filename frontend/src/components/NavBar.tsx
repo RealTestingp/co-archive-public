@@ -1,16 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../auth";
 import NotificationBell from "./notifications/NotificationBell";
 import styles from "./NavBar.module.css";
-
-// ── TEMP: mock auth while EntraID is disabled ──────────────────────────────
-const MOCK_USER = {
-  name: "Aurora Choban",
-  email: "aurora.choban@calgaryopera.com",
-  isAdmin: true,
-};
-// ──────────────────────────────────────────────────────────────────────────
 
 const NavBar = () => {
   const { pathname } = useLocation();
@@ -20,7 +13,7 @@ const NavBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { name, email, isAdmin } = MOCK_USER;
+  const { name, email, isAdmin } = useAuth();
 
   const initials = name
     .split(" ")

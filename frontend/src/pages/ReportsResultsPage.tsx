@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import Breadcrumb from "../components/ui//BreadCrumb";
+import Breadcrumb from "../components/ui/BreadCrumb";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 import ErrorState from "../components/ui/ErrorState";
 import { useTheme } from "../context/ThemeContext";
@@ -107,16 +107,55 @@ const ReportResultsPage = () => {
     else exportToXlsx(payload);
   };
 
-  const exportBtnStyle: React.CSSProperties = {
-    fontSize: "12px",
-    fontWeight: 500,
-    padding: "8px 14px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    border: `1px solid ${border}`,
-    background: surface,
-    color: textSecondary,
-    fontFamily: "Inter, sans-serif",
+  // Export button: icon + label, accent-red hover, clear disabled state.
+  const ExportButton = ({
+    format,
+    label,
+    icon,
+  }: {
+    format: "pdf" | "xlsx";
+    label: string;
+    icon: React.ReactNode;
+  }) => {
+    const enabled = !!result;
+    return (
+      <button
+        onClick={() => handleExport(format)}
+        disabled={!enabled}
+        onMouseEnter={(e) => {
+          if (!enabled) return;
+          e.currentTarget.style.borderColor = "#9B1C1C";
+          e.currentTarget.style.color = "#9B1C1C";
+          e.currentTarget.style.background = isDark ? "#2a1414" : "#fef2f2";
+        }}
+        onMouseLeave={(e) => {
+          if (!enabled) return;
+          e.currentTarget.style.borderColor = border;
+          e.currentTarget.style.color = textPrimary;
+          e.currentTarget.style.background = surface;
+        }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "12px",
+          fontWeight: 600,
+          padding: "8px 14px",
+          borderRadius: "6px",
+          cursor: enabled ? "pointer" : "not-allowed",
+          border: `1px solid ${border}`,
+          background: surface,
+          color: enabled ? textPrimary : textMuted,
+          fontFamily: "Inter, sans-serif",
+          opacity: enabled ? 1 : 0.5,
+          transition:
+            "border-color 0.15s ease, color 0.15s ease, background 0.15s ease",
+        }}
+      >
+        {icon}
+        {label}
+      </button>
+    );
   };
 
   return (
@@ -175,20 +214,49 @@ const ReportResultsPage = () => {
 
           {/* Export */}
           <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              style={{ ...exportBtnStyle, opacity: result ? 1 : 0.4 }}
-              onClick={() => handleExport("pdf")}
-              disabled={!result}
-            >
-              Export PDF
-            </button>
-            <button
-              style={{ ...exportBtnStyle, opacity: result ? 1 : 0.4 }}
-              onClick={() => handleExport("xlsx")}
-              disabled={!result}
-            >
-              Export XLSX
-            </button>
+            <ExportButton
+              format="pdf"
+              label="PDF"
+              icon={
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="13" y2="17" />
+                </svg>
+              }
+            />
+            <ExportButton
+              format="xlsx"
+              label="Excel"
+              icon={
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="3" y1="9" x2="21" y2="9" />
+                  <line x1="9" y1="9" x2="9" y2="21" />
+                </svg>
+              }
+            />
           </div>
         </div>
 

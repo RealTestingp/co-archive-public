@@ -10,6 +10,7 @@ import ErrorState from "../components/ui/ErrorState";
 import EditPersonModal from "../components/modals/EditPersonModal";
 import DeletePersonModal from "../components/modals/DeletePersonModal";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../auth";
 import { api } from "../api";
 
 interface Appearance {
@@ -48,6 +49,7 @@ const PersonPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark, colors } = useTheme();
+  const { isAdmin } = useAuth();
 
   const [person, setPerson] = useState<Person | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -259,57 +261,47 @@ const PersonPage = () => {
               </div>
 
               <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    padding: "7px 14px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    border: `1px solid ${border}`,
-                    background: surface,
-                    color: textSecondary,
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  View History
-                </button>
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  disabled={!person}
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    padding: "7px 14px",
-                    borderRadius: "6px",
-                    cursor: person ? "pointer" : "default",
-                    border: "1px solid #9B1C1C",
-                    background: "#9B1C1C",
-                    color: "#fff",
-                    fontFamily: "Inter, sans-serif",
-                    opacity: person ? 1 : 0.6,
-                  }}
-                >
-                  Edit Profile
-                </button>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  disabled={!person}
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    padding: "7px 14px",
-                    borderRadius: "6px",
-                    cursor: person ? "pointer" : "default",
-                    border: `1px solid ${deleteBorder}`,
-                    background: surface,
-                    color: "#9B1C1C",
-                    fontFamily: "Inter, sans-serif",
-                    opacity: person ? 1 : 0.6,
-                  }}
-                >
-                  Delete
-                </button>
+                {/* Editing and deleting are admin-only */}
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      disabled={!person}
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        padding: "7px 14px",
+                        borderRadius: "6px",
+                        cursor: person ? "pointer" : "default",
+                        border: "1px solid #9B1C1C",
+                        background: "#9B1C1C",
+                        color: "#fff",
+                        fontFamily: "Inter, sans-serif",
+                        opacity: person ? 1 : 0.6,
+                      }}
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      disabled={!person}
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        padding: "7px 14px",
+                        borderRadius: "6px",
+                        cursor: person ? "pointer" : "default",
+                        border: `1px solid ${deleteBorder}`,
+                        background: surface,
+                        color: "#9B1C1C",
+                        fontFamily: "Inter, sans-serif",
+                        opacity: person ? 1 : 0.6,
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

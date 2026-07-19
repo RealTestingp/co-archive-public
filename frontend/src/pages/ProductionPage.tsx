@@ -11,6 +11,7 @@ import ErrorState from "../components/ui/ErrorState";
 import EditProductionModal from "../components/modals/EditProductionModal";
 import DeleteProductionModal from "../components/modals/DeleteProductionModal";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../auth";
 import { api } from "../api";
 
 interface Performance {
@@ -23,6 +24,7 @@ interface CastMember {
   firstName: string;
   lastName: string;
   contributorType: string;
+  characterId?: number | null;
   character: string | null;
   position: string | null;
 }
@@ -66,6 +68,7 @@ const ProductionPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark, colors } = useTheme();
+  const { isAdmin } = useAuth();
   const [production, setProduction] = useState<Production | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -131,6 +134,37 @@ const ProductionPage = () => {
   const chipBg = isDark ? "#2a2a2a" : "#f3f4f6";
   const chipColor = isDark ? "#9ca3af" : "#374151";
 
+  // Shared clickable-name style for anything that links to another record.
+  const linkCell = (onClick: () => void, label: string, flex: number) => (
+    <span
+      role="link"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.textDecoration = "underline";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.textDecoration = "none";
+      }}
+      style={{
+        flex,
+        fontSize: "13px",
+        fontWeight: flex === 1 ? 400 : 500,
+        color: "#9B1C1C",
+        cursor: "pointer",
+        outline: "none",
+      }}
+    >
+      {label}
+    </span>
+  );
+
   const details = production
     ? [
         { label: "Composer", value: production.composers.join(", ") || "—" },
@@ -176,6 +210,7 @@ const ProductionPage = () => {
       firstName: string;
       lastName: string;
       position?: string | null;
+      characterId?: number | null;
       character?: string | null;
       contributorType?: string;
     }[],
@@ -208,7 +243,7 @@ const ProductionPage = () => {
         </div>
       ) : (
         members.map((m, i) => {
-          const isLinkable = m.personId != null;
+          const name = `${m.lastName}, ${m.firstName}`;
           return (
             <div
               key={i}
@@ -221,34 +256,9 @@ const ProductionPage = () => {
                 background: "transparent",
               }}
             >
-              {isLinkable ? (
-                <span
-                  role="link"
-                  tabIndex={0}
-                  onClick={() => navigate(`/persons/${m.personId}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      navigate(`/persons/${m.personId}`);
-                    }
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.textDecoration = "underline";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.textDecoration = "none";
-                  }}
-                  style={{
-                    flex: 1,
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "#9B1C1C",
-                    cursor: "pointer",
-                    outline: "none",
-                  }}
-                >
-                  {m.lastName}, {m.firstName}
-                </span>
+              {/* Person — links to their profile */}
+              {m.personId != null ? (
+                linkCell(() => navigate(`/persons/${m.personId}`), name, 1)
               ) : (
                 <span
                   style={{
@@ -258,14 +268,25 @@ const ProductionPage = () => {
                     color: textPrimary,
                   }}
                 >
-                  {m.lastName}, {m.firstName}
+                  {name}
                 </span>
               )}
-              {showRole && (
-                <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-                  {m.character ?? m.position ?? "—"}
-                </span>
-              )}
+
+              {/* Character (links) or position (plain text) */}
+              {showRole &&
+                (m.characterId != null && m.character ? (
+                  linkCell(
+                    () => navigate(`/characters/${m.characterId}`),
+                    m.character,
+                    1,
+                  )
+                ) : (
+                  <span
+                    style={{ flex: 1, fontSize: "13px", color: textSecondary }}
+                  >
+                    {m.character ?? m.position ?? "—"}
+                  </span>
+                ))}
             </div>
           );
         })
@@ -314,8 +335,9 @@ const ProductionPage = () => {
                 title={production!.title}
                 subtitle={`${production!.season} · ${production!.eventType}`}
                 editLabel="Edit Production"
-                onEdit={() => setShowEditModal(true)}
-                onDelete={() => setShowDeleteModal(true)}
+                // Admin-only: omitting the handlers hides the buttons entirely.
+                onEdit={isAdmin ? () => setShowEditModal(true) : undefined}
+                onDelete={isAdmin ? () => setShowDeleteModal(true) : undefined}
               />
             )}
 

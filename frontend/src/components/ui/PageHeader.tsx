@@ -10,6 +10,9 @@ interface Props {
   deleteLabel?: string;
 }
 
+// Every action button renders ONLY when its handler is supplied. That keeps
+// dead buttons off the page — pass a handler to show a button, omit it to
+// hide one (which is also how callers gate actions behind admin rights).
 const PageHeader = ({
   title,
   subtitle,
@@ -20,6 +23,8 @@ const PageHeader = ({
   deleteLabel = "Delete",
 }: Props) => {
   const { colors, isDark } = useTheme();
+
+  const hasActions = !!(onViewHistory || onEdit || onDelete);
 
   return (
     <div
@@ -46,58 +51,67 @@ const PageHeader = ({
           {subtitle}
         </div>
       </div>
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button
-          onClick={onViewHistory}
-          style={{
-            fontSize: "12px",
-            fontWeight: 500,
-            padding: "7px 14px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            border: `1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"}`,
-            background: "transparent",
-            color: colors.textSecondary,
-            marginLeft: "8px",
-          }}
-        >
-          View History
-        </button>
-        <button
-          onClick={onEdit}
-          style={{
-            fontSize: "12px",
-            fontWeight: 500,
-            padding: "7px 14px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            border: `1px solid ${colors.accent}`,
-            background: colors.accent,
-            color: "#fff",
-            marginLeft: "8px",
-          }}
-        >
-          {editLabel}
-        </button>
-        {onDelete && (
-          <button
-            onClick={onDelete}
-            style={{
-              fontSize: "12px",
-              fontWeight: 500,
-              padding: "7px 14px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
-              background: "transparent",
-              color: colors.accent,
-              marginLeft: "8px",
-            }}
-          >
-            {deleteLabel}
-          </button>
-        )}
-      </div>
+
+      {hasActions && (
+        <div style={{ display: "flex", gap: "8px" }}>
+          {onViewHistory && (
+            <button
+              onClick={onViewHistory}
+              style={{
+                fontSize: "12px",
+                fontWeight: 500,
+                padding: "7px 14px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                border: `1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"}`,
+                background: "transparent",
+                color: colors.textSecondary,
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              View History
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              style={{
+                fontSize: "12px",
+                fontWeight: 500,
+                padding: "7px 14px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                border: `1px solid ${colors.accent}`,
+                background: colors.accent,
+                color: "#fff",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              {editLabel}
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              style={{
+                fontSize: "12px",
+                fontWeight: 500,
+                padding: "7px 14px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
+                background: "transparent",
+                color: colors.accent,
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              {deleteLabel}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

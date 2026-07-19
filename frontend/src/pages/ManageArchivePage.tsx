@@ -55,12 +55,16 @@ const ManageArchivePage = () => {
   // screen while it refreshes in the background (no flicker on tab switches).
   const [loadedTabs, setLoadedTabs] = useState<Set<Tab>>(new Set());
 
+  // Tabs whose data is currently filtered by a search term.
+  const [searchedTabs, setSearchedTabs] = useState<Set<Tab>>(new Set());
+
   const [persons, setPersons] = useState<Person[]>([]);
   const [productions, setProductions] = useState<Production[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
 
   const navigate = useNavigate();
 
+  // Fetch a single tab (used for search and after add/edit).
   const fetchData = useCallback(async (tab: Tab, searchTerm = "") => {
     setIsLoading(true);
     setHasError(false);
@@ -87,9 +91,37 @@ const ManageArchivePage = () => {
     }
   }, []);
 
+  // Load all three on mount so every stat count is accurate straight away and
+  // switching tabs needs no fetch at all (instant, no flicker).
+  const fetchAll = useCallback(async () => {
+    setIsLoading(true);
+    setHasError(false);
+    try {
+      const [pRes, prRes, cRes] = await Promise.all([
+        api.get("/api/persons"),
+        api.get("/api/productions"),
+        api.get("/api/characters"),
+      ]);
+      if (!pRes.ok || !prRes.ok || !cRes.ok) throw new Error();
+      const [p, pr, c] = await Promise.all([
+        pRes.json(),
+        prRes.json(),
+        cRes.json(),
+      ]);
+      setPersons(p);
+      setProductions(pr);
+      setCharacters(c);
+      setLoadedTabs(new Set<Tab>(["Persons", "Productions", "Characters"]));
+    } catch {
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchData(activeTab, search);
-  }, [activeTab]);
+    fetchAll();
+  }, [fetchAll]);
 
   useEffect(() => {
     setPage(1);
@@ -98,6 +130,12 @@ const ManageArchivePage = () => {
   const handleSearch = () => {
     setPage(1);
     fetchData(activeTab, search);
+    setSearchedTabs((prev) => {
+      const next = new Set(prev);
+      if (search.trim()) next.add(activeTab);
+      else next.delete(activeTab);
+      return next;
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -108,6 +146,16 @@ const ManageArchivePage = () => {
     setActiveTab(tab);
     setSearch("");
     setPage(1);
+    // If this tab's data is still filtered by an earlier search, restore the
+    // full list. Otherwise the data is already loaded — no fetch needed.
+    if (searchedTabs.has(tab)) {
+      fetchData(tab, "");
+      setSearchedTabs((prev) => {
+        const next = new Set(prev);
+        next.delete(tab);
+        return next;
+      });
+    }
   };
 
   const handleAddNew = () => {
@@ -167,29 +215,36 @@ const ManageArchivePage = () => {
     color: textPrimary,
   };
 
-  const editBtnStyle: React.CSSProperties = {
-    fontSize: "11px",
-    fontWeight: 500,
-    padding: "4px 10px",
-    borderRadius: "4px",
-    cursor: "pointer",
-    border: `1px solid ${border}`,
-    background: surface,
-    color: textSecondary,
-    fontFamily: "Inter, sans-serif",
-  };
-
-  const viewBtnStyle: React.CSSProperties = {
-    fontSize: "11px",
-    fontWeight: 500,
-    padding: "4px 10px",
-    borderRadius: "4px",
-    cursor: "pointer",
-    border: "1px solid #9B1C1C",
-    background: "#9B1C1C",
-    color: "#fff",
-    fontFamily: "Inter, sans-serif",
-  };
+  // Clickable name cell — the whole row's entry point to its detail page.
+  const NameLink = ({ id, label }: { id: number; label: string }) => (
+    <span
+      role="link"
+      tabIndex={0}
+      onClick={() => handleView(id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleView(id);
+        }
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.textDecoration = "underline";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.textDecoration = "none";
+      }}
+      style={{
+        flex: 2,
+        fontSize: "13px",
+        fontWeight: 500,
+        color: "#9B1C1C",
+        cursor: "pointer",
+        outline: "none",
+      }}
+    >
+      {label}
+    </span>
+  );
 
   const renderRows = () => {
     if (activeTab === "Persons") {
@@ -204,16 +259,7 @@ const ManageArchivePage = () => {
               i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
           }}
         >
-          <span
-            style={{
-              flex: 2,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: textPrimary,
-            }}
-          >
-            {p.lastName}, {p.firstName}
-          </span>
+          <NameLink id={p.id} label={`${p.lastName}, ${p.firstName}`} />
           <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
             {p.voiceType ?? "—"}
           </span>
@@ -240,19 +286,6 @@ const ManageArchivePage = () => {
               {p.isActive ? "Active" : "Inactive"}
             </span>
           </span>
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              minWidth: "100px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button style={editBtnStyle}>Edit</button>
-            <button onClick={() => handleView(p.id)} style={viewBtnStyle}>
-              View
-            </button>
-          </div>
         </div>
       ));
     }
@@ -269,16 +302,7 @@ const ManageArchivePage = () => {
               i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
           }}
         >
-          <span
-            style={{
-              flex: 2,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: textPrimary,
-            }}
-          >
-            {p.title}
-          </span>
+          <NameLink id={p.id} label={p.title} />
           <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
             {p.season}
           </span>
@@ -288,19 +312,6 @@ const ManageArchivePage = () => {
           <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
             {p.venue}
           </span>
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              minWidth: "100px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button style={editBtnStyle}>Edit</button>
-            <button onClick={() => handleView(p.id)} style={viewBtnStyle}>
-              View
-            </button>
-          </div>
         </div>
       ));
     }
@@ -317,41 +328,19 @@ const ManageArchivePage = () => {
               i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
           }}
         >
-          <span
-            style={{
-              flex: 2,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: textPrimary,
-            }}
-          >
-            {c.name}
-          </span>
-          <span style={{ flex: 2, fontSize: "13px", color: textSecondary }}>
+          <NameLink id={c.id} label={c.name} />
+          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
             {c.operaTitle ?? "—"}
           </span>
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              minWidth: "100px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button style={editBtnStyle}>Edit</button>
-            <button onClick={() => handleView(c.id)} style={viewBtnStyle}>
-              View
-            </button>
-          </div>
         </div>
       ));
     }
   };
 
   const tableHeaders = {
-    Persons: ["Name", "Voice Type", "Contributor Type", "Status", ""],
-    Productions: ["Title", "Season", "Event Type", "Venue", ""],
-    Characters: ["Name", "Opera", ""],
+    Persons: ["Name", "Voice Type", "Contributor Type", "Status"],
+    Productions: ["Title", "Season", "Event Type", "Venue"],
+    Characters: ["Name", "Opera"],
   };
 
   // Skeleton rows mirror the real row layout: same flex weights per column
@@ -448,7 +437,7 @@ const ManageArchivePage = () => {
                   letterSpacing: "-0.02em",
                 }}
               >
-                {isLoading && activeTab === tab && !loadedTabs.has(tab) ? (
+                {isLoading && !loadedTabs.has(tab) ? (
                   <LoadingSkeleton width="48px" height="28px" />
                 ) : (
                   counts[tab]
@@ -602,7 +591,7 @@ const ManageArchivePage = () => {
 
         {/* Table */}
         {hasError ? (
-          <ErrorState onRetry={() => fetchData(activeTab, search)} />
+          <ErrorState onRetry={() => fetchAll()} />
         ) : (
           <>
             <div
