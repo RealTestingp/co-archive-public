@@ -1,33 +1,26 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { useNotifications } from "../../context/NotificationsContext";
-import type { AppNotification } from "../../context/NotificationsContext";
 
-// "Today" / "Tomorrow" / weekday label for a milestone date.
-const relativeLabel = (iso: string) => {
-  const d = new Date(iso);
-  const today = new Date();
-  const startOfDay = (x: Date) =>
-    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diffDays = Math.round(
-    (startOfDay(d) - startOfDay(today)) / 86_400_000,
-  );
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Tomorrow";
-  return d.toLocaleDateString("en-CA", { weekday: "long" });
-};
-
-const fullDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-CA", {
+// "just now" / "3h ago" / "2d ago" / date for anything older than a week.
+const relativeTime = (iso: string) => {
+  const then = new Date(iso).getTime();
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-CA", {
     month: "short",
     day: "numeric",
   });
+};
 
 const NotificationBell = () => {
   const { isDark, colors } = useTheme();
-  const navigate = useNavigate();
-  const { items, count } = useNotifications();
+  const { items, count, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +42,7 @@ const NotificationBell = () => {
     };
   }, [open]);
 
-  // ── Theme tokens (match ProductionPage / ManageArchive) ──
+  // ── Theme tokens ──
   const surface = isDark ? "#1c1c1c" : "#fff";
   const border = isDark ? "#2a2a2a" : "#e5e7eb";
   const borderLight = isDark ? "#2a2a2a" : "#f3f4f6";
@@ -59,18 +52,13 @@ const NotificationBell = () => {
   const tableBg = isDark ? "#161616" : "#f9fafb";
   const hoverBg = isDark ? "#242424" : "#f9fafb";
 
-  const handleGo = (n: AppNotification) => {
-    setOpen(false);
-    navigate(`/productions/${n.productionId}`);
-  };
-
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
       {/* Bell button */}
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={
-          count > 0 ? `Notifications, ${count} upcoming` : "Notifications"
+          count > 0 ? `Notifications, ${count} unread` : "Notifications"
         }
         aria-haspopup="true"
         aria-expanded={open}
@@ -137,7 +125,7 @@ const NotificationBell = () => {
             position: "absolute",
             top: "calc(100% + 8px)",
             right: 0,
-            width: "320px",
+            width: "340px",
             maxHeight: "420px",
             overflowY: "auto",
             background: surface,
@@ -159,6 +147,8 @@ const NotificationBell = () => {
               padding: "12px 16px",
               background: tableBg,
               borderBottom: `1px solid ${border}`,
+              position: "sticky",
+              top: 0,
             }}
           >
             <span
@@ -170,12 +160,24 @@ const NotificationBell = () => {
                 color: textMuted,
               }}
             >
-              Upcoming this week
+              Milestones
             </span>
             {count > 0 && (
-              <span style={{ fontSize: "11px", color: textMuted }}>
-                {count} item{count !== 1 ? "s" : ""}
-              </span>
+              <button
+                onClick={() => markAllAsRead()}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: "#9B1C1C",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                Mark all read
+              </button>
             )}
           </div>
 
@@ -189,80 +191,43 @@ const NotificationBell = () => {
                 color: textMuted,
               }}
             >
-              Nothing upcoming this week.
+              You're all caught up.
             </div>
           ) : (
             items.map((n, i) => (
               <div
                 key={n.id}
-                role="menuitem"
-                tabIndex={0}
-                onClick={() => handleGo(n)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleGo(n);
-                  }
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = hoverBg;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
                 style={{
                   display: "flex",
                   gap: "12px",
                   alignItems: "flex-start",
                   padding: "12px 16px",
-                  cursor: "pointer",
                   borderBottom:
                     i < items.length - 1 ? `1px solid ${borderLight}` : "none",
-                  outline: "none",
                 }}
               >
-                {/* Date pill */}
+                {/* Milestone count badge */}
                 <div
                   style={{
                     flexShrink: 0,
                     display: "flex",
-                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "44px",
-                    padding: "6px 0",
-                    borderRadius: "6px",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
                     background: isDark ? "#2a1414" : "#fef2f2",
                     border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
+                    color: "#9B1C1C",
+                    fontSize: "13px",
+                    fontWeight: 700,
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      color: "#9B1C1C",
-                    }}
-                  >
-                    {new Date(n.date).toLocaleDateString("en-CA", {
-                      month: "short",
-                    })}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#9B1C1C",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {new Date(n.date).getDate()}
-                  </span>
+                  {n.milestoneCount}
                 </div>
 
                 {/* Body */}
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
                       fontSize: "13px",
@@ -271,13 +236,41 @@ const NotificationBell = () => {
                       marginBottom: "2px",
                     }}
                   >
-                    {n.title}
+                    {n.person.firstName} {n.person.lastName}
                   </div>
-                  <div style={{ fontSize: "11px", color: textSecondary }}>
-                    {relativeLabel(n.date)} · {fullDate(n.date)}
-                    {n.eventType ? ` · ${n.eventType}` : ""}
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: textSecondary,
+                      lineHeight: 1.4,
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {n.message}
+                  </div>
+                  <div style={{ fontSize: "11px", color: textMuted }}>
+                    {n.milestoneType} · {relativeTime(n.createdAt)}
                   </div>
                 </div>
+
+                {/* Dismiss */}
+                <button
+                  onClick={() => markAsRead(n.id)}
+                  aria-label="Mark as read"
+                  title="Mark as read"
+                  style={{
+                    flexShrink: 0,
+                    border: "none",
+                    background: "transparent",
+                    color: textMuted,
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    lineHeight: 1,
+                    padding: "2px 4px",
+                  }}
+                >
+                  ×
+                </button>
               </div>
             ))
           )}

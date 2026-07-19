@@ -8,15 +8,19 @@ import {
 import type { ReactNode } from "react";
 import { api } from "../api";
 
-// ── Data contract (what Dylan's endpoint returns) ──
-// GET /api/notifications?withinDays=7  ->  AppNotification[]
+// ── Matches NotificationsController.GetAll() ──
+// GET /api/notifications  ->  all UNREAD notifications
 export interface AppNotification {
   id: number;
-  type: "milestone";
-  title: string; // e.g. "La Bohème — Opening Night"
-  date: string; // ISO 8601, the date the milestone falls on
-  productionId: number; // used to link to /productions/:id
-  eventType?: string; // e.g. "Mainstage"
+  message: string;
+  milestoneType: string; // e.g. "Performance", "Production"
+  milestoneCount: number; // e.g. 50
+  createdAt: string; // ISO 8601
+  isRead: boolean;
+  person: {
+    firstName: string;
+    lastName: string;
+  };
 }
 
 interface NotificationsValue {
@@ -24,45 +28,9 @@ interface NotificationsValue {
   count: number;
   loading: boolean;
   refetch: () => void;
+  markAsRead: (id: number) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 }
-
-const WITHIN_DAYS = 7;
-
-// Dev-only sample so the bell/toast are visible before the endpoint exists.
-// Dates are generated relative to today so they always land "this week".
-const daysFromNow = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  d.setHours(19, 30, 0, 0);
-  return d.toISOString();
-};
-
-const MOCK: AppNotification[] = [
-  {
-    id: 1,
-    type: "milestone",
-    title: "La Bohème — Opening Night",
-    date: daysFromNow(1),
-    productionId: 1,
-    eventType: "Mainstage",
-  },
-  {
-    id: 2,
-    type: "milestone",
-    title: "The Magic Flute — Final Performance",
-    date: daysFromNow(4),
-    productionId: 2,
-    eventType: "Mainstage",
-  },
-  {
-    id: 3,
-    type: "milestone",
-    title: "Emerging Artists Recital",
-    date: daysFromNow(6),
-    productionId: 3,
-    eventType: "Recital",
-  },
-];
 
 const NotificationsContext = createContext<NotificationsValue | undefined>(
   undefined,
@@ -79,13 +47,12 @@ export const NotificationsProvider = ({
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/notifications?withinDays=${WITHIN_DAYS}`);
+      const res = await api.get("/api/notifications");
       if (!res.ok) throw new Error();
       const data: AppNotification[] = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch {
-      // Endpoint not built yet: show sample data in dev, nothing in prod.
-      setItems(import.meta.env.DEV ? MOCK : []);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -95,9 +62,42 @@ export const NotificationsProvider = ({
     refetch();
   }, [refetch]);
 
+  // The endpoint only returns unread items, so on success we drop it locally
+  // rather than refetching — keeps the badge instant.
+  const markAsRead = useCallback(async (id: number) => {
+    const previous = items;
+    setItems((list) => list.filter((n) => n.id !== id));
+    try {
+      const res = await api.put(`/api/notifications/${id}/read`, {});
+      if (!res.ok) throw new Error();
+    } catch {
+      setItems(previous); // roll back if the call failed
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  const markAllAsRead = useCallback(async () => {
+    const previous = items;
+    setItems([]);
+    try {
+      const res = await api.put("/api/notifications/read-all", {});
+      if (!res.ok) throw new Error();
+    } catch {
+      setItems(previous);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
   return (
     <NotificationsContext.Provider
-      value={{ items, count: items.length, loading, refetch }}
+      value={{
+        items,
+        count: items.length,
+        loading,
+        refetch,
+        markAsRead,
+        markAllAsRead,
+      }}
     >
       {children}
     </NotificationsContext.Provider>

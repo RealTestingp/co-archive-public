@@ -50,6 +50,11 @@ const ManageArchivePage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
+  // Tabs that have successfully loaded at least once. Used so we only show
+  // skeletons on a tab's FIRST load — afterwards the existing data stays on
+  // screen while it refreshes in the background (no flicker on tab switches).
+  const [loadedTabs, setLoadedTabs] = useState<Set<Tab>>(new Set());
+
   const [persons, setPersons] = useState<Person[]>([]);
   const [productions, setProductions] = useState<Production[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -74,6 +79,7 @@ const ManageArchivePage = () => {
         if (!res.ok) throw new Error();
         setCharacters(await res.json());
       }
+      setLoadedTabs((prev) => new Set(prev).add(tab));
     } catch {
       setHasError(true);
     } finally {
@@ -117,6 +123,10 @@ const ManageArchivePage = () => {
   };
 
   const tabs: Tab[] = ["Persons", "Productions", "Characters"];
+
+  // Only show skeletons when this tab has never loaded. Any later fetch keeps
+  // the current content visible while new data arrives.
+  const showSkeletons = isLoading && !loadedTabs.has(activeTab);
 
   // Active list for pagination
   const activeList =
@@ -438,7 +448,7 @@ const ManageArchivePage = () => {
                   letterSpacing: "-0.02em",
                 }}
               >
-                {isLoading && activeTab === tab ? (
+                {isLoading && activeTab === tab && !loadedTabs.has(tab) ? (
                   <LoadingSkeleton width="48px" height="28px" />
                 ) : (
                   counts[tab]
@@ -555,7 +565,8 @@ const ManageArchivePage = () => {
             }}
           >
             <span style={{ fontSize: "12px", color: textMuted }}>
-              {!isLoading && `${activeList.length} ${activeTab.toLowerCase()}`}
+              {!showSkeletons &&
+                `${activeList.length} ${activeTab.toLowerCase()}`}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "12px", color: textMuted }}>Show</span>
@@ -628,7 +639,7 @@ const ManageArchivePage = () => {
                 ))}
               </div>
 
-              {isLoading ? (
+              {showSkeletons ? (
                 renderSkeletonRows()
               ) : pagedList.length === 0 ? (
                 <div
@@ -647,7 +658,7 @@ const ManageArchivePage = () => {
             </div>
 
             {/* Pagination */}
-            {!isLoading && totalPages > 1 && (
+            {!showSkeletons && totalPages > 1 && (
               <div
                 style={{
                   display: "flex",

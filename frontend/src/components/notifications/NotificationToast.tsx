@@ -4,9 +4,7 @@ import { useNotifications } from "../../context/NotificationsContext";
 
 // ISO week key like "2026-W29" so the toast shows at most once per week.
 const isoWeekKey = (d = new Date()) => {
-  const date = new Date(
-    Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()),
-  );
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const day = date.getUTCDay() || 7; // Mon=1..Sun=7
   date.setUTCDate(date.getUTCDate() + 4 - day); // nearest Thursday
   const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
@@ -71,7 +69,9 @@ const NotificationToast = () => {
       aria-live="polite"
       style={{
         position: "fixed",
-        bottom: "24px",
+        // Top-right, just below the 52px navbar — sits under the bell it came
+        // from and clears the chat widget's column entirely (bubble + panel).
+        top: "68px",
         right: "24px",
         width: "320px",
         background: surface,
@@ -83,7 +83,7 @@ const NotificationToast = () => {
         padding: "16px",
         zIndex: 1000,
         fontFamily: "Inter, sans-serif",
-        transform: mounted ? "translateY(0)" : "translateY(16px)",
+        transform: mounted ? "translateY(0)" : "translateY(-12px)",
         opacity: mounted ? 1 : 0,
         transition: "transform 0.25s ease, opacity 0.25s ease",
       }}
@@ -116,7 +116,7 @@ const NotificationToast = () => {
           <span
             style={{ fontSize: "13px", fontWeight: 600, color: textPrimary }}
           >
-            {count} milestone{count !== 1 ? "s" : ""} this week
+            {count} milestone{count !== 1 ? "s" : ""} to review
           </span>
         </div>
         <button
@@ -152,10 +152,7 @@ const NotificationToast = () => {
           <span
             style={{ fontWeight: 600, color: "#9B1C1C", whiteSpace: "nowrap" }}
           >
-            {new Date(n.date).toLocaleDateString("en-CA", {
-              month: "short",
-              day: "numeric",
-            })}
+            {n.milestoneCount}
           </span>
           <span
             style={{
@@ -164,7 +161,7 @@ const NotificationToast = () => {
               whiteSpace: "nowrap",
             }}
           >
-            {n.title}
+            {n.person.firstName} {n.person.lastName} — {n.milestoneType}
           </span>
         </div>
       ))}
