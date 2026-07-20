@@ -145,7 +145,6 @@ const PersonPage = () => {
   const textMuted = isDark ? "#6b7280" : "#9ca3af";
   const surface = isDark ? "#1c1c1c" : "#fff";
   const tableBg = isDark ? "#161616" : "#f9fafb";
-  const rowHover = isDark ? "#1e1e1e" : "#fafafa";
   const metricBg = isDark ? "#1c1c1c" : "#fff";
   const metricDivider = isDark ? "#2a2a2a" : "#e5e7eb";
   const deleteBorder = isDark ? "#4a2020" : "#fecaca";
@@ -473,7 +472,6 @@ const PersonPage = () => {
                 {person.appearances.map((a, i) => (
                   <div
                     key={i}
-                    onClick={() => navigate(`/productions/${a.productionId}`)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -482,23 +480,33 @@ const PersonPage = () => {
                         i < person.appearances.length - 1
                           ? `1px solid ${borderLight}`
                           : "none",
-                      cursor: "pointer",
-                      transition: "background 0.1s ease",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = rowHover)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
                   >
-                    {/* Accent red so it reads as a link, matching ProductionPage */}
+                    {/* The title is the link — same red + underline-on-hover
+                        behaviour as every other link in the app. */}
                     <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={() => navigate(`/productions/${a.productionId}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/productions/${a.productionId}`);
+                        }
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.textDecoration = "underline";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.textDecoration = "none";
+                      }}
                       style={{
                         flex: 1,
                         fontSize: "13px",
                         fontWeight: 500,
                         color: "#9B1C1C",
+                        cursor: "pointer",
+                        outline: "none",
                       }}
                     >
                       {a.productionTitle}
