@@ -22,10 +22,14 @@ namespace COArchive.API.Controllers
         // GET /api/productions?search=butterfly - search terms
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
-
         {
             if (search != null && search.Length > 100)
                 return BadRequest("Search term too long.");
+
+            // Ignore search terms under 2 characters, avoids single-letter queries
+            var effectiveSearch = string.IsNullOrWhiteSpace(search) || search.Trim().Length < 2
+                ? null
+                : search.Trim();
 
             var query = _db.Productions
                 .Include(e => e.Season)
@@ -34,11 +38,17 @@ namespace COArchive.API.Controllers
                 .Include(e => e.Opera)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(e => e.Title.Contains(search));
+            if (effectiveSearch != null)
+                query = query.Where(e => e.Title.Contains(effectiveSearch));
 
-            var results = await query
-                .OrderByDescending(e => e.Season.Label)
+            // Rank titles that start with the search term first, then fall back to the existing season-descending ordering
+            var orderedQuery = effectiveSearch != null
+                ? query
+                    .OrderByDescending(e => e.Title.StartsWith(effectiveSearch))
+                    .ThenByDescending(e => e.Season.Label)
+                : query.OrderByDescending(e => e.Season.Label);
+
+            var results = await orderedQuery
                 .Select(e => new
                 {
                     e.Id,
@@ -110,6 +120,7 @@ namespace COArchive.API.Controllers
                         a.Person.FirstName,
                         a.Person.LastName,
                         ContributorType = a.ContributorType.Name,
+                        CharacterId = a.Character?.Id,
                         Character = a.Character?.Name,
                         Position = a.Position?.Name,
                     })
@@ -163,7 +174,6 @@ namespace COArchive.API.Controllers
         }
 
         // PUT /api/productions/5
-       
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
@@ -188,7 +198,6 @@ namespace COArchive.API.Controllers
         }
 
         // POST /api/productions
-        
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
@@ -212,7 +221,6 @@ namespace COArchive.API.Controllers
         }
 
         // DELETE /api/productions/1
-       
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

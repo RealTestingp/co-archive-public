@@ -1,5 +1,4 @@
-﻿
-using COArchive.API.DataTransferObjects;
+﻿using COArchive.API.DataTransferObjects;
 using COArchive.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,8 +9,6 @@ namespace COArchive.API.Controllers
     //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
-   
-    
     public class CharactersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -28,18 +25,27 @@ namespace COArchive.API.Controllers
             if (search != null && search.Length > 100)
                 return BadRequest("Search term too long.");
 
+            var effectiveSearch = string.IsNullOrWhiteSpace(search) || search.Trim().Length < 2
+                ? null
+                : search.Trim();
+
             var query = _db.Characters
                 .Include(c => c.Opera)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(c => c.Name.Contains(search));
+            if (effectiveSearch != null)
+                query = query.Where(c => c.Name.Contains(effectiveSearch));
 
             if (operaId.HasValue)
                 query = query.Where(c => c.OperaId == operaId);
 
-            var results = await query
-                .OrderBy(c => c.Name)
+            var orderedQuery = effectiveSearch != null
+                ? query
+                    .OrderByDescending(c => c.Name.StartsWith(effectiveSearch))
+                    .ThenBy(c => c.Name)
+                : query.OrderBy(c => c.Name);
+
+            var results = await orderedQuery
                 .Select(c => new
                 {
                     c.Id,
@@ -85,6 +91,7 @@ namespace COArchive.API.Controllers
                         Season = g.Key.Season.Label,
                         Performers = g.Select(a => new
                         {
+                            PersonId = a.Person.Id,
                             a.Person.FirstName,
                             a.Person.LastName,
                             ContributorType = a.ContributorType.Name,
@@ -99,7 +106,6 @@ namespace COArchive.API.Controllers
 
         // POST /api/characters
         [HttpPost]
-        
         public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
         {
             var character = new COArchive.Models.Character

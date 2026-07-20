@@ -32,7 +32,7 @@ namespace COArchive.API.Controllers
                     n.MilestoneCount,
                     n.CreatedAt,
                     n.IsRead,
-                    Person = new { n.Person.FirstName, n.Person.LastName }
+                    Person = new { PersonId = n.Person.Id, n.Person.FirstName, n.Person.LastName }
                 })
                 .ToListAsync();
 
