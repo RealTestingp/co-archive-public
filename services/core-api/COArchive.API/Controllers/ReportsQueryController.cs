@@ -46,23 +46,38 @@ namespace COArchive.API.Controllers
                 .Include(a => a.Production)
                     .ThenInclude(p => p.Season)
                 .AsQueryable();
+
             if (request.SeasonId.HasValue)
                 query = query.Where(a => a.Production.SeasonId == request.SeasonId);
-            if (request.ContributorTypeId.HasValue)
-                query = query.Where(a => a.ContributorTypeId == request.ContributorTypeId);
-            if (request.PositionId.HasValue)
-                query = query.Where(a => a.PositionId == request.PositionId);
-            if (request.CharacterId.HasValue)
-                query = query.Where(a => a.CharacterId == request.CharacterId);
+
+            if (request.ContributorTypeIds?.Any() == true)
+                query = query.Where(a =>
+                    request.ContributorTypeIds.Contains(a.ContributorTypeId));
+
+            if (request.PositionIds?.Any() == true)
+                query = query.Where(a =>
+                    a.PositionId.HasValue &&
+                    request.PositionIds.Contains(a.PositionId.Value));
+
+            if (request.CharacterIds?.Any() == true)
+                query = query.Where(a =>
+                    a.CharacterId.HasValue &&
+                    request.CharacterIds.Contains(a.CharacterId.Value));
+
             if (request.ProductionId.HasValue)
                 query = query.Where(a => a.ProductionId == request.ProductionId);
+
             if (request.EventTypeId.HasValue)
                 query = query.Where(a => a.Production.EventTypeId == request.EventTypeId);
-            if (request.VoiceTypeId.HasValue)
-                query = query.Where(a => a.Person.VoiceTypeId == request.VoiceTypeId);
-            if (request.NationalityId.HasValue)
+
+            if (request.VoiceTypeIds?.Any() == true)
                 query = query.Where(a =>
-                    a.Person.Nationalities.Any(n => n.Id == request.NationalityId));
+                    a.Person.VoiceTypeId.HasValue &&
+                    request.VoiceTypeIds.Contains(a.Person.VoiceTypeId.Value));
+
+            if (request.NationalityIds?.Any() == true)
+                query = query.Where(a =>
+                    a.Person.Nationalities.Any(n => request.NationalityIds.Contains(n.Id)));
 
             if (request.Mode == ReportMode.Count)
             {
