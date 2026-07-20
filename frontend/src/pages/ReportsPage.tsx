@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SectionTitle from "../components/ui/SectionTitle";
@@ -14,46 +14,74 @@ interface Option {
 
 type ReportMode = "List" | "Count";
 
-// Maps each request-DTO key to its label + lookup endpoint.
-const FILTERS: {
-  key: keyof Selected;
-  label: string;
-  endpoint: string;
-}[] = [
-  { key: "SeasonId", label: "Season", endpoint: "/api/seasons" },
+// Every filter is a multi-select array on the API now.
+type FilterKey =
+  | "SeasonIds"
+  | "ContributorTypeIds"
+  | "NationalityIds"
+  | "PositionIds"
+  | "CharacterIds"
+  | "ProductionIds"
+  | "EventTypeIds"
+  | "VoiceTypeIds"
+  | "WrittenLanguageIds"
+  | "SungLanguageIds";
+
+type Selected = Record<FilterKey, number[]>;
+
+const FILTERS: { key: FilterKey; label: string; endpoint: string }[] = [
+  { key: "SeasonIds", label: "Season", endpoint: "/api/seasons" },
   {
-    key: "ContributorTypeId",
+    key: "ContributorTypeIds",
     label: "Contributor Type",
     endpoint: "/api/contributortypes",
   },
-  { key: "NationalityId", label: "Nationality", endpoint: "/api/nationalities" },
-  { key: "PositionId", label: "Position", endpoint: "/api/positions" },
-  { key: "CharacterId", label: "Character", endpoint: "/api/characters" },
-  { key: "ProductionId", label: "Production", endpoint: "/api/productions" },
-  { key: "EventTypeId", label: "Event Type", endpoint: "/api/eventtypes" },
-  { key: "VoiceTypeId", label: "Voice Type", endpoint: "/api/voicetypes" },
+  { key: "NationalityIds", label: "Nationality", endpoint: "/api/nationalities" },
+  { key: "PositionIds", label: "Position", endpoint: "/api/positions" },
+  { key: "CharacterIds", label: "Character", endpoint: "/api/characters" },
+  { key: "ProductionIds", label: "Production", endpoint: "/api/productions" },
+  { key: "EventTypeIds", label: "Event Type", endpoint: "/api/eventtypes" },
+  { key: "VoiceTypeIds", label: "Voice Type", endpoint: "/api/voicetypes" },
+  {
+    key: "WrittenLanguageIds",
+    label: "Written Language",
+    endpoint: "/api/languages",
+  },
+  { key: "SungLanguageIds", label: "Sung Language", endpoint: "/api/languages" },
 ];
 
-interface Selected {
-  SeasonId: string;
-  ContributorTypeId: string;
-  NationalityId: string;
-  PositionId: string;
-  CharacterId: string;
-  ProductionId: string;
-  EventTypeId: string;
-  VoiceTypeId: string;
-}
-
 const EMPTY_SELECTED: Selected = {
-  SeasonId: "",
-  ContributorTypeId: "",
-  NationalityId: "",
-  PositionId: "",
-  CharacterId: "",
-  ProductionId: "",
-  EventTypeId: "",
-  VoiceTypeId: "",
+  SeasonIds: [],
+  ContributorTypeIds: [],
+  NationalityIds: [],
+  PositionIds: [],
+  CharacterIds: [],
+  ProductionIds: [],
+  EventTypeIds: [],
+  VoiceTypeIds: [],
+  WrittenLanguageIds: [],
+  SungLanguageIds: [],
+};
+
+// Filters that only make sense for certain contributor types.
+const CONDITIONAL_KEYS: FilterKey[] = [
+  "CharacterIds",
+  "VoiceTypeIds",
+  "PositionIds",
+];
+
+// Given a contributor-type name, which conditional filters apply?
+// Keyword-matched so it works regardless of exact DB naming; unknown names
+// keep everything enabled so nothing valid is hidden.
+const applicableFields = (typeName: string): FilterKey[] => {
+  const n = typeName.toLowerCase();
+  if (/artist|mcphee|cast|principal|soloist/.test(n))
+    return ["CharacterIds", "VoiceTypeIds"];
+  if (/chorus|choir/.test(n)) return ["VoiceTypeIds"];
+  if (/orchestra|musician|instrument/.test(n)) return [];
+  if (/creative|crew|staff|board|director|design|manage|technical/.test(n))
+    return ["PositionIds"];
+  return CONDITIONAL_KEYS; // unknown → don't restrict
 };
 
 const normalize = (item: Record<string, unknown>): Option => ({
@@ -61,33 +89,246 @@ const normalize = (item: Record<string, unknown>): Option => ({
   name: String(item.name ?? item.label ?? item.title ?? item.id),
 });
 
-// Filters that only make sense for certain contributor types.
-const CONDITIONAL_KEYS: (keyof Selected)[] = [
-  "CharacterId",
-  "VoiceTypeId",
-  "PositionId",
-];
+const camel = (key: string) => key.charAt(0).toLowerCase() + key.slice(1);
 
-// Given a contributor-type name, which conditional filters apply?
-// Keyword-matched so it works regardless of exact DB naming; unknown names
-// keep everything enabled so nothing valid is hidden.
-const applicableFields = (typeName: string): Set<keyof Selected> => {
-  const n = typeName.toLowerCase();
-  const fields = new Set<keyof Selected>();
-  if (/artist|mcphee|cast|principal|soloist/.test(n)) {
-    fields.add("CharacterId");
-    fields.add("VoiceTypeId");
-  } else if (/chorus|choir/.test(n)) {
-    fields.add("VoiceTypeId");
-  } else if (/orchestra|musician|instrument/.test(n)) {
-    // instrumentalists — no character, voice type, or crew position
-  } else if (/creative|crew|staff|board|director|design|manage|technical/.test(n)) {
-    fields.add("PositionId");
-  } else {
-    CONDITIONAL_KEYS.forEach((k) => fields.add(k)); // unknown → don't restrict
-  }
-  return fields;
+// ── Multi-select ──────────────────────────────────────────────────────────────
+// Defined at module scope so it isn't remounted (and doesn't lose its open
+// state) on every parent render.
+
+interface MultiSelectProps {
+  label: string;
+  options: Option[];
+  value: number[];
+  onChange: (next: number[]) => void;
+  disabled?: boolean;
+  tokens: {
+    surface: string;
+    border: string;
+    textPrimary: string;
+    textSecondary: string;
+    textMuted: string;
+    hoverBg: string;
+    isDark: boolean;
+  };
+}
+
+const MultiSelect = ({
+  label,
+  options,
+  value,
+  onChange,
+  disabled,
+  tokens,
+}: MultiSelectProps) => {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const toggle = (id: number) =>
+    onChange(
+      value.includes(id) ? value.filter((v) => v !== id) : [...value, id],
+    );
+
+  const selectedNames = options
+    .filter((o) => value.includes(o.id))
+    .map((o) => o.name);
+
+  const summary =
+    selectedNames.length === 0
+      ? "Any"
+      : selectedNames.length <= 2
+        ? selectedNames.join(", ")
+        : `${selectedNames.length} selected`;
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative", opacity: disabled ? 0.45 : 1 }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: "10px",
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: tokens.textMuted,
+          marginBottom: "6px",
+        }}
+      >
+        {label}
+      </label>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        title={
+          disabled
+            ? "Not applicable for the selected contributor type"
+            : selectedNames.join(", ")
+        }
+        style={{
+          width: "100%",
+          height: "38px",
+          padding: "0 12px",
+          fontSize: "13px",
+          fontFamily: "Inter, sans-serif",
+          textAlign: "left",
+          border: `1px solid ${tokens.border}`,
+          borderRadius: "6px",
+          background: tokens.surface,
+          color: value.length ? tokens.textPrimary : tokens.textMuted,
+          cursor: disabled ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          overflow: "hidden",
+        }}
+      >
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {disabled ? "N/A" : summary}
+        </span>
+        <span style={{ fontSize: "10px", color: tokens.textMuted }}>▾</span>
+      </button>
+
+      {open && !disabled && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            maxHeight: "220px",
+            overflowY: "auto",
+            background: tokens.surface,
+            border: `1px solid ${tokens.border}`,
+            borderRadius: "8px",
+            boxShadow: tokens.isDark
+              ? "0 8px 24px rgba(0,0,0,0.5)"
+              : "0 8px 24px rgba(0,0,0,0.12)",
+            zIndex: 40,
+          }}
+        >
+          {options.length === 0 ? (
+            <div
+              style={{
+                padding: "12px",
+                fontSize: "12px",
+                color: tokens.textMuted,
+              }}
+            >
+              No options available.
+            </div>
+          ) : (
+            <>
+              {value.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onChange([])}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 12px",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: "#9B1C1C",
+                    background: "none",
+                    border: "none",
+                    borderBottom: `1px solid ${tokens.border}`,
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
+                  Clear selection
+                </button>
+              )}
+              {options.map((o) => {
+                const checked = value.includes(o.id);
+                return (
+                  <div
+                    key={o.id}
+                    onClick={() => toggle(o.id)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = tokens.hoverBg;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      color: tokens.textPrimary,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "15px",
+                        height: "15px",
+                        flexShrink: 0,
+                        borderRadius: "3px",
+                        border: `1.5px solid ${checked ? "#9B1C1C" : tokens.border}`,
+                        background: checked ? "#9B1C1C" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {checked && (
+                        <svg
+                          width="9"
+                          height="7"
+                          viewBox="0 0 10 8"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M1 4l3 3 5-6"
+                            stroke="#fff"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                    {o.name}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 const ReportsPage = () => {
   const navigate = useNavigate();
@@ -106,25 +347,34 @@ const ReportsPage = () => {
   );
   const [mode, setMode] = useState<ReportMode>(restored?.mode ?? "List");
 
-  // Fetch every lookup in parallel; any endpoint that 404s just yields an empty
-  // dropdown rather than breaking the page.
+  // Fetch each distinct endpoint once (languages is shared by two filters),
+  // then map the results onto every filter that uses it.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const entries = await Promise.all(
-        FILTERS.map(async (f) => {
+      const endpoints = Array.from(new Set(FILTERS.map((f) => f.endpoint)));
+      const byEndpoint: Record<string, Option[]> = {};
+
+      await Promise.all(
+        endpoints.map(async (endpoint) => {
           try {
-            const res = await api.get(f.endpoint);
+            const res = await api.get(endpoint);
             if (!res.ok) throw new Error();
             const data = await res.json();
             const list = Array.isArray(data) ? data : (data.items ?? []);
-            return [f.key, list.map(normalize)] as const;
+            byEndpoint[endpoint] = list.map(normalize);
           } catch {
-            return [f.key, [] as Option[]] as const;
+            byEndpoint[endpoint] = [];
           }
         }),
       );
-      if (!cancelled) setOptions(Object.fromEntries(entries));
+
+      if (cancelled) return;
+      setOptions(
+        Object.fromEntries(
+          FILTERS.map((f) => [f.key, byEndpoint[f.endpoint] ?? []]),
+        ),
+      );
     };
     load();
     return () => {
@@ -132,59 +382,65 @@ const ReportsPage = () => {
     };
   }, []);
 
-  const setField = (key: keyof Selected, value: string) =>
-    setSelected((s) => ({ ...s, [key]: value }));
+  const setField = (key: FilterKey, values: number[]) =>
+    setSelected((s) => ({ ...s, [key]: values }));
 
-  const activeFilterCount = Object.values(selected).filter(Boolean).length;
+  const activeFilterCount = FILTERS.filter(
+    (f) => selected[f.key].length > 0,
+  ).length;
 
-  // Which conditional filters apply, based on the chosen contributor type.
-  const contributorName = options.ContributorTypeId?.find(
-    (o) => o.id === Number(selected.ContributorTypeId),
-  )?.name;
-  const supported =
-    selected.ContributorTypeId && contributorName
-      ? applicableFields(contributorName)
-      : null;
-  const isDisabled = (key: keyof Selected) =>
-    supported != null && CONDITIONAL_KEYS.includes(key) && !supported.has(key);
+  // Which conditional filters apply — the union across every selected
+  // contributor type, so picking Artist + Crew keeps both sides available.
+  const selectedContributorNames = (options.ContributorTypeIds ?? [])
+    .filter((o) => selected.ContributorTypeIds.includes(o.id))
+    .map((o) => o.name);
 
-  // Clear any now-irrelevant filter when the contributor type changes.
+  const supported: FilterKey[] | null = selectedContributorNames.length
+    ? Array.from(
+        new Set(selectedContributorNames.flatMap((n) => applicableFields(n))),
+      )
+    : null;
+
+  const isDisabled = (key: FilterKey) =>
+    supported != null && CONDITIONAL_KEYS.includes(key) && !supported.includes(key);
+
+  // Clear any now-irrelevant filter when the contributor types change.
   useEffect(() => {
     if (!supported) return;
     setSelected((s) => {
       let changed = false;
       const next = { ...s };
       for (const k of CONDITIONAL_KEYS) {
-        if (!supported.has(k) && next[k]) {
-          next[k] = "";
+        if (!supported.includes(k) && next[k].length) {
+          next[k] = [];
           changed = true;
         }
       }
       return changed ? next : s;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected.ContributorTypeId, options]);
+  }, [selected.ContributorTypeIds, options]);
 
   const handleRun = () => {
-    // Build the request DTO: "" -> undefined, otherwise numeric id.
-    // Omit mode for List (the DTO defaults to List) so it works without the
-    // string-enum converter; only send it explicitly for Count.
+    // Omit mode for List (the DTO defaults to List); only send it for Count.
     const request: Record<string, unknown> = {};
     if (mode === "Count") request.mode = "Count";
     for (const f of FILTERS) {
-      const v = selected[f.key];
-      if (v) request[f.key.charAt(0).toLowerCase() + f.key.slice(1)] = Number(v);
+      const vals = selected[f.key];
+      if (vals.length) request[camel(f.key)] = vals;
     }
 
     // Human-readable summary of the chosen criteria for the results screen.
-    const summary = FILTERS.filter((f) => selected[f.key]).map((f) => {
-      const opt = options[f.key]?.find(
-        (o) => o.id === Number(selected[f.key]),
-      );
-      return { label: f.label, value: opt?.name ?? selected[f.key] };
-    });
+    const summary = FILTERS.filter((f) => selected[f.key].length > 0).map(
+      (f) => ({
+        label: f.label,
+        value: (options[f.key] ?? [])
+          .filter((o) => selected[f.key].includes(o.id))
+          .map((o) => o.name)
+          .join(", "),
+      }),
+    );
 
-    // `selected` rides along so the results page can hand it back to us.
     navigate("/reports/results", {
       state: { request, summary, mode, selected },
     });
@@ -201,29 +457,16 @@ const ReportsPage = () => {
   const textPrimary = colors.textPrimary;
   const textSecondary = isDark ? "#9ca3af" : "#6b7280";
   const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const hoverBg = isDark ? "#242424" : "#f9fafb";
 
-  const selectStyle: React.CSSProperties = {
-    width: "100%",
-    height: "38px",
-    padding: "0 12px",
-    fontSize: "13px",
-    fontFamily: "Inter, sans-serif",
-    border: `1px solid ${border}`,
-    borderRadius: "6px",
-    background: surface,
-    color: textPrimary,
-    outline: "none",
-    cursor: "pointer",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "10px",
-    fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: textMuted,
-    marginBottom: "6px",
+  const tokens = {
+    surface,
+    border,
+    textPrimary,
+    textSecondary,
+    textMuted,
+    hoverBg,
+    isDark,
   };
 
   return (
@@ -251,6 +494,7 @@ const ReportsPage = () => {
         </h1>
         <p style={{ fontSize: "13px", color: textMuted, marginBottom: "2rem" }}>
           Build a custom report by choosing any combination of criteria below.
+          Each filter accepts multiple values.
         </p>
 
         <SectionTitle>Criteria</SectionTitle>
@@ -263,35 +507,17 @@ const ReportsPage = () => {
             marginBottom: "1.5rem",
           }}
         >
-          {FILTERS.map((f) => {
-            const disabled = isDisabled(f.key);
-            return (
-              <div key={f.key} style={{ opacity: disabled ? 0.45 : 1 }}>
-                <label style={labelStyle}>{f.label}</label>
-                <select
-                  value={selected[f.key]}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                  disabled={disabled}
-                  title={
-                    disabled
-                      ? "Not applicable for the selected contributor type"
-                      : undefined
-                  }
-                  style={{
-                    ...selectStyle,
-                    cursor: disabled ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <option value="">{disabled ? "N/A" : "Any"}</option>
-                  {(options[f.key] ?? []).map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            );
-          })}
+          {FILTERS.map((f) => (
+            <MultiSelect
+              key={f.key}
+              label={f.label}
+              options={options[f.key] ?? []}
+              value={selected[f.key]}
+              onChange={(next) => setField(f.key, next)}
+              disabled={isDisabled(f.key)}
+              tokens={tokens}
+            />
+          ))}
         </div>
 
         <Divider />

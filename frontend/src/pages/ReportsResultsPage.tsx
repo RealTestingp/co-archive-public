@@ -31,7 +31,7 @@ interface LocationState {
   mode: "List" | "Count";
   // The raw form selections, passed straight back on "Edit criteria" so the
   // form repopulates rather than resetting.
-  selected?: Record<string, string>;
+  selected?: Record<string, number[]>;
 }
 
 // Column definitions in display order.
