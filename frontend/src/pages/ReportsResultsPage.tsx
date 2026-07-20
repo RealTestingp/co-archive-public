@@ -29,6 +29,9 @@ interface LocationState {
   request: Record<string, unknown>;
   summary: { label: string; value: string }[];
   mode: "List" | "Count";
+  // The raw form selections, passed straight back on "Edit criteria" so the
+  // form repopulates rather than resetting.
+  selected?: Record<string, string>;
 }
 
 // Column definitions in display order.
@@ -197,7 +200,11 @@ const ReportResultsPage = () => {
               Report Results
             </h1>
             <button
-              onClick={() => navigate("/reports")}
+              onClick={() =>
+                navigate("/reports", {
+                  state: { selected: state.selected, mode: state.mode },
+                })
+              }
               style={{
                 fontSize: "12px",
                 fontWeight: 500,

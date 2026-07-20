@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SectionTitle from "../components/ui/SectionTitle";
 import Divider from "../components/ui/Divider";
@@ -91,11 +91,20 @@ const applicableFields = (typeName: string): Set<keyof Selected> => {
 
 const ReportsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark, colors } = useTheme();
 
+  // Coming back via "← Edit criteria" carries the previous selections so the
+  // form repopulates instead of resetting.
+  const restored = location.state as
+    | { selected?: Selected; mode?: ReportMode }
+    | null;
+
   const [options, setOptions] = useState<Record<string, Option[]>>({});
-  const [selected, setSelected] = useState<Selected>(EMPTY_SELECTED);
-  const [mode, setMode] = useState<ReportMode>("List");
+  const [selected, setSelected] = useState<Selected>(
+    restored?.selected ?? EMPTY_SELECTED,
+  );
+  const [mode, setMode] = useState<ReportMode>(restored?.mode ?? "List");
 
   // Fetch every lookup in parallel; any endpoint that 404s just yields an empty
   // dropdown rather than breaking the page.
@@ -175,7 +184,10 @@ const ReportsPage = () => {
       return { label: f.label, value: opt?.name ?? selected[f.key] };
     });
 
-    navigate("/reports/results", { state: { request, summary, mode } });
+    // `selected` rides along so the results page can hand it back to us.
+    navigate("/reports/results", {
+      state: { request, summary, mode, selected },
+    });
   };
 
   const handleClear = () => {

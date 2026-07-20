@@ -21,11 +21,15 @@ interface LookupItem {
   title?: string;
 }
 
+// NOTE: the list endpoint (/api/characters) returns `operaTitle` and may omit
+// `operaId`, while the detail endpoint returns `opera` + `operaId`. All three
+// are optional here so the opera filter below can cope with either shape.
 interface Character {
   id: number;
   name: string;
-  opera: string;
-  operaId: number;
+  opera?: string;
+  operaTitle?: string;
+  operaId?: number;
 }
 
 interface PersonSearchResult {
@@ -285,9 +289,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   // Save
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [pdfUploadWarning, setPdfUploadWarning] = useState<string | null>(
-    null,
-  );
+  const [pdfUploadWarning, setPdfUploadWarning] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   const makeCrewRow = (): CrewRow => ({
@@ -307,9 +309,18 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     ? selectedEventType.trackMilestones
     : true;
   const selectedOpera = operas.find((o) => o.id === selectedOperaId);
-  const operaCharacters = allCharacters.filter(
-    (c) => c.operaId === selectedOperaId,
-  );
+
+  // Match on operaId when the API gives us one; otherwise fall back to
+  // comparing the opera title, since the list endpoint returns `operaTitle`
+  // and may not include `operaId` at all. Without the fallback every
+  // character gets filtered out and the Characters step looks empty.
+  const operaCharacters = allCharacters.filter((c) => {
+    if (selectedOperaId == null) return false;
+    if (c.operaId != null) return c.operaId === selectedOperaId;
+    const title = c.opera ?? c.operaTitle;
+    return !!selectedOpera && title === selectedOpera.title;
+  });
+
   const selectedCharacters = operaCharacters.filter((c) =>
     selectedCharacterIds.includes(c.id),
   );
@@ -545,7 +556,12 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       });
       if (!res.ok) throw new Error();
       const created = await res.json();
-      setAllCharacters((prev) => [...prev, created]);
+      // Stamp operaId locally in case the response omits it — otherwise the
+      // new character is filtered straight back out of the list below.
+      setAllCharacters((prev) => [
+        ...prev,
+        { ...created, operaId: created.operaId ?? selectedOperaId },
+      ]);
       setSelectedCharacterIds((prev) => [...prev, created.id]);
       setNewCharacterName("");
       setShowAddCharacter(false);
@@ -688,7 +704,6 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
 
       // Upload the program PDF, if one was selected.
-
       if (programPdfFile) {
         try {
           const uploadRes = await uploadFile(
@@ -1575,7 +1590,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     color: "#374151",
                   }}
                 >
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span
+                    style={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
                     📄 {programPdfFile.name}
                   </span>
                   <button
@@ -1616,7 +1633,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               )}
               {pdfError && (
                 <div
-                  style={{ fontSize: "12px", color: "#9B1C1C", marginTop: "4px" }}
+                  style={{
+                    fontSize: "12px",
+                    color: "#9B1C1C",
+                    marginTop: "4px",
+                  }}
                 >
                   {pdfError}
                 </div>
@@ -1809,7 +1830,6 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           background: "#9B1C1C",
                           color: "#fff",
                           fontFamily: "Inter, sans-serif",
-                          marginBottom: "1.1rem",
                         }}
                       >
                         {savingCharacter ? "..." : "Add"}
@@ -1828,14 +1848,19 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           background: "#fff",
                           color: "#6b7280",
                           fontFamily: "Inter, sans-serif",
-                          marginBottom: "1.1rem",
                         }}
                       >
                         Cancel
                       </button>
                     </div>
                     {characterError && (
-                      <div style={{ fontSize: "12px", color: "#9B1C1C" }}>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#9B1C1C",
+                          marginTop: "0.5rem",
+                        }}
+                      >
                         {characterError}
                       </div>
                     )}

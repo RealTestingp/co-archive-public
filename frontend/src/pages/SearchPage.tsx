@@ -52,6 +52,10 @@ const SearchPage = () => {
   const [inputValue, setInputValue] = useState(urlQuery);
   const [activeTab, setActiveTab] = useState<Tab>("Productions");
   const [results, setResults] = useState<Results | null>(null);
+  // Which query the current `results` actually belong to. Without this there's
+  // a render where loading is still false but results are from the PREVIOUS
+  // query, which flashes "no results" for a frame.
+  const [resultsQuery, setResultsQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -98,7 +102,9 @@ const SearchPage = () => {
       fetchResults(urlQuery.trim());
     } else {
       setResults(null);
+      setResultsQuery("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlQuery]);
 
   // Reset page when tab or filters change
@@ -127,7 +133,6 @@ const SearchPage = () => {
       const [personsRes, productionsRes, charactersRes] = await Promise.all([
         api.get(`/api/persons?search=${encodeURIComponent(q)}`),
         api.get(`/api/productions?search=${encodeURIComponent(q)}`),
-        // Fixed: characters uses ?search= not ?name=
         api.get(`/api/characters?search=${encodeURIComponent(q)}`),
       ]);
 
@@ -138,6 +143,7 @@ const SearchPage = () => {
       ]);
 
       setResults({ persons, productions, characters });
+      setResultsQuery(q);
       setPage(1);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -160,6 +166,7 @@ const SearchPage = () => {
     setInputValue("");
     setSearchParams({});
     setResults(null);
+    setResultsQuery("");
     setActiveTab("Productions");
     clearFilters();
   };
@@ -226,6 +233,11 @@ const SearchPage = () => {
   const pagedPersons = paginate(filteredPersons);
   const pagedProductions = paginate(filteredProductions);
   const pagedCharacters = paginate(filteredCharacters);
+
+  // Show skeletons while fetching AND while results still belong to an older
+  // query — that's what stops the "no results" flash mid-search.
+  const isStale = hasSearched && resultsQuery !== urlQuery.trim();
+  const showSkeletons = loading || isStale;
 
   return (
     <div
@@ -313,7 +325,7 @@ const SearchPage = () => {
       {/* ── Results ── */}
       {hasSearched && (
         <div className={styles.results}>
-          {results && !loading && (
+          {results && !showSkeletons && (
             <div className={styles.resultsHeader}>
               <span className={styles.resultsCount}>
                 {activeSingleList.length} result
@@ -347,7 +359,7 @@ const SearchPage = () => {
                 onClick={() => setActiveTab(tab)}
               >
                 {tab}
-                {results && (
+                {results && !showSkeletons && (
                   <span
                     className={`${styles.tabCount} ${activeTab === tab ? styles.tabCountActive : ""}`}
                   >
@@ -359,7 +371,7 @@ const SearchPage = () => {
           </div>
 
           {/* Filters */}
-          {hasSearched && !loading && (
+          {hasSearched && !showSkeletons && (
             <div className={styles.filterRow}>
               {activeTab === "Persons" && (
                 <>
@@ -426,7 +438,7 @@ const SearchPage = () => {
           )}
 
           {/* Loading */}
-          {loading && (
+          {showSkeletons && (
             <div className={styles.skeletons}>
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className={styles.skeleton} />
@@ -435,139 +447,149 @@ const SearchPage = () => {
           )}
 
           {/* Error */}
-          {error && !loading && (
+          {error && !showSkeletons && (
             <div className={styles.emptyState}>
               <p className={styles.emptyText}>{error}</p>
             </div>
           )}
 
           {/* Empty */}
-          {!loading && !error && results && activeSingleList.length === 0 && (
-            <div className={styles.emptyState}>
-              <p className={styles.emptyTitle}>No results for "{urlQuery}"</p>
-              <p className={styles.emptyText}>
-                Try a different spelling or adjust your filters.
-              </p>
-            </div>
-          )}
+          {!showSkeletons &&
+            !error &&
+            results &&
+            activeSingleList.length === 0 && (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyTitle}>No results for "{urlQuery}"</p>
+                <p className={styles.emptyText}>
+                  Try a different spelling or adjust your filters.
+                </p>
+              </div>
+            )}
 
           {/* Result groups */}
-          {!loading && !error && results && activeSingleList.length > 0 && (
-            <div className={styles.resultGroups}>
-              {showPersons && pagedPersons.length > 0 && (
-                <div className={styles.group}>
-                  <div className={styles.groupLabel}>People</div>
-                  {pagedPersons.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/persons/${p.id}`}
-                      className={styles.resultCard}
-                    >
-                      <div className={styles.avatar}>
-                        {p.firstName[0]}
-                        {p.lastName[0]}
-                      </div>
-                      <div className={styles.cardBody}>
-                        <div className={styles.cardName}>
-                          {p.firstName} {p.lastName}
+          {!showSkeletons &&
+            !error &&
+            results &&
+            activeSingleList.length > 0 && (
+              <div className={styles.resultGroups}>
+                {showPersons && pagedPersons.length > 0 && (
+                  <div className={styles.group}>
+                    <div className={styles.groupLabel}>People</div>
+                    {pagedPersons.map((p) => (
+                      <Link
+                        key={p.id}
+                        to={`/persons/${p.id}`}
+                        className={styles.resultCard}
+                      >
+                        <div className={styles.avatar}>
+                          {p.firstName[0]}
+                          {p.lastName[0]}
                         </div>
-                        {(p.voiceType || p.nationality) && (
-                          <div className={styles.cardMeta}>
-                            {[p.voiceType, p.nationality]
-                              .filter(Boolean)
-                              .join(" · ")}
+                        <div className={styles.cardBody}>
+                          <div className={styles.cardName}>
+                            {p.firstName} {p.lastName}
                           </div>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                          {(p.voiceType || p.nationality) && (
+                            <div className={styles.cardMeta}>
+                              {[p.voiceType, p.nationality]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
-              {showProductions && pagedProductions.length > 0 && (
-                <div className={styles.group}>
-                  <div className={styles.groupLabel}>Productions</div>
-                  {pagedProductions.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/productions/${p.id}`}
-                      className={styles.resultCard}
-                    >
-                      <div className={`${styles.avatar} ${styles.avatarProd}`}>
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
+                {showProductions && pagedProductions.length > 0 && (
+                  <div className={styles.group}>
+                    <div className={styles.groupLabel}>Productions</div>
+                    {pagedProductions.map((p) => (
+                      <Link
+                        key={p.id}
+                        to={`/productions/${p.id}`}
+                        className={styles.resultCard}
+                      >
+                        <div
+                          className={`${styles.avatar} ${styles.avatarProd}`}
                         >
-                          <path d="M2 6l10-4 10 4v2H2V6z" />
-                          <path d="M4 8v10h16V8" />
-                          <path d="M9 12h6" />
-                        </svg>
-                      </div>
-                      <div className={styles.cardBody}>
-                        <div className={styles.cardName}>{p.title}</div>
-                        {(p.season || p.venue) && (
-                          <div className={styles.cardMeta}>
-                            {[p.season, p.venue].filter(Boolean).join(" · ")}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M2 6l10-4 10 4v2H2V6z" />
+                            <path d="M4 8v10h16V8" />
+                            <path d="M9 12h6" />
+                          </svg>
+                        </div>
+                        <div className={styles.cardBody}>
+                          <div className={styles.cardName}>{p.title}</div>
+                          {(p.season || p.venue) && (
+                            <div className={styles.cardMeta}>
+                              {[p.season, p.venue].filter(Boolean).join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
-              {showCharacters && pagedCharacters.length > 0 && (
-                <div className={styles.group}>
-                  <div className={styles.groupLabel}>Characters</div>
-                  {pagedCharacters.map((c) => (
-                    <Link
-                      key={c.id}
-                      to={`/characters/${c.id}`}
-                      className={styles.resultCard}
-                    >
-                      <div className={`${styles.avatar} ${styles.avatarChar}`}>
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
+                {showCharacters && pagedCharacters.length > 0 && (
+                  <div className={styles.group}>
+                    <div className={styles.groupLabel}>Characters</div>
+                    {pagedCharacters.map((c) => (
+                      <Link
+                        key={c.id}
+                        to={`/characters/${c.id}`}
+                        className={styles.resultCard}
+                      >
+                        <div
+                          className={`${styles.avatar} ${styles.avatarChar}`}
                         >
-                          <circle cx="12" cy="8" r="4" />
-                          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                        </svg>
-                      </div>
-                      <div className={styles.cardBody}>
-                        <div className={styles.cardName}>{c.name}</div>
-                        {c.operaTitle && (
-                          <div className={styles.cardMeta}>
-                            {c.operaTitle}
-                            {c.appearanceCount
-                              ? ` · ${c.appearanceCount} appearance${c.appearanceCount !== 1 ? "s" : ""} in archive`
-                              : ""}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                          </svg>
+                        </div>
+                        <div className={styles.cardBody}>
+                          <div className={styles.cardName}>{c.name}</div>
+                          {c.operaTitle && (
+                            <div className={styles.cardMeta}>
+                              {c.operaTitle}
+                              {c.appearanceCount
+                                ? ` · ${c.appearanceCount} appearance${c.appearanceCount !== 1 ? "s" : ""} in archive`
+                                : ""}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Pagination */}
-          {!loading && !error && totalPages > 1 && (
+          {!showSkeletons && !error && totalPages > 1 && (
             <div className={styles.pagination}>
               <button
                 className={styles.pageBtn}

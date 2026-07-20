@@ -116,6 +116,7 @@ const PersonPage = () => {
 
   const details = person
     ? [
+        { label: "Email", value: person.email || "—" },
         { label: "Voice Type", value: person.voiceType ?? "—" },
         { label: "Nationality", value: person.nationalities.join(", ") || "—" },
         {
@@ -316,7 +317,7 @@ const PersonPage = () => {
                   flexWrap: "wrap",
                 }}
               >
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
                     style={{
