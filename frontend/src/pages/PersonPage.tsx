@@ -492,12 +492,13 @@ const PersonPage = () => {
                       (e.currentTarget.style.background = "transparent")
                     }
                   >
+                    {/* Accent red so it reads as a link, matching ProductionPage */}
                     <span
                       style={{
                         flex: 1,
                         fontSize: "13px",
                         fontWeight: 500,
-                        color: textPrimary,
+                        color: "#9B1C1C",
                       }}
                     >
                       {a.productionTitle}

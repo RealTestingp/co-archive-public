@@ -114,10 +114,11 @@ const CharacterPage = () => {
                 <LoadingSkeleton width="160px" height="14px" />
               </div>
             ) : (
+              // No onEdit passed — there's no EditCharacterModal yet, and
+              // PageHeader only renders buttons whose handlers exist.
               <PageHeader
                 title={character!.name}
                 subtitle={character!.opera ?? ""}
-                editLabel="Edit Character"
               />
             )}
 
@@ -227,12 +228,13 @@ const CharacterPage = () => {
                       (e.currentTarget.style.background = "transparent")
                     }
                   >
+                    {/* Accent red so it reads as a link, matching ProductionPage */}
                     <span
                       style={{
                         flex: 1,
                         fontSize: "13px",
                         fontWeight: 500,
-                        color: textPrimary,
+                        color: "#9B1C1C",
                       }}
                     >
                       {p.productionTitle}
