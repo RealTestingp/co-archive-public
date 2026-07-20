@@ -27,15 +27,19 @@ namespace COArchive.API.Controllers
             if (search != null && search.Length > 100)
                 return BadRequest("Search term too long.");
 
+            var effectiveSearch = string.IsNullOrWhiteSpace(search) || search.Trim().Length < 2
+                ? null
+                : search.Trim();
+
             var query = _db.Persons
                 .Include(p => p.VoiceType)
                 .Include(p => p.Appearances)
                     .ThenInclude(a => a.ContributorType)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search))
+            if (effectiveSearch != null)
             {
-                var terms = search
+                var terms = effectiveSearch
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var term in terms)
                 {
@@ -47,9 +51,17 @@ namespace COArchive.API.Controllers
                 }
             }
 
-            var results = await query
-                .OrderBy(p => p.LastName)
-                .ThenBy(p => p.FirstName)
+            // Rank names that start with the search term first, then alphabetical
+            var orderedQuery = effectiveSearch != null
+                ? query
+                    .OrderByDescending(p => p.FirstName.StartsWith(effectiveSearch) || p.LastName.StartsWith(effectiveSearch))
+                    .ThenBy(p => p.LastName)
+                    .ThenBy(p => p.FirstName)
+                : query
+                    .OrderBy(p => p.LastName)
+                    .ThenBy(p => p.FirstName);
+
+            var results = await orderedQuery
                 .Select(p => new
                 {
                     p.Id,
