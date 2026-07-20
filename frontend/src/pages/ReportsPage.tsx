@@ -347,36 +347,36 @@ const ReportsPage = () => {
   );
   const [mode, setMode] = useState<ReportMode>(restored?.mode ?? "List");
 
-  // Fetch each distinct endpoint once (languages is shared by two filters),
-  // then map the results onto every filter that uses it.
+  // Fetch each distinct endpoint once (languages is shared by two filters) and
+  // populate that filter as soon as its own request returns. Deliberately NOT
+  // Promise.all — one slow or failing endpoint shouldn't leave every dropdown
+  // empty.
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const endpoints = Array.from(new Set(FILTERS.map((f) => f.endpoint)));
-      const byEndpoint: Record<string, Option[]> = {};
+    const endpoints = Array.from(new Set(FILTERS.map((f) => f.endpoint)));
 
-      await Promise.all(
-        endpoints.map(async (endpoint) => {
-          try {
-            const res = await api.get(endpoint);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            const list = Array.isArray(data) ? data : (data.items ?? []);
-            byEndpoint[endpoint] = list.map(normalize);
-          } catch {
-            byEndpoint[endpoint] = [];
-          }
-        }),
-      );
-
+    endpoints.forEach(async (endpoint) => {
+      let list: Option[] = [];
+      try {
+        const res = await api.get(endpoint);
+        if (res.ok) {
+          const data = await res.json();
+          const arr = Array.isArray(data) ? data : (data.items ?? []);
+          list = arr.map(normalize);
+        }
+      } catch {
+        /* leave this one empty, the others still populate */
+      }
       if (cancelled) return;
-      setOptions(
-        Object.fromEntries(
-          FILTERS.map((f) => [f.key, byEndpoint[f.endpoint] ?? []]),
-        ),
-      );
-    };
-    load();
+      setOptions((prev) => {
+        const next = { ...prev };
+        for (const f of FILTERS) {
+          if (f.endpoint === endpoint) next[f.key] = list;
+        }
+        return next;
+      });
+    });
+
     return () => {
       cancelled = true;
     };
