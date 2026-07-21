@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
+import Dropdown from "../dropdown/Dropdown";
 
 interface LookupItem {
   id: number;
@@ -31,18 +32,6 @@ const inputStyle = {
   color: "#111",
 };
 
-const selectStyle = {
-  ...inputStyle,
-  background: "#fff",
-  color: "#374151",
-  cursor: "pointer",
-  appearance: "none" as const,
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 12px center",
-  paddingRight: "32px",
-};
-
 const labelStyle = {
   fontSize: "10px",
   fontWeight: 600,
@@ -54,6 +43,16 @@ const labelStyle = {
 };
 
 const fieldWrap = { marginBottom: "1.1rem" };
+
+// Modal-sized, full width, portalled out of the modal's overflow container,
+// and pinned light because the modal is hardcoded white.
+const DD = {
+  size: "md",
+  block: true,
+  portal: true,
+  theme: "light",
+  highlightWhenSet: false,
+} as const;
 
 const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -80,9 +79,13 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
   }, [isOpen]);
 
   const set =
-    (field: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const operaOptions = useMemo(
+    () => operas.map((o) => ({ value: String(o.id), label: o.title })),
+    [operas],
+  );
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
@@ -199,18 +202,14 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
             {/* Opera */}
             <div style={fieldWrap}>
               <label style={labelStyle}>Opera</label>
-              <select
-                style={selectStyle}
+              <Dropdown
+                {...DD}
+                placeholder="Select opera"
+                ariaLabel="Opera"
                 value={form.operaId}
-                onChange={set("operaId")}
-              >
-                <option value="">Select opera</option>
-                {operas.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title}
-                  </option>
-                ))}
-              </select>
+                options={operaOptions}
+                onChange={(v) => setForm((prev) => ({ ...prev, operaId: v }))}
+              />
             </div>
 
             {error && (

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { api, uploadFile } from "../../api";
+import Dropdown from "../dropdown/Dropdown";
 
 interface LookupItem {
   id: number;
@@ -45,18 +46,6 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
 };
 
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  color: "#374151",
-  cursor: "pointer",
-  appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 12px center",
-  backgroundSize: "12px",
-  paddingRight: "32px",
-};
-
 const labelStyle: React.CSSProperties = {
   fontSize: "10px",
   fontWeight: 600,
@@ -68,6 +57,16 @@ const labelStyle: React.CSSProperties = {
 };
 
 const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
+
+// Modal-sized, full width, portalled out of the modal's overflow container,
+// and pinned light because the modal is hardcoded white.
+const DD = {
+  size: "md",
+  block: true,
+  portal: true,
+  theme: "light",
+  highlightWhenSet: false,
+} as const;
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -107,9 +106,13 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   }, [isOpen]);
 
   const set =
-    (field: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const voiceTypeOptions = useMemo(
+    () => voiceTypes.map((v) => ({ value: String(v.id), label: v.name })),
+    [voiceTypes],
+  );
 
   const toggleNationality = (id: number) => {
     setForm((prev) => ({
@@ -445,18 +448,14 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
             {/* Voice Type */}
             <div style={fieldWrap}>
               <label style={labelStyle}>Voice Type</label>
-              <select
-                style={selectStyle}
+              <Dropdown
+                {...DD}
+                placeholder="Select voice type"
+                ariaLabel="Voice type"
                 value={form.voiceTypeId}
-                onChange={set("voiceTypeId")}
-              >
-                <option value="">Select voice type</option>
-                {voiceTypes.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+                options={voiceTypeOptions}
+                onChange={(v) => setForm((prev) => ({ ...prev, voiceTypeId: v }))}
+              />
             </div>
 
             {/* Nationalities */}

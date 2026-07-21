@@ -1,0 +1,290 @@
+/* Reusable dropdown — replaces native <select> so long option lists stay
+   contained. Windows Chrome draws long native select popups at the OS level,
+   which is why the Season list flew off the top of the screen; a div-based
+   panel with max-height + overflow can't do that on any platform. */
+
+.wrapper,
+.list {
+  --dd-surface: #fff;
+  --dd-surface-hover: #f3f4f6;
+  --dd-border: #d1d5db;
+  --dd-text: #374151;
+  --dd-text-muted: #6b7280;
+  --dd-accent: #9B1C1C;
+  --dd-accent-soft: rgba(155, 28, 28, 0.05);
+  --dd-accent-tint: rgba(155, 28, 28, 0.1);
+  --dd-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode. `.light` opts out — the modals are hardcoded white and don't
+   consume ThemeContext, so their dropdowns must stay light too. */
+[data-theme="dark"] .wrapper:not(.light),
+[data-theme="dark"] .list:not(.light) {
+  --dd-surface: #1c1c1c;
+  --dd-surface-hover: #242424;
+  --dd-border: #2a2a2a;
+  --dd-text: #9ca3af;
+  --dd-text-muted: #6b7280;
+  --dd-accent: #c0392b;
+  --dd-accent-soft: rgba(192, 57, 43, 0.1);
+  --dd-accent-tint: rgba(192, 57, 43, 0.15);
+  --dd-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.wrapper {
+  --dd-height: 32px;
+  --dd-font: 12px;
+  --dd-pad: 10px;
+  --dd-radius: 6px;
+
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Size variants. xs = per-page pickers, sm = page filters, md = modal forms. */
+.xs {
+  --dd-height: 28px;
+  --dd-font: 12px;
+  --dd-pad: 8px;
+}
+
+.sm {
+  --dd-height: 32px;
+  --dd-font: 12px;
+  --dd-pad: 10px;
+}
+
+.md {
+  --dd-height: 36px;
+  --dd-font: 13px;
+  --dd-pad: 12px;
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.label {
+  font-size: 12px;
+  color: var(--dd-text-muted);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: var(--dd-height);
+  padding: 0 var(--dd-pad);
+  font-size: var(--dd-font);
+  font-family: 'Inter', sans-serif;
+  color: var(--dd-text);
+  background: var(--dd-surface);
+  border: 1px solid var(--dd-border);
+  border-radius: var(--dd-radius);
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+/* Page filters use the lighter hairline border the rest of the page uses. */
+.xs .trigger,
+.sm .trigger {
+  border-width: 0.5px;
+}
+
+/* Modal fields match the form inputs beside them. */
+.md .trigger {
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--dd-accent);
+}
+
+.trigger:focus-visible {
+  border-color: var(--dd-accent);
+  box-shadow: 0 0 0 3px var(--dd-accent-tint);
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reproduces .filterSelectActive when a value is chosen. */
+.trigger[data-active-value] {
+  border-color: var(--dd-accent);
+  color: var(--dd-accent);
+  background-color: var(--dd-accent-soft);
+}
+
+.triggerText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 6px;
+  transition: transform 0.15s ease;
+}
+
+.chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+/* The panel. max-height + overflow-y is the actual fix. Inline mode is
+   absolute; portal mode gets position/left/width/max-height inline from JS. */
+.list {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: 320px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-family: 'Inter', sans-serif;
+  background: var(--dd-surface);
+  border: 1px solid var(--dd-border);
+  border-radius: var(--dd-radius);
+  box-shadow: var(--dd-shadow);
+  box-sizing: border-box;
+}
+
+.list[data-drop-up] {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+/* Portal mode: JS supplies position/left/top/width, so drop the inline
+   defaults that would otherwise fight it. */
+.portalList {
+  min-width: 0;
+  width: auto;
+  max-width: none;
+}
+
+.option {
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--dd-text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.option[data-muted] {
+  color: var(--dd-text-muted);
+}
+
+.option[data-highlighted] {
+  background: var(--dd-surface-hover);
+}
+
+.option[data-selected] {
+  color: var(--dd-accent);
+  font-weight: 500;
+}
+
+.option[data-selected][data-highlighted] {
+  background: var(--dd-accent-tint);
+}
+
+/* ── Multi-select additions ──────────────────────────────────────────────
+   MultiSelect shares this stylesheet so the two components are visually
+   identical — same trigger metrics, same panel, same colours. */
+
+/* Checkbox rows keep the pointer cursor but not the single-select
+   "selected = accent text" treatment; the checkbox carries that signal. */
+.optionCheckable {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.optionCheckable[data-selected] {
+  color: var(--dd-text);
+  font-weight: 400;
+}
+
+.optionCheckable[data-selected][data-highlighted] {
+  background: var(--dd-surface-hover);
+}
+
+.checkbox {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  border: 1.5px solid var(--dd-border);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox[data-checked] {
+  border-color: var(--dd-accent);
+  background: var(--dd-accent);
+}
+
+.clearRow {
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  color: var(--dd-accent);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--dd-border);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.emptyRow {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--dd-text-muted);
+}
+
+.list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--dd-border);
+  border: 3px solid var(--dd-surface);
+  border-radius: 999px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .chevron {
+    transition: none;
+  }
+}

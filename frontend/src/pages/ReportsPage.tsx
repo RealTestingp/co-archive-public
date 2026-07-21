@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SectionTitle from "../components/ui/SectionTitle";
 import Divider from "../components/ui/Divider";
+import MultiSelect from "../components/dropdown/MultiSelect";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 
@@ -91,245 +92,6 @@ const normalize = (item: Record<string, unknown>): Option => ({
 
 const camel = (key: string) => key.charAt(0).toLowerCase() + key.slice(1);
 
-// ── Multi-select ──────────────────────────────────────────────────────────────
-// Defined at module scope so it isn't remounted (and doesn't lose its open
-// state) on every parent render.
-
-interface MultiSelectProps {
-  label: string;
-  options: Option[];
-  value: number[];
-  onChange: (next: number[]) => void;
-  disabled?: boolean;
-  tokens: {
-    surface: string;
-    border: string;
-    textPrimary: string;
-    textSecondary: string;
-    textMuted: string;
-    hoverBg: string;
-    isDark: boolean;
-  };
-}
-
-const MultiSelect = ({
-  label,
-  options,
-  value,
-  onChange,
-  disabled,
-  tokens,
-}: MultiSelectProps) => {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const toggle = (id: number) =>
-    onChange(
-      value.includes(id) ? value.filter((v) => v !== id) : [...value, id],
-    );
-
-  const selectedNames = options
-    .filter((o) => value.includes(o.id))
-    .map((o) => o.name);
-
-  const summary =
-    selectedNames.length === 0
-      ? "Any"
-      : selectedNames.length <= 2
-        ? selectedNames.join(", ")
-        : `${selectedNames.length} selected`;
-
-  return (
-    <div ref={wrapRef} style={{ position: "relative", opacity: disabled ? 0.45 : 1 }}>
-      <label
-        style={{
-          display: "block",
-          fontSize: "10px",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: tokens.textMuted,
-          marginBottom: "6px",
-        }}
-      >
-        {label}
-      </label>
-
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
-        title={
-          disabled
-            ? "Not applicable for the selected contributor type"
-            : selectedNames.join(", ")
-        }
-        style={{
-          width: "100%",
-          height: "38px",
-          padding: "0 12px",
-          fontSize: "13px",
-          fontFamily: "Inter, sans-serif",
-          textAlign: "left",
-          border: `1px solid ${tokens.border}`,
-          borderRadius: "6px",
-          background: tokens.surface,
-          color: value.length ? tokens.textPrimary : tokens.textMuted,
-          cursor: disabled ? "not-allowed" : "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px",
-          overflow: "hidden",
-        }}
-      >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {disabled ? "N/A" : summary}
-        </span>
-        <span style={{ fontSize: "10px", color: tokens.textMuted }}>▾</span>
-      </button>
-
-      {open && !disabled && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            right: 0,
-            maxHeight: "220px",
-            overflowY: "auto",
-            background: tokens.surface,
-            border: `1px solid ${tokens.border}`,
-            borderRadius: "8px",
-            boxShadow: tokens.isDark
-              ? "0 8px 24px rgba(0,0,0,0.5)"
-              : "0 8px 24px rgba(0,0,0,0.12)",
-            zIndex: 40,
-          }}
-        >
-          {options.length === 0 ? (
-            <div
-              style={{
-                padding: "12px",
-                fontSize: "12px",
-                color: tokens.textMuted,
-              }}
-            >
-              No options available.
-            </div>
-          ) : (
-            <>
-              {value.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onChange([])}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "8px 12px",
-                    fontSize: "11px",
-                    fontWeight: 500,
-                    color: "#9B1C1C",
-                    background: "none",
-                    border: "none",
-                    borderBottom: `1px solid ${tokens.border}`,
-                    cursor: "pointer",
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  Clear selection
-                </button>
-              )}
-              {options.map((o) => {
-                const checked = value.includes(o.id);
-                return (
-                  <div
-                    key={o.id}
-                    onClick={() => toggle(o.id)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = tokens.hoverBg;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      color: tokens.textPrimary,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "15px",
-                        height: "15px",
-                        flexShrink: 0,
-                        borderRadius: "3px",
-                        border: `1.5px solid ${checked ? "#9B1C1C" : tokens.border}`,
-                        background: checked ? "#9B1C1C" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {checked && (
-                        <svg
-                          width="9"
-                          height="7"
-                          viewBox="0 0 10 8"
-                          fill="none"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M1 4l3 3 5-6"
-                            stroke="#fff"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                    {o.name}
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 const ReportsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -384,6 +146,19 @@ const ReportsPage = () => {
 
   const setField = (key: FilterKey, values: number[]) =>
     setSelected((s) => ({ ...s, [key]: values }));
+
+  // MultiSelect speaks strings (same as Dropdown); the API and this page's
+  // state speak numeric IDs. Convert at the boundary.
+  const dropdownOptions = useMemo(() => {
+    const map: Record<string, { value: string; label: string }[]> = {};
+    for (const f of FILTERS) {
+      map[f.key] = (options[f.key] ?? []).map((o) => ({
+        value: String(o.id),
+        label: o.name,
+      }));
+    }
+    return map;
+  }, [options]);
 
   const activeFilterCount = FILTERS.filter(
     (f) => selected[f.key].length > 0,
@@ -457,17 +232,6 @@ const ReportsPage = () => {
   const textPrimary = colors.textPrimary;
   const textSecondary = isDark ? "#9ca3af" : "#6b7280";
   const textMuted = isDark ? "#6b7280" : "#9ca3af";
-  const hoverBg = isDark ? "#242424" : "#f9fafb";
-
-  const tokens = {
-    surface,
-    border,
-    textPrimary,
-    textSecondary,
-    textMuted,
-    hoverBg,
-    isDark,
-  };
 
   return (
     <div
@@ -511,11 +275,12 @@ const ReportsPage = () => {
             <MultiSelect
               key={f.key}
               label={f.label}
-              options={options[f.key] ?? []}
-              value={selected[f.key]}
-              onChange={(next) => setField(f.key, next)}
+              placeholder="Any"
+              options={dropdownOptions[f.key] ?? []}
+              value={selected[f.key].map(String)}
+              onChange={(next) => setField(f.key, next.map(Number))}
               disabled={isDisabled(f.key)}
-              tokens={tokens}
+              disabledHint="Not applicable for the selected contributor type"
             />
           ))}
         </div>
