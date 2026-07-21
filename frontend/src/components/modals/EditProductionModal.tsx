@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
+import Dropdown from "../dropdown/Dropdown";
 
 // UpdateProductionDto (backend) only touches these fields — performances,
 // cast, creative, crew, orchestra, and chorus are NOT editable through this
@@ -92,18 +93,6 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
 };
 
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  color: "#374151",
-  cursor: "pointer",
-  appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 12px center",
-  backgroundSize: "12px",
-  paddingRight: "32px",
-};
-
 const labelStyle: React.CSSProperties = {
   fontSize: "10px",
   fontWeight: 600,
@@ -118,6 +107,17 @@ const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
 const MAX_PDF_BYTES = 50 * 1024 * 1024;
 const ACCEPTED_PDF_TYPE = "application/pdf";
+
+// Every dropdown in this modal shares the same config: modal-sized, full
+// width, portalled out of the modal's overflow container, and pinned light
+// because the modal itself is hardcoded white.
+const DD = {
+  size: "md",
+  block: true,
+  portal: true,
+  theme: "light",
+  highlightWhenSet: false,
+} as const;
 
 const EditProductionModal = ({
   isOpen,
@@ -218,9 +218,52 @@ const EditProductionModal = ({
   const set =
     (field: keyof FormState) =>
     (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // Dropdown gives us the value directly rather than an event.
+  const setValue = (field: keyof FormState) => (value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+  // ── Dropdown option lists ──
+  const seasonOptions = useMemo(
+    () =>
+      lookups.seasons.map((s) => ({
+        value: String(s.id),
+        label: s.label ?? String(s.id),
+      })),
+    [lookups.seasons],
+  );
+
+  const eventTypeOptions = useMemo(
+    () =>
+      lookups.eventTypes.map((e) => ({ value: String(e.id), label: e.name })),
+    [lookups.eventTypes],
+  );
+
+  const venueOptions = useMemo(
+    () =>
+      lookups.venues.map((v) => ({
+        value: String(v.id),
+        label: v.name ?? String(v.id),
+      })),
+    [lookups.venues],
+  );
+
+  const operaOptions = useMemo(
+    () => lookups.operas.map((o) => ({ value: String(o.id), label: o.title })),
+    [lookups.operas],
+  );
+
+  const languageOptions = useMemo(
+    () =>
+      lookups.languages.map((l) => ({
+        value: String(l.id),
+        label: l.name ?? String(l.id),
+      })),
+    [lookups.languages],
+  );
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -405,35 +448,27 @@ const EditProductionModal = ({
                 <label style={labelStyle}>
                   Season <span style={{ color: "#9B1C1C" }}>*</span>
                 </label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select season"
+                  ariaLabel="Season"
                   value={form.seasonId}
-                  onChange={set("seasonId")}
-                >
-                  <option value="">Select season</option>
-                  {lookups.seasons.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  options={seasonOptions}
+                  onChange={setValue("seasonId")}
+                />
               </div>
               <div>
                 <label style={labelStyle}>
                   Event Type <span style={{ color: "#9B1C1C" }}>*</span>
                 </label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select type"
+                  ariaLabel="Event type"
                   value={form.eventTypeId}
-                  onChange={set("eventTypeId")}
-                >
-                  <option value="">Select type</option>
-                  {lookups.eventTypes.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
+                  options={eventTypeOptions}
+                  onChange={setValue("eventTypeId")}
+                />
               </div>
             </div>
 
@@ -441,34 +476,26 @@ const EditProductionModal = ({
               <label style={labelStyle}>
                 Venue <span style={{ color: "#9B1C1C" }}>*</span>
               </label>
-              <select
-                style={selectStyle}
+              <Dropdown
+                {...DD}
+                placeholder="Select venue"
+                ariaLabel="Venue"
                 value={form.venueId}
-                onChange={set("venueId")}
-              >
-                <option value="">Select venue</option>
-                {lookups.venues.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+                options={venueOptions}
+                onChange={setValue("venueId")}
+              />
             </div>
 
             <div style={fieldWrap}>
               <label style={labelStyle}>Opera</label>
-              <select
-                style={selectStyle}
+              <Dropdown
+                {...DD}
+                placeholder="None"
+                ariaLabel="Opera"
                 value={form.operaId}
-                onChange={set("operaId")}
-              >
-                <option value="">None</option>
-                {lookups.operas.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title}
-                  </option>
-                ))}
-              </select>
+                options={operaOptions}
+                onChange={setValue("operaId")}
+              />
             </div>
 
             <div
@@ -481,33 +508,25 @@ const EditProductionModal = ({
             >
               <div>
                 <label style={labelStyle}>Written Language</label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select"
+                  ariaLabel="Written language"
                   value={form.writtenLanguageId}
-                  onChange={set("writtenLanguageId")}
-                >
-                  <option value="">Select</option>
-                  {lookups.languages.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                  options={languageOptions}
+                  onChange={setValue("writtenLanguageId")}
+                />
               </div>
               <div>
                 <label style={labelStyle}>Sung Language</label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select"
+                  ariaLabel="Sung language"
                   value={form.sungLanguageId}
-                  onChange={set("sungLanguageId")}
-                >
-                  <option value="">Select</option>
-                  {lookups.languages.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                  options={languageOptions}
+                  onChange={setValue("sungLanguageId")}
+                />
               </div>
             </div>
 

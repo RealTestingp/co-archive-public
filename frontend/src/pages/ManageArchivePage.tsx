@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Breadcrumb from "../components/ui/BreadCrumb";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 import ErrorState from "../components/ui/ErrorState";
+import Dropdown from "../components/dropdown/Dropdown";
 import AddPersonModal from "../components/modals/AddPersonModal";
 import AddProductionModal from "../components/modals/AddProductionModal";
 import AddCharacterModal from "../components/modals/AddCharacterModal";
@@ -63,6 +64,11 @@ const ManageArchivePage = () => {
   const [characters, setCharacters] = useState<Character[]>([]);
 
   const navigate = useNavigate();
+
+  const pageSizeOptions = useMemo(
+    () => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })),
+    [],
+  );
 
   // Fetch a single tab (used for search and after add/edit).
   const fetchData = useCallback(async (tab: Tab, searchTerm = "") => {
@@ -559,29 +565,15 @@ const ManageArchivePage = () => {
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "12px", color: textMuted }}>Show</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                style={{
-                  height: "28px",
-                  padding: "0 24px 0 8px",
-                  fontSize: "12px",
-                  fontFamily: "Inter, sans-serif",
-                  border: `1px solid ${border}`,
-                  borderRadius: "6px",
-                  background: `${surface} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center`,
-                  color: textSecondary,
-                  appearance: "none",
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
+              <Dropdown
+                size="xs"
+                allowClear={false}
+                highlightWhenSet={false}
+                ariaLabel="Results per page"
+                value={String(pageSize)}
+                options={pageSizeOptions}
+                onChange={(v) => setPageSize(Number(v))}
+              />
               <span style={{ fontSize: "12px", color: textMuted }}>
                 per page
               </span>

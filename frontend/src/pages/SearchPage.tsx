@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
+import Dropdown from "../components/dropdown/Dropdown";
 import { useTheme } from "../context/ThemeContext";
 import styles from "./SearchPage.module.css";
 import { api } from "../api";
@@ -21,6 +22,7 @@ interface ProductionResult {
   season?: string;
   eventType?: string;
   venue?: string;
+  language?: string;
 }
 
 interface CharacterResult {
@@ -171,6 +173,44 @@ const SearchPage = () => {
     clearFilters();
   };
 
+  // ── Dropdown option lists ──
+  const voiceTypeOptions = useMemo(
+    () =>
+      voiceTypes
+        .filter((v) => v.name)
+        .map((v) => ({ value: v.name!, label: v.name! })),
+    [voiceTypes]
+  );
+
+  const nationalityOptions = useMemo(
+    () =>
+      nationalities
+        .filter((n) => n.name)
+        .map((n) => ({ value: n.name!, label: n.name! })),
+    [nationalities]
+  );
+
+  const languageOptions = useMemo(
+    () =>
+      languages
+        .filter((l) => l.name)
+        .map((l) => ({ value: l.name!, label: l.name! })),
+    [languages]
+  );
+
+  const seasonOptions = useMemo(
+    () =>
+      seasons
+        .filter((s) => s.label)
+        .map((s) => ({ value: s.label!, label: s.label! })),
+    [seasons]
+  );
+
+  const pageSizeOptions = useMemo(
+    () => PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) })),
+    []
+  );
+
   // Client-side filtering
   const filteredPersons =
     results?.persons.filter((p) => {
@@ -183,6 +223,7 @@ const SearchPage = () => {
   const filteredProductions =
     results?.productions.filter((p) => {
       if (selectedSeason && p.season !== selectedSeason) return false;
+      if (selectedLanguage && p.language !== selectedLanguage) return false;
       return true;
     }) ?? [];
 
@@ -334,17 +375,15 @@ const SearchPage = () => {
               {/* Per-page dropdown */}
               <div className={styles.perPageWrap}>
                 <span className={styles.perPageLabel}>Show</span>
-                <select
-                  className={styles.perPageSelect}
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                >
-                  {PAGE_SIZE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown
+                  size="xs"
+                  allowClear={false}
+                  highlightWhenSet={false}
+                  ariaLabel="Results per page"
+                  value={String(pageSize)}
+                  options={pageSizeOptions}
+                  onChange={(v) => setPageSize(Number(v))}
+                />
                 <span className={styles.perPageLabel}>per page</span>
               </div>
             </div>
@@ -375,58 +414,34 @@ const SearchPage = () => {
             <div className={styles.filterRow}>
               {activeTab === "Persons" && (
                 <>
-                  <select
-                    className={`${styles.filterSelect} ${selectedVoiceType ? styles.filterSelectActive : ""}`}
+                  <Dropdown
+                    placeholder="Voice Type"
                     value={selectedVoiceType}
-                    onChange={(e) => setSelectedVoiceType(e.target.value)}
-                  >
-                    <option value="">Voice Type</option>
-                    {voiceTypes.map((v) => (
-                      <option key={v.id} value={v.name}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className={`${styles.filterSelect} ${selectedNationality ? styles.filterSelectActive : ""}`}
+                    options={voiceTypeOptions}
+                    onChange={setSelectedVoiceType}
+                  />
+                  <Dropdown
+                    placeholder="Nationality"
                     value={selectedNationality}
-                    onChange={(e) => setSelectedNationality(e.target.value)}
-                  >
-                    <option value="">Nationality</option>
-                    {nationalities.map((n) => (
-                      <option key={n.id} value={n.name}>
-                        {n.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={nationalityOptions}
+                    onChange={setSelectedNationality}
+                  />
                 </>
               )}
               {activeTab === "Productions" && (
                 <>
-                  <select
-                    className={`${styles.filterSelect} ${selectedLanguage ? styles.filterSelectActive : ""}`}
+                  <Dropdown
+                    placeholder="Language"
                     value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
-                  >
-                    <option value="">Language</option>
-                    {languages.map((l) => (
-                      <option key={l.id} value={l.name}>
-                        {l.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className={`${styles.filterSelect} ${selectedSeason ? styles.filterSelectActive : ""}`}
+                    options={languageOptions}
+                    onChange={setSelectedLanguage}
+                  />
+                  <Dropdown
+                    placeholder="Season"
                     value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(e.target.value)}
-                  >
-                    <option value="">Season</option>
-                    {seasons.map((s) => (
-                      <option key={s.id} value={s.label}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={seasonOptions}
+                    onChange={setSelectedSeason}
+                  />
                 </>
               )}
               {hasActiveFilters && (

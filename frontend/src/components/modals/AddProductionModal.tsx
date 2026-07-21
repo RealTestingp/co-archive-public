@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
+import Dropdown from "../dropdown/Dropdown";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -131,18 +132,6 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
 };
 
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  color: "#374151",
-  cursor: "pointer",
-  appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 12px center",
-  backgroundSize: "12px",
-  paddingRight: "32px",
-};
-
 const labelStyle: React.CSSProperties = {
   fontSize: "10px",
   fontWeight: 600,
@@ -154,6 +143,18 @@ const labelStyle: React.CSSProperties = {
 };
 
 const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
+
+// Every dropdown in this modal shares the same config: modal-sized, full
+// width, portalled out of the modal's overflow container (the modal panel is
+// `overflow-y: auto`, which would otherwise clip the list), and pinned light
+// because the modal itself is hardcoded white and doesn't read ThemeContext.
+const DD = {
+  size: "md",
+  block: true,
+  portal: true,
+  theme: "light",
+  highlightWhenSet: false,
+} as const;
 
 // Shared styles for the inline "add new lookup" accordions (season/venue/language)
 const addLookupBtnStyle: React.CSSProperties = {
@@ -284,7 +285,13 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [personResults, setPersonResults] = useState<
     Record<string, PersonSearchResult[]>
   >({});
-  const [positions, setPositions] = useState<Position[]>([]);
+  // Positions cached per contributor type. This used to be a single shared
+  // array, which meant one crew row changing its Type wiped the options out
+  // from under every other row — row 1's Position dropdown would empty while
+  // still holding a selected positionId underneath.
+  const [positionsByType, setPositionsByType] = useState<
+    Record<string, Position[]>
+  >({});
 
   // Save
   const [submitting, setSubmitting] = useState(false);
@@ -331,6 +338,54 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     form.venueId
   );
 
+  // ── Dropdown option lists ──
+  const operaOptions = useMemo(
+    () => operas.map((o) => ({ value: String(o.id), label: o.title })),
+    [operas],
+  );
+
+  const eventTypeOptions = useMemo(
+    () =>
+      lookups.eventTypes.map((e) => ({ value: String(e.id), label: e.name })),
+    [lookups.eventTypes],
+  );
+
+  const seasonOptions = useMemo(
+    () =>
+      lookups.seasons.map((s) => ({
+        value: String(s.id),
+        label: s.label ?? String(s.id),
+      })),
+    [lookups.seasons],
+  );
+
+  const venueOptions = useMemo(
+    () =>
+      lookups.venues.map((v) => ({
+        value: String(v.id),
+        label: v.name ?? String(v.id),
+      })),
+    [lookups.venues],
+  );
+
+  const languageOptions = useMemo(
+    () =>
+      lookups.languages.map((l) => ({
+        value: String(l.id),
+        label: l.name ?? String(l.id),
+      })),
+    [lookups.languages],
+  );
+
+  const contributorTypeOptions = useMemo(
+    () =>
+      lookups.contributorTypes.map((t) => ({
+        value: String(t.id),
+        label: t.name ?? String(t.id),
+      })),
+    [lookups.contributorTypes],
+  );
+
   const fetchOperas = async () => {
     try {
       const res = await api.get("/api/operas");
@@ -369,12 +424,15 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   };
 
   const fetchPositions = async (contributorTypeId: string) => {
-    if (!contributorTypeId) return;
+    if (!contributorTypeId || positionsByType[contributorTypeId]) return;
     try {
       const res = await api.get(
         `/api/positions?contributorTypeId=${contributorTypeId}`,
       );
-      if (res.ok) setPositions(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setPositionsByType((prev) => ({ ...prev, [contributorTypeId]: data }));
+      }
     } catch {
       /* ignore */
     }
@@ -752,6 +810,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setCastRows([]);
     setCrewRows([makeCrewRow()]);
     setPersonResults({});
+    setPositionsByType({});
     setSubmitError(null);
     setPdfUploadWarning(null);
     setDone(false);
@@ -976,20 +1035,14 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <label style={labelStyle}>
                   Event Type <span style={{ color: "#9B1C1C" }}>*</span>
                 </label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select type"
+                  ariaLabel="Event type"
                   value={form.eventTypeId}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, eventTypeId: e.target.value }))
-                  }
-                >
-                  <option value="">Select type</option>
-                  {lookups.eventTypes.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
+                  options={eventTypeOptions}
+                  onChange={(v) => setForm((p) => ({ ...p, eventTypeId: v }))}
+                />
               </div>
             )}
             <div style={fieldWrap}>
@@ -1012,18 +1065,22 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   </span>
                 )}
               </label>
-              <select
-                style={selectStyle}
-                value={selectedOperaId ?? ""}
-                onChange={(e) => handleOperaSelect(Number(e.target.value))}
-              >
-                <option value="">Select opera</option>
-                {operas.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title}
-                  </option>
-                ))}
-              </select>
+              {/* Clearing used to run Number("") → handleOperaSelect(0), which
+                  set selectedOperaId to 0 instead of null. */}
+              <Dropdown
+                {...DD}
+                placeholder="Select opera"
+                ariaLabel="Opera"
+                value={selectedOperaId != null ? String(selectedOperaId) : ""}
+                options={operaOptions}
+                onChange={(v) => {
+                  if (!v) {
+                    setSelectedOperaId(null);
+                    return;
+                  }
+                  handleOperaSelect(Number(v));
+                }}
+              />
             </div>
 
             {!showAddOpera ? (
@@ -1219,39 +1276,27 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <label style={labelStyle}>
                   Season <span style={{ color: "#9B1C1C" }}>*</span>
                 </label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select season"
+                  ariaLabel="Season"
                   value={form.seasonId}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, seasonId: e.target.value }))
-                  }
-                >
-                  <option value="">Select season</option>
-                  {lookups.seasons.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  options={seasonOptions}
+                  onChange={(v) => setForm((p) => ({ ...p, seasonId: v }))}
+                />
               </div>
               <div>
                 <label style={labelStyle}>
                   Venue <span style={{ color: "#9B1C1C" }}>*</span>
                 </label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select venue"
+                  ariaLabel="Venue"
                   value={form.venueId}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, venueId: e.target.value }))
-                  }
-                >
-                  <option value="">Select venue</option>
-                  {lookups.venues.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
-                    </option>
-                  ))}
-                </select>
+                  options={venueOptions}
+                  onChange={(v) => setForm((p) => ({ ...p, venueId: v }))}
+                />
               </div>
             </div>
 
@@ -1454,40 +1499,27 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             >
               <div>
                 <label style={labelStyle}>Written Language</label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select"
+                  ariaLabel="Written language"
                   value={form.writtenLanguageId}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      writtenLanguageId: e.target.value,
-                    }))
+                  options={languageOptions}
+                  onChange={(v) =>
+                    setForm((p) => ({ ...p, writtenLanguageId: v }))
                   }
-                >
-                  <option value="">Select</option>
-                  {lookups.languages.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label style={labelStyle}>Sung Language</label>
-                <select
-                  style={selectStyle}
+                <Dropdown
+                  {...DD}
+                  placeholder="Select"
+                  ariaLabel="Sung language"
                   value={form.sungLanguageId}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, sungLanguageId: e.target.value }))
-                  }
-                >
-                  <option value="">Select</option>
-                  {lookups.languages.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                  options={languageOptions}
+                  onChange={(v) => setForm((p) => ({ ...p, sungLanguageId: v }))}
+                />
               </div>
             </div>
 
@@ -2100,62 +2132,48 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     </div>
                     <div>
                       <label style={labelStyle}>Type</label>
-                      <select
-                        style={selectStyle}
+                      <Dropdown
+                        {...DD}
+                        placeholder="Select"
+                        ariaLabel="Contributor type"
                         value={row.contributorTypeId}
-                        onChange={(e) => {
+                        options={contributorTypeOptions}
+                        onChange={(v) => {
                           setCrewRows((prev) =>
                             prev.map((r) =>
                               r.id === row.id
-                                ? {
-                                    ...r,
-                                    contributorTypeId: e.target.value,
-                                    positionId: "",
-                                  }
+                                ? { ...r, contributorTypeId: v, positionId: "" }
                                 : r,
                             ),
                           );
-                          fetchPositions(e.target.value);
+                          fetchPositions(v);
                         }}
-                      >
-                        <option value="">Select</option>
-                        {lookups.contributorTypes.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Position</label>
-                      <select
-                        style={selectStyle}
+                      {/* Reads this row's own cached positions, so another
+                          row changing Type can't empty this one out. */}
+                      <Dropdown
+                        {...DD}
+                        placeholder="Select"
+                        ariaLabel="Position"
+                        disabled={!row.contributorTypeId}
                         value={row.positionId}
-                        onChange={(e) =>
+                        options={(
+                          positionsByType[row.contributorTypeId] ?? []
+                        ).map((p) => ({
+                          value: String(p.id),
+                          label: p.name,
+                        }))}
+                        onChange={(v) =>
                           setCrewRows((prev) =>
                             prev.map((r) =>
-                              r.id === row.id
-                                ? { ...r, positionId: e.target.value }
-                                : r,
+                              r.id === row.id ? { ...r, positionId: v } : r,
                             ),
                           )
                         }
-                        disabled={!row.contributorTypeId}
-                      >
-                        <option value="">Select</option>
-                        {positions
-                          .filter(
-                            (p) =>
-                              !row.contributorTypeId ||
-                              p.contributorTypeId ===
-                                Number(row.contributorTypeId),
-                          )
-                          .map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                      </select>
+                      />
                     </div>
                   </div>
                 </div>
