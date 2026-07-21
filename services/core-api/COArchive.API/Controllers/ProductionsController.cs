@@ -44,9 +44,8 @@ namespace COArchive.API.Controllers
             // Rank titles that start with the search term first, then fall back to the existing season-descending ordering
             var orderedQuery = effectiveSearch != null
                 ? query
-                    .OrderByDescending(e => e.Title.StartsWith(effectiveSearch))
-                    .ThenByDescending(e => e.Season.Label)
-                : query.OrderByDescending(e => e.Season.Label);
+                    .OrderByDescending(e => e.Season.Label)
+                    : query.OrderByDescending(e => e.Season.Label);
 
             var results = await orderedQuery
                 .Select(e => new
