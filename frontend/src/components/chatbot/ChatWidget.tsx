@@ -15,11 +15,13 @@ const ChatWidget = () => {
       role: "user",
       content: text,
     };
+    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, userMessage]);
     setIsSending(true);
 
     try {
-      const res = await api.post("/api/chat", { message: text });
+      const res = await api.post("/api/chat", { message: text, history });
 
       if (!res.ok)
         throw new Error(`Chat request failed with status ${res.status}`);
