@@ -1,0 +1,14 @@
+bin
+obj
+.env
+.env.*
+.git
+.gitignore
+*.md
+.vscode
+.vs
+.DS_Store
+COArchive.API/bin
+COArchive.API/obj
+COArchive/bin
+COArchive/obj
