@@ -87,7 +87,11 @@ const ChatPanel = ({
         )}
         {isSending && (
           <div className={`${styles.message} ${styles.messageAssistant}`}>
-            …
+            <div className={styles.typingIndicator}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
         )}
       </div>
