@@ -27,6 +27,7 @@ namespace COArchive.API.Controllers
                 return BadRequest("Search term too long.");
 
             // Ignore search terms under 2 characters, avoids single-letter queries
+            //TODO FIX - display error or stop search - less than 2 chars returns entire db
             var effectiveSearch = string.IsNullOrWhiteSpace(search) || search.Trim().Length < 2
                 ? null
                 : search.Trim();
@@ -108,7 +109,7 @@ namespace COArchive.API.Controllers
                 SungLanguage = production.SungLanguage?.Name,
                 Performances = production.Performances
                     .OrderBy(p => p.Date)
-                    .Select(p => new { p.Id, p.Date })
+                    .Select(p => new { p.Id, p.Date, p.DateTo })
                     .ToList(),
                 Cast = appearances
                     .Where(a => a.ContributorType.Name == "Artist"
@@ -193,6 +194,46 @@ namespace COArchive.API.Controllers
             existing.Notes = dto.Notes;
 
             await _db.SaveChangesAsync();
+
+            // Update performance dates if provided — clear existing and replace
+            if (dto.PerformanceDates != null || dto.TourStartDate.HasValue)
+            {
+                // Remove all existing performances for this production
+                var existingPerformances = await _db.Performances
+                    .Where(p => p.ProductionId == id)
+                    .ToListAsync();
+                _db.Performances.RemoveRange(existingPerformances);
+
+                // Add specific dates — MainStage, Brunch, Family, Cabaret
+                if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+                {
+                    foreach (var date in dto.PerformanceDates)
+                    {
+                        _db.Performances.Add(new Performance
+                        {
+                            ProductionId = id,
+                            Date = date,
+                        });
+                    }
+                }
+                // Add tour date range
+                else if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue)
+                {
+                    _db.Performances.Add(new Performance
+                    {
+                        ProductionId = id,
+                        Date = dto.TourStartDate.Value,
+                    });
+                    _db.Performances.Add(new Performance
+                    {
+                        ProductionId = id,
+                        Date = dto.TourEndDate.Value,
+                    });
+                }
+
+                await _db.SaveChangesAsync();
+            }
+
             return NoContent();
         }
 
@@ -216,7 +257,34 @@ namespace COArchive.API.Controllers
 
             _db.Productions.Add(production);
             await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = production.Id }, production);
+
+            // Specific performance dates — MainStage, Brunch, Family, Cabaret
+            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+            {
+                foreach (var date in dto.PerformanceDates)
+                {
+                    _db.Performances.Add(new Performance
+                    {
+                        ProductionId = production.Id,
+                        Date = date,
+                        DateTo = null,
+                    });
+                }
+                await _db.SaveChangesAsync();
+            }
+            // Tour date range — one row with start and end date
+            else if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue)
+            {
+                _db.Performances.Add(new Performance
+                {
+                    ProductionId = production.Id,
+                    Date = dto.TourStartDate.Value,
+                    DateTo = dto.TourEndDate.Value,
+                });
+                await _db.SaveChangesAsync();
+            }
+
+            return CreatedAtAction(nameof(GetById), new { id = production.Id }, new { production.Id });
         }
 
         // DELETE /api/productions/1

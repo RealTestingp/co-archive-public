@@ -12,6 +12,13 @@
         public int? RuntimeMinutes { get; set; }
         public string? ProgramPdfUrl { get; set; }
         public string? Notes { get; set; }
+
+        // All event types except for Tour = multiple specific dates
+        public List<DateTime>? PerformanceDates { get; set; }
+
+        // Tour - store a range (single row of data, start date and end date)
+        public DateTime? TourStartDate { get; set; }
+        public DateTime? TourEndDate { get; set; }
     }
 
     public class UpdateProductionDto
@@ -27,5 +34,12 @@
         public int? RuntimeMinutes { get; set; }
         public string? ProgramPdfUrl { get; set; }
         public string? Notes { get; set; }
+
+        // All event types except for Tour = multiple specific dates
+        public List<DateTime>? PerformanceDates { get; set; }
+
+        // Tour - store a range (single row of data, start date and end date)
+        public DateTime? TourStartDate { get; set; }
+        public DateTime? TourEndDate { get; set; }
     }
 }
