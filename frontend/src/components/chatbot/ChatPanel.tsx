@@ -46,7 +46,7 @@ const ChatPanel = ({
       aria-label="Archive assistant chat"
     >
       <div className={styles.panelHeader}>
-        <span className={styles.panelTitle}>Archive Assistant</span>
+        <span className={styles.panelTitle}>Pagliacci</span>
         <button
           className={styles.panelClose}
           onClick={onClose}
