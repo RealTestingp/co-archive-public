@@ -1,17 +1,20 @@
 services:
   frontend:
+    image: coarchiveregistry.azurecr.io/frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         - VITE_ENTRA_CLIENT_ID=${VITE_ENTRA_CLIENT_ID}
         - VITE_ENTRA_TENANT_ID=${VITE_ENTRA_TENANT_ID}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     ports:
       - "5173:80"
     depends_on:
       - gateway
 
   gateway:
+    image: coarchiveregistry.azurecr.io/gateway:latest
     build:
       context: ./gateway/COArchive.Gateway
       dockerfile: Dockerfile
@@ -23,6 +26,7 @@ services:
       - core-api
 
   core-api:
+    image: coarchiveregistry.azurecr.io/core-api:latest
     build:
       context: ./services/core-api
       dockerfile: Dockerfile
@@ -37,6 +41,7 @@ services:
       - AzureStorage__ConnectionString=${AZURE_STORAGE_CONNECTION_STRING}
 
   reports-service:
+    image: coarchiveregistry.azurecr.io/reports-service:latest
     build:
       context: ./services/reports-service
       dockerfile: Dockerfile
@@ -48,6 +53,7 @@ services:
       - CoreApi__BaseUrl=http://core-api:8080
 
   chatbot-service:
+    image: coarchiveregistry.azurecr.io/chatbot-service:latest
     build:
       context: ./services/chatbot-service/ChatbotService
       dockerfile: Dockerfile
