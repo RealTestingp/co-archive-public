@@ -8,7 +8,9 @@ import SectionTitle from "../components/ui/SectionTitle";
 import Divider from "../components/ui/Divider";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 import ErrorState from "../components/ui/ErrorState";
+import EditCharacterModal from "../components/modals/EditCharacterModal";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../auth";
 import { api } from "../api";
 
 interface Performer {
@@ -36,9 +38,12 @@ const CharacterPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark, colors } = useTheme();
+  const { isAdmin } = useAuth();
   const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchCharacter = useCallback(async () => {
     setIsLoading(true);
@@ -113,11 +118,14 @@ const CharacterPage = () => {
                 <LoadingSkeleton width="160px" height="14px" />
               </div>
             ) : (
-              // No onEdit passed — there's no EditCharacterModal yet, and
-              // PageHeader only renders buttons whose handlers exist.
+              // Editing is admin-only — omitting onEdit hides the button.
+              // No onDelete yet (no DeleteCharacterModal), so PageHeader
+              // renders just the edit action.
               <PageHeader
                 title={character!.name}
                 subtitle={character!.opera ?? ""}
+                editLabel="Edit Character"
+                onEdit={isAdmin ? () => setShowEditModal(true) : undefined}
               />
             )}
 
@@ -274,6 +282,18 @@ const CharacterPage = () => {
           </>
         )}
       </div>
+
+      {character && (
+        <EditCharacterModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          character={character}
+          onSuccess={() => {
+            setShowEditModal(false);
+            fetchCharacter();
+          }}
+        />
+      )}
     </div>
   );
 };
