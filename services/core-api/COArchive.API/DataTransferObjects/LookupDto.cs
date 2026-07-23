@@ -30,4 +30,16 @@
     {
         public string Name { get; set; } = string.Empty;
     }
+
+    public class CreateComposerDto
+    {
+        public string Name { get; set; } = string.Empty;
+
+    }
+
+    public class CreateLibrettistDto
+    {
+        public string Name { get; set; } = string.Empty;
+
+    }
 }

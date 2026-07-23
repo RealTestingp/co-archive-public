@@ -1,6 +1,7 @@
 ﻿using COArchive.API.DataTransferObjects;
 using COArchive.Data;
 using COArchive.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -289,5 +290,123 @@ namespace COArchive.API.Controllers
                 .Select(p => new { p.Id, p.Name, p.ContributorTypeId })
                 .ToListAsync());
         }
+    }
+
+    // ── COMPOSERS ─────────────────────────────────────────────────
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ComposersController : ControllerBase
+    {
+        private readonly ApplicationDbContext _db;
+        public ComposersController(ApplicationDbContext db) => _db = db;
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll() =>
+            Ok(await _db.Composers
+                .OrderBy(c => c.Name)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync());
+
+        //[Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateComposerDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Name is required.");
+
+            if (await _db.Composers.AnyAsync(c => c.Name == dto.Name))
+                return Conflict("A composer with this name already exists.");
+
+            var composer = new Composer { Name = dto.Name };
+            _db.Composers.Add(composer);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = composer.Id }, new { composer.Id, composer.Name });
+        }
+
+        // DELETE /api/composers/5
+        //[Authorize(Roles = "Admin")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var composer = await _db.Composers.FindAsync(id);
+            if (composer == null) return NotFound();
+
+            // Check if composer is linked to any operas
+            var hasOperas = await _db.Operas
+                .AnyAsync(o => o.Composers.Any(c => c.Id == id));
+            if (hasOperas)
+                return Conflict("This composer is linked to one or more operas and cannot be deleted.");
+
+            try
+            {
+                _db.Composers.Remove(composer);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("This composer could not be deleted due to existing related records.");
+            }
+        }
+    }
+
+    // ── LIBRETTISTS ───────────────────────────────────────────────
+    [ApiController]
+    [Route("api/[controller]")]
+    public class LibrettistsController : ControllerBase
+    {
+        private readonly ApplicationDbContext _db;
+        public LibrettistsController(ApplicationDbContext db) => _db = db;
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll() =>
+            Ok(await _db.Librettists
+                .OrderBy(l => l.Name)
+                .Select(l => new { l.Id, l.Name })
+                .ToListAsync());
+
+        //[Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateLibrettistDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Name is required.");
+
+            if (await _db.Librettists.AnyAsync(l => l.Name == dto.Name))
+                return Conflict("A librettist with this name already exists.");
+
+            var librettist = new Librettist { Name = dto.Name };
+            _db.Librettists.Add(librettist);
+            await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetAll), new { id = librettist.Id }, new { librettist.Id, librettist.Name });
+        }
+
+        // DELETE /api/librettists/5
+        //[Authorize(Roles = "Admin")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var librettist = await _db.Librettists.FindAsync(id);
+            if (librettist == null) return NotFound();
+
+            var hasOperas = await _db.Operas
+                .AnyAsync(o => o.Librettists.Any(l => l.Id == id));
+            if (hasOperas)
+                return Conflict("This librettist is linked to one or more operas and cannot be deleted.");
+
+            try
+            {
+                _db.Librettists.Remove(librettist);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("This librettist could not be deleted due to existing related records.");
+            }
+        }
+
+
+
     }
 }
