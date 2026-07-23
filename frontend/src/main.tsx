@@ -17,16 +17,12 @@ const msalInstance = new PublicClientApplication(msalConfig);
 // Initialising inside an async bootstrap keeps the module graph synchronous.
 async function bootstrap() {
   await msalInstance.initialize();
-  const response = await msalInstance.handleRedirectPromise();
 
-  if (response?.account) {
-    msalInstance.setActiveAccount(response.account);
-  } else {
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      msalInstance.setActiveAccount(accounts[0]);
-    }
-  }
+  // Note: we intentionally do NOT call msalInstance.handleRedirectPromise()
+  // here. MsalProvider already calls it internally — calling it a second
+  // time here causes a race where the first call consumes the temporary
+  // cache entry MSAL needs, and the second (inside MsalProvider) throws
+  // BrowserAuthError: no_token_request_cache_error.
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
