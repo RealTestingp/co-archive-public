@@ -34,7 +34,9 @@ interface Production {
 interface Character {
   id: number;
   name: string;
-  operaTitle?: string;
+  // GET /api/characters projects the opera name as `opera` (Opera = c.Opera.Title),
+  // not `operaTitle` — reading the wrong key showed "—" for every row.
+  opera?: string;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -336,7 +338,7 @@ const ManageArchivePage = () => {
         >
           <NameLink id={c.id} label={c.name} />
           <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {c.operaTitle ?? "—"}
+            {c.opera ?? "—"}
           </span>
         </div>
       ));
