@@ -64,6 +64,13 @@ interface Production {
   chorus: EnsembleMember[];
 }
 
+// McPhee is a program membership the API surfaces as a contributor type on a
+// cast appearance. It carries no character, so left in the Cast table it
+// renders as a bare "—" beside the person's real (Artist) credit. We split it
+// into its own section instead. Same keyword-match approach ReportsPage uses.
+const isMcPhee = (contributorType?: string) =>
+  !!contributorType && /mcphee/i.test(contributorType);
+
 const ProductionPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -184,6 +191,15 @@ const ProductionPage = () => {
         { label: "Event Type", value: production.eventType },
         { label: "Season", value: production.season },
       ]
+    : [];
+
+  // Split McPhee appearances out of Cast so they get their own section rather
+  // than showing as a role-less duplicate row in the Cast table.
+  const castMembers = production
+    ? production.cast.filter((m) => !isMcPhee(m.contributorType))
+    : [];
+  const mcpheeMembers = production
+    ? production.cast.filter((m) => isMcPhee(m.contributorType))
     : [];
 
   const personnelCount = production
@@ -445,10 +461,10 @@ const ProductionPage = () => {
             ) : (
               production && (
                 <>
-                  {production.cast.length > 0 && (
+                  {castMembers.length > 0 && (
                     <>
                       <SectionTitle>Cast</SectionTitle>
-                      {renderPersonTable(production.cast, true)}
+                      {renderPersonTable(castMembers, true)}
                     </>
                   )}
                   {production.creative.length > 0 && (
@@ -473,6 +489,15 @@ const ProductionPage = () => {
                     <>
                       <SectionTitle>Chorus</SectionTitle>
                       {renderPersonTable(production.chorus, false)}
+                    </>
+                  )}
+                  {/* McPhee artists — a program membership, listed by name.
+                      Their character (if any) shows under Cast via their
+                      Artist appearance, so this section is names only. */}
+                  {mcpheeMembers.length > 0 && (
+                    <>
+                      <SectionTitle>McPhee Artists</SectionTitle>
+                      {renderPersonTable(mcpheeMembers, false)}
                     </>
                   )}
                   {production.notes && (

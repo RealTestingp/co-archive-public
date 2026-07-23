@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Breadcrumb from "../components/ui/BreadCrumb";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
@@ -34,14 +34,25 @@ interface Production {
 interface Character {
   id: number;
   name: string;
-  operaTitle?: string;
+  // GET /api/characters projects the opera name as `opera` (Opera = c.Opera.Title),
+  // not `operaTitle` — reading the wrong key showed "—" for every row.
+  opera?: string;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
+const TABS: Tab[] = ["Persons", "Productions", "Characters"];
+
 const ManageArchivePage = () => {
   const { isDark, colors } = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>("Persons");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Active tab lives in the URL (?tab=Characters) so a refresh restores the
+  // tab you were on instead of snapping back to Persons. Falls back to
+  // Persons for a missing or unrecognised value.
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const activeTab: Tab =
+    tabParam && TABS.includes(tabParam) ? tabParam : "Persons";
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
@@ -149,7 +160,8 @@ const ManageArchivePage = () => {
   };
 
   const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
+    // Persons is the default, so keep its URL clean (no ?tab=).
+    setSearchParams(tab === "Persons" ? {} : { tab }, { replace: true });
     setSearch("");
     setPage(1);
     // If this tab's data is still filtered by an earlier search, restore the
@@ -176,7 +188,7 @@ const ManageArchivePage = () => {
     if (activeTab === "Characters") navigate(`/characters/${id}`);
   };
 
-  const tabs: Tab[] = ["Persons", "Productions", "Characters"];
+  const tabs = TABS;
 
   // Only show skeletons when this tab has never loaded. Any later fetch keeps
   // the current content visible while new data arrives.
@@ -336,7 +348,7 @@ const ManageArchivePage = () => {
         >
           <NameLink id={c.id} label={c.name} />
           <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {c.operaTitle ?? "—"}
+            {c.opera ?? "—"}
           </span>
         </div>
       ));
@@ -498,7 +510,9 @@ const ManageArchivePage = () => {
           ))}
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar — Search is the primary (red) action anchored to the
+            input; Add New is de-emphasised and separated to the right so it
+            isn't mistaken for the search action right after typing. */}
         <div
           style={{
             display: "flex",
@@ -515,8 +529,38 @@ const ManageArchivePage = () => {
             onKeyDown={handleKeyDown}
             style={inputStyle}
           />
+          {/* Primary: belongs to the input, so it's the emphasised action. */}
           <button
             onClick={handleSearch}
+            style={{
+              fontSize: "12px",
+              fontWeight: 500,
+              padding: "8px 18px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              border: "1px solid #9B1C1C",
+              background: "#9B1C1C",
+              color: "#fff",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Search
+          </button>
+
+          {/* Divider separates the search cluster from the create action. */}
+          <div
+            style={{
+              width: "1px",
+              height: "24px",
+              background: border,
+              margin: "0 4px",
+            }}
+          />
+
+          {/* Secondary: a create action, deliberately not competing with
+              Search for the eye immediately after typing. */}
+          <button
+            onClick={handleAddNew}
             style={{
               fontSize: "12px",
               fontWeight: 500,
@@ -527,22 +571,7 @@ const ManageArchivePage = () => {
               background: surface,
               color: textSecondary,
               fontFamily: "Inter, sans-serif",
-            }}
-          >
-            Search
-          </button>
-          <button
-            onClick={handleAddNew}
-            style={{
-              fontSize: "12px",
-              fontWeight: 500,
-              padding: "8px 14px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              border: "1px solid #9B1C1C",
-              background: "#9B1C1C",
-              color: "#fff",
-              fontFamily: "Inter, sans-serif",
+              whiteSpace: "nowrap",
             }}
           >
             + Add New

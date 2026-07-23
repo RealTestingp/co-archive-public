@@ -1,11 +1,22 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
 
-type Theme = 'light' | 'dark';
+// Three modes. "system" follows the OS live; "light"/"dark" are explicit
+// overrides. This is what fixes automatic dark mode: previously any stored
+// value permanently blocked system-follow, so once you clicked the toggle the
+// OS was ignored forever. Now "system" is a real, persistable choice.
+type ThemeMode = "light" | "dark" | "system";
+// The resolved theme actually applied to the UI.
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
+  /** The user's chosen mode: light, dark, or system. */
+  mode: ThemeMode;
+  /** The resolved theme after applying system preference. */
   theme: Theme;
-  toggleTheme: () => void;
   isDark: boolean;
+  setMode: (mode: ThemeMode) => void;
+  /** Cycles light → dark → system → light. Kept for the existing toggle. */
+  toggleTheme: () => void;
   colors: {
     background: string;
     surface: string;
@@ -22,81 +33,100 @@ interface ThemeContextType {
 }
 
 const lightColors = {
-  background: '#ffffff',
-  surface: '#f9fafb',
-  surfaceHover: '#fafafa',
-  border: '#e5e7eb',
-  borderLight: '#f3f4f6',
-  textPrimary: '#111111',
-  textSecondary: '#6b7280',
-  textTertiary: '#9ca3af',
-  accent: '#9B1C1C',
-  accentHover: '#7a1515',
-  accentLight: '#f3e8e8',
+  background: "#ffffff",
+  surface: "#f9fafb",
+  surfaceHover: "#fafafa",
+  border: "#e5e7eb",
+  borderLight: "#f3f4f6",
+  textPrimary: "#111111",
+  textSecondary: "#6b7280",
+  textTertiary: "#9ca3af",
+  accent: "#9B1C1C",
+  accentHover: "#7a1515",
+  accentLight: "#f3e8e8",
 };
 
 const darkColors = {
-  background: '#111111',
-  surface: '#1c1c1c',
-  surfaceHover: '#242424',
-  border: '#2a2a2a',
-  borderLight: '#222222',
-  textPrimary: '#f9f9f9',
-  textSecondary: '#9ca3af',
-  textTertiary: '#6b7280',
-  accent: '#c0392b',
-  accentHover: '#a93226',
-  accentLight: 'rgba(192, 57, 43, 0.15)',
+  background: "#111111",
+  surface: "#1c1c1c",
+  surfaceHover: "#242424",
+  border: "#2a2a2a",
+  borderLight: "#222222",
+  textPrimary: "#f9f9f9",
+  textSecondary: "#9ca3af",
+  textTertiary: "#6b7280",
+  accent: "#c0392b",
+  accentHover: "#a93226",
+  accentLight: "rgba(192, 57, 43, 0.15)",
 };
 
+const STORAGE_KEY = "coa-theme";
+
+const prefersDark = () =>
+  window.matchMedia("(prefers-color-scheme: dark)").matches;
+
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'light',
-  toggleTheme: () => {},
+  mode: "system",
+  theme: "light",
   isDark: false,
+  setMode: () => {},
+  toggleTheme: () => {},
   colors: lightColors,
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const getInitialTheme = (): Theme => {
-    // Check localStorage first (manual override)
-    const stored = localStorage.getItem('coa-theme') as Theme | null;
-    if (stored) return stored;
-    // Fall back to system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const getInitialMode = (): ThemeMode => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    // Accept only known modes; anything else (including nothing) → system.
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
+    }
+    return "system";
   };
 
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [mode, setModeState] = useState<ThemeMode>(getInitialMode);
+  // Tracked separately so a live OS change re-resolves the theme while in
+  // system mode without needing a reload.
+  const [systemDark, setSystemDark] = useState<boolean>(prefersDark);
 
+  // Keep systemDark in sync with the OS, always — cheap, and it means
+  // switching back to system mode is instantly correct.
   useEffect(() => {
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only follow system if user hasn't manually overridden
-      if (!localStorage.getItem('coa-theme')) {
-        setTheme(e.matches ? 'dark' : 'light');
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
   }, []);
 
+  const theme: Theme = mode === "system" ? (systemDark ? "dark" : "light") : mode;
+  const isDark = theme === "dark";
+
+  // Drive the CSS. data-theme is always the *resolved* theme so stylesheets
+  // never need to know about "system".
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
+  const setMode = (next: ThemeMode) => {
+    localStorage.setItem(STORAGE_KEY, next);
+    setModeState(next);
+  };
+
+  // Existing single-button toggle now cycles through all three so "system"
+  // (automatic) is reachable again: light → dark → system → light.
   const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
-    localStorage.setItem('coa-theme', next);
-    setTheme(next);
+    setMode(mode === "light" ? "dark" : mode === "dark" ? "system" : "light");
   };
 
   return (
     <ThemeContext.Provider
       value={{
+        mode,
         theme,
+        isDark,
+        setMode,
         toggleTheme,
-        isDark: theme === 'dark',
-        colors: theme === 'dark' ? darkColors : lightColors,
+        colors: isDark ? darkColors : lightColors,
       }}
     >
       {children}
