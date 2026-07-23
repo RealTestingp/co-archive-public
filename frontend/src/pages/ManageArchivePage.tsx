@@ -498,7 +498,9 @@ const ManageArchivePage = () => {
           ))}
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar — Search is the primary (red) action anchored to the
+            input; Add New is de-emphasised and separated to the right so it
+            isn't mistaken for the search action right after typing. */}
         <div
           style={{
             display: "flex",
@@ -515,8 +517,38 @@ const ManageArchivePage = () => {
             onKeyDown={handleKeyDown}
             style={inputStyle}
           />
+          {/* Primary: belongs to the input, so it's the emphasised action. */}
           <button
             onClick={handleSearch}
+            style={{
+              fontSize: "12px",
+              fontWeight: 500,
+              padding: "8px 18px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              border: "1px solid #9B1C1C",
+              background: "#9B1C1C",
+              color: "#fff",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Search
+          </button>
+
+          {/* Divider separates the search cluster from the create action. */}
+          <div
+            style={{
+              width: "1px",
+              height: "24px",
+              background: border,
+              margin: "0 4px",
+            }}
+          />
+
+          {/* Secondary: a create action, deliberately not competing with
+              Search for the eye immediately after typing. */}
+          <button
+            onClick={handleAddNew}
             style={{
               fontSize: "12px",
               fontWeight: 500,
@@ -527,22 +559,7 @@ const ManageArchivePage = () => {
               background: surface,
               color: textSecondary,
               fontFamily: "Inter, sans-serif",
-            }}
-          >
-            Search
-          </button>
-          <button
-            onClick={handleAddNew}
-            style={{
-              fontSize: "12px",
-              fontWeight: 500,
-              padding: "8px 14px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              border: "1px solid #9B1C1C",
-              background: "#9B1C1C",
-              color: "#fff",
-              fontFamily: "Inter, sans-serif",
+              whiteSpace: "nowrap",
             }}
           >
             + Add New
