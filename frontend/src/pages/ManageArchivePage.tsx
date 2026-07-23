@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Breadcrumb from "../components/ui/BreadCrumb";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
@@ -41,9 +41,18 @@ interface Character {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
+const TABS: Tab[] = ["Persons", "Productions", "Characters"];
+
 const ManageArchivePage = () => {
   const { isDark, colors } = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>("Persons");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Active tab lives in the URL (?tab=Characters) so a refresh restores the
+  // tab you were on instead of snapping back to Persons. Falls back to
+  // Persons for a missing or unrecognised value.
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const activeTab: Tab =
+    tabParam && TABS.includes(tabParam) ? tabParam : "Persons";
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
@@ -151,7 +160,8 @@ const ManageArchivePage = () => {
   };
 
   const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
+    // Persons is the default, so keep its URL clean (no ?tab=).
+    setSearchParams(tab === "Persons" ? {} : { tab }, { replace: true });
     setSearch("");
     setPage(1);
     // If this tab's data is still filtered by an earlier search, restore the
@@ -178,7 +188,7 @@ const ManageArchivePage = () => {
     if (activeTab === "Characters") navigate(`/characters/${id}`);
   };
 
-  const tabs: Tab[] = ["Persons", "Productions", "Characters"];
+  const tabs = TABS;
 
   // Only show skeletons when this tab has never loaded. Any later fetch keeps
   // the current content visible while new data arrives.
