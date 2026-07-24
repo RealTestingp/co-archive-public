@@ -19,6 +19,8 @@
         // Tour - store a range (single row of data, start date and end date)
         public DateTime? TourStartDate { get; set; }
         public DateTime? TourEndDate { get; set; }
+
+        public List<CreateAppearanceDto>? Appearances { get; set; }
     }
 
     public class UpdateProductionDto
