@@ -10,6 +10,7 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 import ErrorState from "../components/ui/ErrorState";
 import EditProductionModal from "../components/modals/EditProductionModal";
 import DeleteProductionModal from "../components/modals/DeleteProductionModal";
+import ManageCastModal from "../components/modals/ManageCastModal";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../auth";
 import { api } from "../api";
@@ -20,6 +21,8 @@ interface Performance {
 }
 
 interface CastMember {
+  // Returned by GET /api/productions/{id} — needed to DELETE the appearance.
+  appearanceId?: number;
   personId?: number;
   firstName: string;
   lastName: string;
@@ -49,6 +52,8 @@ interface Production {
   eventType: string;
   venue: string;
   opera: string | null;
+  // Now returned by GET /api/productions/{id} — used to load/add characters.
+  operaId: number | null;
   composers: string[];
   librettists: string[];
   writtenLanguage: string | null;
@@ -82,6 +87,7 @@ const ProductionPage = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showManageCast, setShowManageCast] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -463,6 +469,33 @@ const ProductionPage = () => {
             ) : (
               production && (
                 <>
+                  {/* Admin-only: assign / add / remove cast after creation. */}
+                  {isAdmin && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        marginBottom: "0.75rem",
+                      }}
+                    >
+                      <button
+                        onClick={() => setShowManageCast(true)}
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 500,
+                          padding: "7px 14px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          border: `1px solid ${border}`,
+                          background: "transparent",
+                          color: textPrimary,
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        Manage Cast
+                      </button>
+                    </div>
+                  )}
                   {castMembers.length > 0 && (
                     <>
                       <SectionTitle>Cast</SectionTitle>
@@ -547,6 +580,17 @@ const ProductionPage = () => {
             onConfirm={handleDeleteConfirm}
             isDeleting={isDeleting}
             error={deleteError}
+          />
+          <ManageCastModal
+            isOpen={showManageCast}
+            onClose={() => setShowManageCast(false)}
+            productionId={production.id}
+            productionTitle={production.title}
+            operaId={production.operaId}
+            cast={production.cast}
+            // Refetch so the current-cast list and the page stay in sync after
+            // any add/remove — modal stays open for further edits.
+            onChanged={fetchProduction}
           />
         </>
       )}
