@@ -77,6 +77,10 @@ const SearchPage = () => {
   const [selectedSeason, setSelectedSeason] = useState("");
 
   const hasSearched = urlQuery.trim().length > 0;
+  // Backend returns [] for queries under 2 chars, so a single character would
+  // otherwise read as "no results". Flag it and show a hint instead.
+  const MIN_SEARCH = 2;
+  const tooShort = hasSearched && urlQuery.trim().length < MIN_SEARCH;
 
   useEffect(() => {
     const fetchLookups = async () => {
@@ -100,8 +104,11 @@ const SearchPage = () => {
 
   useEffect(() => {
     setInputValue(urlQuery);
-    if (urlQuery.trim()) {
-      fetchResults(urlQuery.trim());
+    const q = urlQuery.trim();
+    // Only hit the API at 2+ chars — under that the backend just returns [],
+    // and we show a "type more" hint instead.
+    if (q.length >= MIN_SEARCH) {
+      fetchResults(q);
     } else {
       setResults(null);
       setResultsQuery("");
@@ -278,7 +285,9 @@ const SearchPage = () => {
   // Show skeletons while fetching AND while results still belong to an older
   // query — that's what stops the "no results" flash mid-search.
   const isStale = hasSearched && resultsQuery !== urlQuery.trim();
-  const showSkeletons = loading || isStale;
+  // Never skeleton for a too-short query — we don't fetch, so the stale check
+  // would otherwise flash the loading bars above the "Keep typing…" hint.
+  const showSkeletons = (loading || isStale) && !tooShort;
 
   return (
     <div
@@ -410,7 +419,7 @@ const SearchPage = () => {
           </div>
 
           {/* Filters */}
-          {hasSearched && !showSkeletons && (
+          {hasSearched && !showSkeletons && !tooShort && (
             <div className={styles.filterRow}>
               {activeTab === "Persons" && (
                 <>
@@ -468,9 +477,20 @@ const SearchPage = () => {
             </div>
           )}
 
+          {/* Search term too short — hint instead of a "no results" flash. */}
+          {tooShort && (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyTitle}>Keep typing…</p>
+              <p className={styles.emptyText}>
+                Please enter at least 2 characters to search.
+              </p>
+            </div>
+          )}
+
           {/* Empty */}
           {!showSkeletons &&
             !error &&
+            !tooShort &&
             results &&
             activeSingleList.length === 0 && (
               <div className={styles.emptyState}>
