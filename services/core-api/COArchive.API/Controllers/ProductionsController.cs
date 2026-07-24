@@ -28,7 +28,12 @@ namespace COArchive.API.Controllers
 
             // Ignore search terms under 2 characters, avoids single-letter queries
             //TODO FIX - display error or stop search - less than 2 chars returns entire db
-            var effectiveSearch = string.IsNullOrWhiteSpace(search) || search.Trim().Length < 2
+            if (search!= null && search.Trim().Length > 0 && search.Trim().Length < 2)
+            {
+                return Ok(new List<object>());
+            }
+
+            var effectiveSearch = string.IsNullOrWhiteSpace(search)
                 ? null
                 : search.Trim();
 
