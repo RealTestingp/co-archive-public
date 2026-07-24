@@ -252,50 +252,75 @@ namespace COArchive.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
-            var production = new Production
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
             {
-                Title = dto.Title,
-                SeasonId = dto.SeasonId,
-                EventTypeId = dto.EventTypeId,
-                VenueId = dto.VenueId,
-                OperaId = dto.OperaId,
-                WrittenLanguageId = dto.WrittenLanguageId,
-                SungLanguageId = dto.SungLanguageId,
-                RuntimeMinutes = dto.RuntimeMinutes,
-                ProgramPdfUrl = dto.ProgramPdfUrl,
-                Notes = dto.Notes,
-            };
+                var production = new Production
+                {
+                    Title = dto.Title,
+                    SeasonId = dto.SeasonId,
+                    EventTypeId = dto.EventTypeId,
+                    VenueId = dto.VenueId,
+                    OperaId = dto.OperaId,
+                    WrittenLanguageId = dto.WrittenLanguageId,
+                    SungLanguageId = dto.SungLanguageId,
+                    RuntimeMinutes = dto.RuntimeMinutes,
+                    ProgramPdfUrl = dto.ProgramPdfUrl,
+                    Notes = dto.Notes,
+                };
 
-            _db.Productions.Add(production);
-            await _db.SaveChangesAsync();
+                _db.Productions.Add(production);
+                await _db.SaveChangesAsync();
 
-            // Specific performance dates — MainStage, Brunch, Family, Cabaret
-            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
-            {
-                foreach (var date in dto.PerformanceDates)
+                // Add performance dates
+                if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+                {
+                    foreach (var date in dto.PerformanceDates)
+                    {
+                        _db.Performances.Add(new Performance
+                        {
+                            ProductionId = production.Id,
+                            Date = date,
+                            DateTo = null,
+                        });
+                    }
+                }
+                else if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue)
                 {
                     _db.Performances.Add(new Performance
                     {
                         ProductionId = production.Id,
-                        Date = date,
-                        DateTo = null,
+                        Date = dto.TourStartDate.Value,
+                        DateTo = dto.TourEndDate.Value,
                     });
                 }
-                await _db.SaveChangesAsync();
-            }
-            // Tour date range — one row with start and end date
-            else if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue)
-            {
-                _db.Performances.Add(new Performance
-                {
-                    ProductionId = production.Id,
-                    Date = dto.TourStartDate.Value,
-                    DateTo = dto.TourEndDate.Value,
-                });
-                await _db.SaveChangesAsync();
-            }
 
-            return CreatedAtAction(nameof(GetById), new { id = production.Id }, new { production.Id });
+                // Add appearances
+                if (dto.Appearances != null && dto.Appearances.Any())
+                {
+                    foreach (var a in dto.Appearances)
+                    {
+                        _db.Appearances.Add(new Appearance
+                        {
+                            PersonId = a.PersonId,
+                            ProductionId = production.Id, // always from new production
+                            ContributorTypeId = a.ContributorTypeId,
+                            PositionId = a.PositionId,
+                            CharacterId = a.CharacterId,
+                        });
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return CreatedAtAction(nameof(GetById), new { id = production.Id }, new { production.Id });
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "An error occurred creating the production. No data was saved.");
+            }
         }
 
         // DELETE /api/productions/1
