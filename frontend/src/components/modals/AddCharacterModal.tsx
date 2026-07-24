@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 interface LookupItem {
   id: number;
@@ -20,46 +21,59 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const inputStyle = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box" as const,
-  color: "#111",
-};
-
-const labelStyle = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap = { marginBottom: "1.1rem" };
-
-// Modal-sized, full width, portalled out of the modal's overflow container,
-// and pinned light because the modal is hardcoded white.
+// Full-width, portalled dropdown. theme "auto" now that the modal itself
+// follows the app theme.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
 
 const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
+  const { isDark, colors } = useTheme();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [operas, setOperas] = useState<LookupItem[]>([]);
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,10 +91,6 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
     };
     fetchLookups();
   }, [isOpen]);
-
-  const set =
-    (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const operaOptions = useMemo(
     () => operas.map((o) => ({ value: String(o.id), label: o.title })),
@@ -127,7 +137,7 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -136,12 +146,15 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "480px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -155,14 +168,14 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
             marginBottom: "1.5rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Add Character
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -178,7 +191,7 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
               textAlign: "center",
               padding: "2rem 0",
               fontSize: "13px",
-              color: "#6b7280",
+              color: textSecondary,
             }}
           >
             Loading form options...
@@ -195,7 +208,9 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 placeholder="e.g. Violetta"
                 style={inputStyle}
                 value={form.name}
-                onChange={set("name")}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, name: e.target.value }))
+                }
               />
             </div>
 
@@ -219,9 +234,9 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   color: "#9B1C1C",
                   marginBottom: "1rem",
                   padding: "8px 12px",
-                  background: "#fef2f2",
+                  background: dangerBg,
                   borderRadius: "6px",
-                  border: "1px solid #fecaca",
+                  border: `1px solid ${dangerBorder}`,
                 }}
               >
                 {error}
@@ -237,7 +252,7 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 marginTop: "1.5rem",
               }}
             >
-              <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "11px", color: textMuted }}>
                 <span style={{ color: "#9B1C1C" }}>*</span> Required fields
               </span>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -250,9 +265,10 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     padding: "8px 14px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
+                    border: `1px solid ${border}`,
+                    background: surface,
+                    color: textPrimary,
+                    fontFamily: "Inter, sans-serif",
                   }}
                 >
                   Cancel
@@ -269,6 +285,7 @@ const AddCharacterModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     border: "1px solid #9B1C1C",
                     background: submitting ? "#c85a5a" : "#9B1C1C",
                     color: "#fff",
+                    fontFamily: "Inter, sans-serif",
                   }}
                 >
                   {submitting ? "Saving..." : "Add Character"}

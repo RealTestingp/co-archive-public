@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 interface LookupItem {
   id: number;
@@ -17,8 +18,8 @@ interface FormState {
   isActive: boolean;
 }
 
-// The shape of person data this modal needs in order to pre-fill the form.
-// Matches (a superset of) PersonPage's `Person` interface.
+// The shape of person data this modal needs to pre-fill. Matches (a superset
+// of) PersonPage's `Person` interface.
 export interface PersonForEdit {
   id: number;
   firstName: string;
@@ -38,38 +39,11 @@ interface Props {
   person: PersonForEdit;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#111",
-  background: "#fff",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
-
-// Modal-sized, full width, portalled out of the modal's overflow container,
-// and pinned light because the modal is hardcoded white.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
 
@@ -87,6 +61,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
+  const { isDark, colors } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [voiceTypes, setVoiceTypes] = useState<LookupItem[]>([]);
@@ -100,10 +75,46 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarHovered, setAvatarHovered] = useState(false);
 
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+  const avatarBg = isDark ? "#2a2a2a" : "#f3e8e8";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
+
   useEffect(() => {
     if (!isOpen) return;
 
-    // Clear any leftover selection from a previous time this modal was open
     setImageFile(null);
     setImagePreview(null);
 
@@ -118,13 +129,11 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
         setVoiceTypes(vt);
         setNationalities(nat);
 
-        // NOTE: GET /api/persons/{id} currently returns voiceType and
-        // nationalities as display-name strings, not IDs. We match those
-        // names back against the lookup lists to recover the IDs needed
-        // for the dropdown/chip selection. This is a stopgap — if two
-        // lookup entries ever share a display name this will misfire.
-        // Better long-term fix: have the API return voiceTypeId and
-        // nationalityIds directly on the person detail response.
+        // NOTE: GET /api/persons/{id} returns voiceType and nationalities as
+        // display-name strings, not IDs. We match names back against the
+        // lookup lists to recover the IDs. Stopgap — if two lookup entries
+        // ever share a display name this will misfire. Ideal fix: have the
+        // API return voiceTypeId and nationalityIds on the detail response.
         const matchedVoiceType = (vt as LookupItem[]).find(
           (v) => v.name === person.voiceType,
         );
@@ -205,12 +214,9 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
     setError(null);
 
     try {
-      // Update requires `id` in the body (UpdatePersonDto) — the controller
-      // 400s if it doesn't match the route id. It also unconditionally
-      // overwrites ProfileImageUrl from the DTO, so we must pass the
-      // person's existing image URL through unchanged — the actual new
-      // image (if any) is uploaded separately below via the uploads
-      // endpoint, which is responsible for updating ProfileImageUrl itself.
+      // Update requires `id` in the body (UpdatePersonDto). It also
+      // overwrites ProfileImageUrl from the DTO, so we pass the existing URL
+      // through unchanged — a new image (if any) is uploaded separately below.
       const res = await api.put(`/api/persons/${person.id}`, {
         id: person.id,
         firstName: form.firstName.trim(),
@@ -224,11 +230,6 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
       });
 
       if (!res.ok) throw new Error("Failed to update person.");
-
-      // Upload the new photo, if one was selected. Awaited (unlike
-      // AddPersonModal's fire-and-forget) since the user is looking at
-      // this person's page right now and expects to see the new photo
-      // once the modal closes.
 
       if (imageFile) {
         try {
@@ -276,7 +277,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -285,12 +286,15 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "500px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -304,14 +308,14 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
             marginBottom: "1.5rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Edit Person
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -327,7 +331,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
               textAlign: "center",
               padding: "2rem 0",
               fontSize: "13px",
-              color: "#6b7280",
+              color: textSecondary,
             }}
           >
             Loading form options...
@@ -360,10 +364,10 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                     height: "64px",
                     borderRadius: "50%",
                     overflow: "hidden",
-                    border: `1.5px ${imagePreview || avatarHovered ? "solid #9B1C1C" : "dashed #d1d5db"}`,
+                    border: `1.5px ${imagePreview || avatarHovered ? "solid #9B1C1C" : `dashed ${border}`}`,
                     cursor: "pointer",
                     position: "relative",
-                    background: "#f3e8e8",
+                    background: avatarBg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -406,7 +410,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                       height="20"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#9ca3af"
+                      stroke={textMuted}
                       strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -446,7 +450,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                <span style={{ fontSize: "11px", color: textMuted }}>
                   {imageFile ? imageFile.name : "Click photo to replace"}
                 </span>
                 <input
@@ -547,11 +551,9 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                         padding: "4px 10px",
                         borderRadius: "4px",
                         cursor: "pointer",
-                        border: selected
-                          ? "1px solid #9B1C1C"
-                          : "1px solid #e5e7eb",
-                        background: selected ? "#fef2f2" : "#fff",
-                        color: selected ? "#9B1C1C" : "#6b7280",
+                        border: `1px solid ${selected ? "#9B1C1C" : border}`,
+                        background: selected ? dangerBg : inputBg,
+                        color: selected ? "#9B1C1C" : textSecondary,
                         fontFamily: "Inter, sans-serif",
                       }}
                     >
@@ -584,7 +586,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                 htmlFor="isActiveEdit"
                 style={{
                   fontSize: "12px",
-                  color: "#374151",
+                  color: textPrimary,
                   cursor: "pointer",
                 }}
               >
@@ -600,9 +602,9 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                   color: "#9B1C1C",
                   marginBottom: "1rem",
                   padding: "8px 12px",
-                  background: "#fef2f2",
+                  background: dangerBg,
                   borderRadius: "6px",
-                  border: "1px solid #fecaca",
+                  border: `1px solid ${dangerBorder}`,
                 }}
               >
                 {error}
@@ -618,7 +620,7 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                 marginTop: "1.5rem",
               }}
             >
-              <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "11px", color: textMuted }}>
                 <span style={{ color: "#9B1C1C" }}>*</span> Required fields
               </span>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -631,9 +633,9 @@ const EditPersonModal = ({ isOpen, onClose, onSuccess, person }: Props) => {
                     padding: "8px 14px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
+                    border: `1px solid ${border}`,
+                    background: surface,
+                    color: textPrimary,
                     fontFamily: "Inter, sans-serif",
                   }}
                 >

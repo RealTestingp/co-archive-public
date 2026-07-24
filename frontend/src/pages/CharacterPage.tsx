@@ -248,7 +248,8 @@ const CharacterPage = () => {
                         flex: 1,
                         fontSize: "13px",
                         fontWeight: 500,
-                        color: "#9B1C1C",
+                        // Link uses primary ink, not red — hover underline signals it.
+                        color: textPrimary,
                         cursor: "pointer",
                         outline: "none",
                       }}

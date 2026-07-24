@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -117,101 +118,15 @@ interface Props {
   onSuccess?: () => void;
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#111",
-  background: "#fff",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
-
-// Every dropdown in this modal shares the same config: modal-sized, full
-// width, portalled out of the modal's overflow container (the modal panel is
-// `overflow-y: auto`, which would otherwise clip the list), and pinned light
-// because the modal itself is hardcoded white and doesn't read ThemeContext.
+// Full-width, portalled dropdown; theme "auto" so it follows the app theme
+// now that the modal itself is theme-aware.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
-
-// Shared styles for the inline "add new lookup" accordions (season/venue/language)
-const addLookupBtnStyle: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#9B1C1C",
-  background: "none",
-  border: "1px dashed #fca5a5",
-  borderRadius: "6px",
-  padding: "7px 14px",
-  cursor: "pointer",
-  fontFamily: "Inter, sans-serif",
-};
-
-const accordionBoxStyle: React.CSSProperties = {
-  border: "1px solid #e5e7eb",
-  borderRadius: "8px",
-  padding: "1rem",
-  marginBottom: "1.1rem",
-};
-
-const accordionHeadStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginBottom: "0.75rem",
-};
-
-const accordionTitleStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "#111",
-};
-
-const accordionCancelStyle: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#9ca3af",
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-};
-
-const accordionErrStyle: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#9B1C1C",
-  marginBottom: "0.5rem",
-};
-
-const accordionSaveStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 500,
-  padding: "7px 14px",
-  borderRadius: "6px",
-  cursor: "pointer",
-  border: "1px solid #9B1C1C",
-  background: "#9B1C1C",
-  color: "#fff",
-  fontFamily: "Inter, sans-serif",
-};
 
 const newId = () => Math.random().toString(36).slice(2);
 
@@ -223,6 +138,7 @@ const ACCEPTED_PDF_TYPE = "application/pdf";
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
+  const { isDark, colors } = useTheme();
   const [step, setStep] = useState(0);
 
   // Step 0 — Opera
@@ -285,10 +201,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [personResults, setPersonResults] = useState<
     Record<string, PersonSearchResult[]>
   >({});
-  // Positions cached per contributor type. This used to be a single shared
-  // array, which meant one crew row changing its Type wiped the options out
-  // from under every other row — row 1's Position dropdown would empty while
-  // still holding a selected positionId underneath.
+  // Positions cached per contributor type (see fetchPositions).
   const [positionsByType, setPositionsByType] = useState<
     Record<string, Position[]>
   >({});
@@ -298,6 +211,101 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pdfUploadWarning, setPdfUploadWarning] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const borderLight = isDark ? "#2a2a2a" : "#f3f4f6";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+  const hoverBg = isDark ? "#242424" : "#f9fafb";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
+
+  // Inline "add new lookup" accordion styles.
+  const addLookupBtnStyle: React.CSSProperties = {
+    fontSize: "12px",
+    color: "#9B1C1C",
+    background: "none",
+    border: `1px dashed ${isDark ? "#6b2a2a" : "#fca5a5"}`,
+    borderRadius: "6px",
+    padding: "7px 14px",
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif",
+  };
+
+  const accordionBoxStyle: React.CSSProperties = {
+    border: `1px solid ${border}`,
+    borderRadius: "8px",
+    padding: "1rem",
+    marginBottom: "1.1rem",
+  };
+
+  const accordionHeadStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "0.75rem",
+  };
+
+  const accordionTitleStyle: React.CSSProperties = {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: textPrimary,
+  };
+
+  const accordionCancelStyle: React.CSSProperties = {
+    fontSize: "12px",
+    color: textMuted,
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+  };
+
+  const accordionErrStyle: React.CSSProperties = {
+    fontSize: "12px",
+    color: "#9B1C1C",
+    marginBottom: "0.5rem",
+  };
+
+  const accordionSaveStyle: React.CSSProperties = {
+    fontSize: "12px",
+    fontWeight: 500,
+    padding: "7px 14px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    border: "1px solid #9B1C1C",
+    background: "#9B1C1C",
+    color: "#fff",
+    fontFamily: "Inter, sans-serif",
+  };
 
   const makeCrewRow = (): CrewRow => ({
     id: newId(),
@@ -317,10 +325,6 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     : true;
   const selectedOpera = operas.find((o) => o.id === selectedOperaId);
 
-  // Match on operaId when the API gives us one; otherwise fall back to
-  // comparing the opera title, since the list endpoint returns `operaTitle`
-  // and may not include `operaId` at all. Without the fallback every
-  // character gets filtered out and the Characters step looks empty.
   const operaCharacters = allCharacters.filter((c) => {
     if (selectedOperaId == null) return false;
     if (c.operaId != null) return c.operaId === selectedOperaId;
@@ -614,8 +618,6 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       });
       if (!res.ok) throw new Error();
       const created = await res.json();
-      // Stamp operaId locally in case the response omits it — otherwise the
-      // new character is filtered straight back out of the list below.
       setAllCharacters((prev) => [
         ...prev,
         { ...created, operaId: created.operaId ?? selectedOperaId },
@@ -761,7 +763,6 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
 
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
 
-      // Upload the program PDF, if one was selected.
       if (programPdfFile) {
         try {
           const uploadRes = await uploadFile(
@@ -859,8 +860,8 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 width: "22px",
                 height: "22px",
                 borderRadius: "50%",
-                background: i <= step ? "#9B1C1C" : "#e5e7eb",
-                color: i <= step ? "#fff" : "#9ca3af",
+                background: i <= step ? "#9B1C1C" : border,
+                color: i <= step ? "#fff" : textMuted,
                 fontSize: "10px",
                 fontWeight: 600,
                 display: "flex",
@@ -874,7 +875,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             <span
               style={{
                 fontSize: "10px",
-                color: i === step ? "#9B1C1C" : "#9ca3af",
+                color: i === step ? textPrimary : textMuted,
                 fontWeight: i === step ? 600 : 400,
                 whiteSpace: "nowrap",
               }}
@@ -887,7 +888,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               style={{
                 flex: 1,
                 height: "1px",
-                background: i < step ? "#9B1C1C" : "#e5e7eb",
+                background: i < step ? "#9B1C1C" : border,
                 margin: "0 6px",
                 marginBottom: "16px",
               }}
@@ -918,7 +919,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
         alignItems: "center",
         marginTop: "1.75rem",
         paddingTop: "1rem",
-        borderTop: "1px solid #f3f4f6",
+        borderTop: `1px solid ${borderLight}`,
       }}
     >
       <div>
@@ -927,7 +928,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             onClick={onBack}
             style={{
               fontSize: "12px",
-              color: "#6b7280",
+              color: textSecondary,
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -947,9 +948,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             padding: "8px 14px",
             borderRadius: "6px",
             cursor: "pointer",
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-            color: "#374151",
+            border: `1px solid ${border}`,
+            background: surface,
+            color: textPrimary,
             fontFamily: "Inter, sans-serif",
           }}
         >
@@ -964,9 +965,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             padding: "8px 16px",
             borderRadius: "6px",
             cursor: nextDisabled ? "not-allowed" : "pointer",
-            border: "1px solid #9B1C1C",
-            background: nextDisabled ? "#f3f4f6" : "#9B1C1C",
-            color: nextDisabled ? "#9ca3af" : "#fff",
+            border: `1px solid ${nextDisabled ? border : "#9B1C1C"}`,
+            background: nextDisabled ? inputBg : "#9B1C1C",
+            color: nextDisabled ? textMuted : "#fff",
             fontFamily: "Inter, sans-serif",
           }}
         >
@@ -976,12 +977,61 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     </div>
   );
 
+  // Person-search autocomplete panel, shared by cast + crew rows.
+  const PersonResults = ({
+    rowId,
+    isCast,
+    maxHeight,
+  }: {
+    rowId: string;
+    isCast: boolean;
+    maxHeight: string;
+  }) =>
+    (personResults[rowId]?.length ?? 0) > 0 ? (
+      <div
+        style={{
+          position: "absolute",
+          top: "100%",
+          left: 0,
+          right: 0,
+          background: surface,
+          border: `1px solid ${border}`,
+          borderRadius: "6px",
+          boxShadow: isDark
+            ? "0 4px 12px rgba(0,0,0,0.5)"
+            : "0 4px 12px rgba(0,0,0,0.1)",
+          zIndex: 10,
+          maxHeight,
+          overflowY: "auto",
+        }}
+      >
+        {personResults[rowId].map((p) => (
+          <div
+            key={p.id}
+            onClick={() => selectPerson(rowId, p, isCast)}
+            style={{
+              padding: "7px 12px",
+              fontSize: "13px",
+              cursor: "pointer",
+              color: textPrimary,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
+          >
+            {p.firstName} {p.lastName}
+          </div>
+        ))}
+      </div>
+    ) : null;
+
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.35)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -990,12 +1040,15 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "580px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -1008,14 +1061,14 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             marginBottom: "1.25rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Add Production
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -1053,7 +1106,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 ) : (
                   <span
                     style={{
-                      color: "#9ca3af",
+                      color: textMuted,
                       fontWeight: 400,
                       textTransform: "none",
                       letterSpacing: 0,
@@ -1065,8 +1118,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   </span>
                 )}
               </label>
-              {/* Clearing used to run Number("") → handleOperaSelect(0), which
-                  set selectedOperaId to 0 instead of null. */}
+              {/* Clearing sets selectedOperaId to null (not 0). */}
               <Dropdown
                 {...DD}
                 placeholder="Select opera"
@@ -1086,53 +1138,20 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             {!showAddOpera ? (
               <button
                 onClick={() => setShowAddOpera(true)}
-                style={{
-                  fontSize: "12px",
-                  color: "#9B1C1C",
-                  background: "none",
-                  border: "1px dashed #fca5a5",
-                  borderRadius: "6px",
-                  padding: "7px 14px",
-                  cursor: "pointer",
-                  fontFamily: "Inter, sans-serif",
-                  marginBottom: "1rem",
-                }}
+                style={{ ...addLookupBtnStyle, marginBottom: "1rem" }}
               >
                 + Add new opera
               </button>
             ) : (
-              <div
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  padding: "1rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  <span
-                    style={{ fontSize: "12px", fontWeight: 600, color: "#111" }}
-                  >
-                    New Opera
-                  </span>
+              <div style={accordionBoxStyle}>
+                <div style={accordionHeadStyle}>
+                  <span style={accordionTitleStyle}>New Opera</span>
                   <button
                     onClick={() => {
                       setShowAddOpera(false);
                       setOperaError(null);
                     }}
-                    style={{
-                      fontSize: "12px",
-                      color: "#9ca3af",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
+                    style={accordionCancelStyle}
                   >
                     Cancel
                   </button>
@@ -1188,30 +1207,12 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   </div>
                 </div>
                 {operaError && (
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#9B1C1C",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    {operaError}
-                  </div>
+                  <div style={accordionErrStyle}>{operaError}</div>
                 )}
                 <button
                   onClick={handleSaveNewOpera}
                   disabled={savingOpera}
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    padding: "7px 14px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    border: "1px solid #9B1C1C",
-                    background: "#9B1C1C",
-                    color: "#fff",
-                    fontFamily: "Inter, sans-serif",
-                  }}
+                  style={accordionSaveStyle}
                 >
                   {savingOpera ? "Saving..." : "Save Opera"}
                 </button>
@@ -1251,7 +1252,8 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   }
                   style={{
                     fontSize: "11px",
-                    color: "#9B1C1C",
+                    color: textPrimary,
+                    textDecoration: "underline",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
@@ -1570,7 +1572,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <p
                   style={{
                     fontSize: "11px",
-                    color: "#9ca3af",
+                    color: textMuted,
                     marginTop: "0.5rem",
                     marginBottom: 0,
                   }}
@@ -1615,11 +1617,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${border}`,
                     borderRadius: "6px",
                     padding: "8px 12px",
                     fontSize: "13px",
-                    color: "#374151",
+                    color: textPrimary,
                   }}
                 >
                   <span
@@ -1631,7 +1633,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     onClick={() => setProgramPdfFile(null)}
                     style={{
                       fontSize: "12px",
-                      color: "#9ca3af",
+                      color: textMuted,
                       background: "none",
                       border: "none",
                       cursor: "pointer",
@@ -1646,11 +1648,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "1px dashed #d1d5db",
+                    border: `1px dashed ${border}`,
                     borderRadius: "6px",
                     padding: "10px 12px",
                     fontSize: "13px",
-                    color: "#9ca3af",
+                    color: textMuted,
                     cursor: "pointer",
                   }}
                 >
@@ -1710,7 +1712,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: textSecondary,
                   marginBottom: "1rem",
                 }}
               >
@@ -1721,7 +1723,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <p
                   style={{
                     fontSize: "13px",
-                    color: "#6b7280",
+                    color: textSecondary,
                     marginBottom: "1rem",
                   }}
                 >
@@ -1739,7 +1741,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   }}
                 >
                   {operaCharacters.length === 0 ? (
-                    <p style={{ fontSize: "13px", color: "#9ca3af" }}>
+                    <p style={{ fontSize: "13px", color: textMuted }}>
                       No characters found for this opera.
                     </p>
                   ) : (
@@ -1756,8 +1758,8 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                             padding: "8px 12px",
                             borderRadius: "6px",
                             cursor: "pointer",
-                            border: `1px solid ${selected ? "#9B1C1C" : "#e5e7eb"}`,
-                            background: selected ? "#fef2f2" : "#fff",
+                            border: `1px solid ${selected ? "#9B1C1C" : border}`,
+                            background: selected ? dangerBg : inputBg,
                             transition: "all 0.1s ease",
                           }}
                         >
@@ -1767,8 +1769,8 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                               height: "16px",
                               borderRadius: "3px",
                               flexShrink: 0,
-                              border: `1.5px solid ${selected ? "#9B1C1C" : "#d1d5db"}`,
-                              background: selected ? "#9B1C1C" : "#fff",
+                              border: `1.5px solid ${selected ? "#9B1C1C" : border}`,
+                              background: selected ? "#9B1C1C" : inputBg,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -1794,7 +1796,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           <span
                             style={{
                               fontSize: "13px",
-                              color: selected ? "#9B1C1C" : "#111",
+                              color: selected ? "#9B1C1C" : textPrimary,
                               fontWeight: selected ? 500 : 400,
                             }}
                           >
@@ -1809,24 +1811,14 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 {!showAddCharacter ? (
                   <button
                     onClick={() => setShowAddCharacter(true)}
-                    style={{
-                      fontSize: "12px",
-                      color: "#9B1C1C",
-                      background: "none",
-                      border: "1px dashed #fca5a5",
-                      borderRadius: "6px",
-                      padding: "7px 14px",
-                      cursor: "pointer",
-                      fontFamily: "Inter, sans-serif",
-                      marginBottom: "0.5rem",
-                    }}
+                    style={{ ...addLookupBtnStyle, marginBottom: "0.5rem" }}
                   >
                     + Add missing character
                   </button>
                 ) : (
                   <div
                     style={{
-                      border: "1px solid #e5e7eb",
+                      border: `1px solid ${border}`,
                       borderRadius: "8px",
                       padding: "0.75rem",
                       marginBottom: "0.5rem",
@@ -1852,17 +1844,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       <button
                         onClick={handleSaveNewCharacter}
                         disabled={savingCharacter}
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 500,
-                          padding: "8px 14px",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          border: "1px solid #9B1C1C",
-                          background: "#9B1C1C",
-                          color: "#fff",
-                          fontFamily: "Inter, sans-serif",
-                        }}
+                        style={accordionSaveStyle}
                       >
                         {savingCharacter ? "..." : "Add"}
                       </button>
@@ -1876,9 +1858,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           padding: "8px 10px",
                           borderRadius: "6px",
                           cursor: "pointer",
-                          border: "1px solid #e5e7eb",
-                          background: "#fff",
-                          color: "#6b7280",
+                          border: `1px solid ${border}`,
+                          background: surface,
+                          color: textSecondary,
                           fontFamily: "Inter, sans-serif",
                         }}
                       >
@@ -1902,7 +1884,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   <div
                     style={{
                       fontSize: "12px",
-                      color: "#6b7280",
+                      color: textSecondary,
                       marginTop: "4px",
                     }}
                   >
@@ -1934,7 +1916,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     fontWeight: 600,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
-                    color: "#9ca3af",
+                    color: textMuted,
                     marginBottom: "0.75rem",
                   }}
                 >
@@ -1968,45 +1950,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                             searchPersons(row.id, e.target.value, true)
                           }
                         />
-                        {(personResults[row.id]?.length ?? 0) > 0 && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "100%",
-                              left: 0,
-                              right: 0,
-                              background: "#fff",
-                              border: "1px solid #e5e7eb",
-                              borderRadius: "6px",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                              zIndex: 10,
-                              maxHeight: "140px",
-                              overflowY: "auto",
-                            }}
-                          >
-                            {personResults[row.id].map((p) => (
-                              <div
-                                key={p.id}
-                                onClick={() => selectPerson(row.id, p, true)}
-                                style={{
-                                  padding: "7px 12px",
-                                  fontSize: "13px",
-                                  cursor: "pointer",
-                                  color: "#111",
-                                }}
-                                onMouseEnter={(e) =>
-                                  (e.currentTarget.style.background = "#f9fafb")
-                                }
-                                onMouseLeave={(e) =>
-                                  (e.currentTarget.style.background =
-                                    "transparent")
-                                }
-                              >
-                                {p.firstName} {p.lastName}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <PersonResults
+                          rowId={row.id}
+                          isCast
+                          maxHeight="140px"
+                        />
                       </div>
                     </div>
                   ))}
@@ -2020,7 +1968,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "#9ca3af",
+                color: textMuted,
                 marginBottom: "0.75rem",
               }}
             >
@@ -2038,7 +1986,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 <div
                   key={row.id}
                   style={{
-                    border: "1px solid #f3f4f6",
+                    border: `1px solid ${borderLight}`,
                     borderRadius: "8px",
                     padding: "0.75rem",
                   }}
@@ -2050,7 +1998,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       marginBottom: "0.5rem",
                     }}
                   >
-                    <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                    <span style={{ fontSize: "11px", color: textMuted }}>
                       Member {idx + 1}
                     </span>
                     {crewRows.length > 1 && (
@@ -2062,7 +2010,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                         }
                         style={{
                           fontSize: "11px",
-                          color: "#9ca3af",
+                          color: textMuted,
                           background: "none",
                           border: "none",
                           cursor: "pointer",
@@ -2090,45 +2038,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           searchPersons(row.id, e.target.value, false)
                         }
                       />
-                      {(personResults[row.id]?.length ?? 0) > 0 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            background: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "6px",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                            zIndex: 10,
-                            maxHeight: "120px",
-                            overflowY: "auto",
-                          }}
-                        >
-                          {personResults[row.id].map((p) => (
-                            <div
-                              key={p.id}
-                              onClick={() => selectPerson(row.id, p, false)}
-                              style={{
-                                padding: "7px 12px",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                color: "#111",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "#f9fafb")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background =
-                                  "transparent")
-                              }
-                            >
-                              {p.firstName} {p.lastName}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <PersonResults
+                        rowId={row.id}
+                        isCast={false}
+                        maxHeight="120px"
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Type</label>
@@ -2152,8 +2066,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     </div>
                     <div>
                       <label style={labelStyle}>Position</label>
-                      {/* Reads this row's own cached positions, so another
-                          row changing Type can't empty this one out. */}
+                      {/* Reads this row's own cached positions. */}
                       <Dropdown
                         {...DD}
                         placeholder="Select"
@@ -2181,18 +2094,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             </div>
             <button
               onClick={() => setCrewRows((prev) => [...prev, makeCrewRow()])}
-              style={{
-                fontSize: "12px",
-                color: "#9B1C1C",
-                background: "none",
-                border: "1px dashed #fca5a5",
-                borderRadius: "6px",
-                padding: "7px 14px",
-                cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-                width: "100%",
-                marginBottom: "0.5rem",
-              }}
+              style={{ ...addLookupBtnStyle, width: "100%", marginBottom: "0.5rem" }}
             >
               + Add crew member
             </button>
@@ -2213,7 +2115,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 style={{
                   fontSize: "15px",
                   fontWeight: 600,
-                  color: "#111",
+                  color: textPrimary,
                   marginBottom: "4px",
                 }}
               >
@@ -2222,7 +2124,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: textSecondary,
                   marginBottom: "1.5rem",
                 }}
               >
@@ -2235,9 +2137,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     color: "#9B1C1C",
                     marginBottom: "1rem",
                     padding: "8px 12px",
-                    background: "#fef2f2",
+                    background: dangerBg,
                     borderRadius: "6px",
-                    border: "1px solid #fecaca",
+                    border: `1px solid ${dangerBorder}`,
                     textAlign: "left",
                   }}
                 >
@@ -2273,7 +2175,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
               >
                 <div
                   style={{
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${border}`,
                     borderRadius: "8px",
                     padding: "1rem",
                   }}
@@ -2284,7 +2186,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       fontWeight: 600,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
-                      color: "#9ca3af",
+                      color: textMuted,
                       marginBottom: "0.5rem",
                     }}
                   >
@@ -2294,13 +2196,13 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     style={{
                       fontSize: "15px",
                       fontWeight: 600,
-                      color: "#111",
+                      color: textPrimary,
                       marginBottom: "2px",
                     }}
                   >
                     {form.title}
                   </div>
-                  <div style={{ fontSize: "13px", color: "#6b7280" }}>
+                  <div style={{ fontSize: "13px", color: textSecondary }}>
                     {[
                       lookups.seasons.find(
                         (s) => String(s.id) === form.seasonId,
@@ -2316,7 +2218,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     <div
                       style={{
                         fontSize: "12px",
-                        color: "#9ca3af",
+                        color: textMuted,
                         marginTop: "4px",
                       }}
                     >
@@ -2327,7 +2229,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     <div
                       style={{
                         fontSize: "12px",
-                        color: "#9ca3af",
+                        color: textMuted,
                         marginTop: "4px",
                       }}
                     >
@@ -2338,7 +2240,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 {selectedCharacters.length > 0 && (
                   <div
                     style={{
-                      border: "1px solid #e5e7eb",
+                      border: `1px solid ${border}`,
                       borderRadius: "8px",
                       padding: "1rem",
                     }}
@@ -2349,13 +2251,13 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
-                        color: "#9ca3af",
+                        color: textMuted,
                         marginBottom: "0.5rem",
                       }}
                     >
                       Characters ({selectedCharacters.length})
                     </div>
-                    <div style={{ fontSize: "13px", color: "#374151" }}>
+                    <div style={{ fontSize: "13px", color: textSecondary }}>
                       {selectedCharacters.map((c) => c.name).join(", ")}
                     </div>
                   </div>
@@ -2363,7 +2265,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 {castRows.filter((r) => r.personId).length > 0 && (
                   <div
                     style={{
-                      border: "1px solid #e5e7eb",
+                      border: `1px solid ${border}`,
                       borderRadius: "8px",
                       padding: "1rem",
                     }}
@@ -2374,7 +2276,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
-                        color: "#9ca3af",
+                        color: textMuted,
                         marginBottom: "0.5rem",
                       }}
                     >
@@ -2387,11 +2289,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           key={r.id}
                           style={{
                             fontSize: "13px",
-                            color: "#374151",
+                            color: textSecondary,
                             marginBottom: "2px",
                           }}
                         >
-                          <span style={{ fontWeight: 500 }}>
+                          <span style={{ fontWeight: 500, color: textPrimary }}>
                             {r.personName}
                           </span>{" "}
                           — {r.characterName}
@@ -2402,7 +2304,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 {crewRows.filter((r) => r.personId).length > 0 && (
                   <div
                     style={{
-                      border: "1px solid #e5e7eb",
+                      border: `1px solid ${border}`,
                       borderRadius: "8px",
                       padding: "1rem",
                     }}
@@ -2413,7 +2315,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
-                        color: "#9ca3af",
+                        color: textMuted,
                         marginBottom: "0.5rem",
                       }}
                     >
@@ -2426,11 +2328,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                           key={r.id}
                           style={{
                             fontSize: "13px",
-                            color: "#374151",
+                            color: textSecondary,
                             marginBottom: "2px",
                           }}
                         >
-                          <span style={{ fontWeight: 500 }}>
+                          <span style={{ fontWeight: 500, color: textPrimary }}>
                             {r.personName}
                           </span>
                           {r.contributorTypeId &&
@@ -2447,9 +2349,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     color: "#9B1C1C",
                     marginBottom: "1rem",
                     padding: "8px 12px",
-                    background: "#fef2f2",
+                    background: dangerBg,
                     borderRadius: "6px",
-                    border: "1px solid #fecaca",
+                    border: `1px solid ${dangerBorder}`,
                   }}
                 >
                   {submitError}

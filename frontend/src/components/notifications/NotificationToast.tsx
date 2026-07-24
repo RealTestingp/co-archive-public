@@ -99,6 +99,7 @@ const NotificationToast = () => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Header bell icon — decorative accent, kept red. */}
           <svg
             width="16"
             height="16"
@@ -149,8 +150,10 @@ const NotificationToast = () => {
             marginBottom: "6px",
           }}
         >
+          {/* Inline count — reading text, so ink not red (the bell icon and
+              the panel's circular badge carry the red accent). */}
           <span
-            style={{ fontWeight: 600, color: "#9B1C1C", whiteSpace: "nowrap" }}
+            style={{ fontWeight: 700, color: textPrimary, whiteSpace: "nowrap" }}
           >
             {n.milestoneCount}
           </span>

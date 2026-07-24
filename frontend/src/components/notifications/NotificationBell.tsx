@@ -91,6 +91,7 @@ const NotificationBell = () => {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
 
+        {/* Unread-count badge — a badge, kept red. */}
         {count > 0 && (
           <span
             style={{
@@ -162,13 +163,20 @@ const NotificationBell = () => {
             >
               Milestones
             </span>
+            {/* Action link — ink, not red. */}
             {count > 0 && (
               <button
                 onClick={() => markAllAsRead()}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.textDecoration = "underline";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.textDecoration = "none";
+                }}
                 style={{
                   fontSize: "11px",
                   fontWeight: 500,
-                  color: "#9B1C1C",
+                  color: textPrimary,
                   background: "none",
                   border: "none",
                   cursor: "pointer",
@@ -206,7 +214,7 @@ const NotificationBell = () => {
                     i < items.length - 1 ? `1px solid ${borderLight}` : "none",
                 }}
               >
-                {/* Milestone count badge */}
+                {/* Milestone count badge — a badge, kept red. */}
                 <div
                   style={{
                     flexShrink: 0,

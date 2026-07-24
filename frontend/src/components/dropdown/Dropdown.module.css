@@ -120,10 +120,11 @@
   cursor: not-allowed;
 }
 
-/* Reproduces .filterSelectActive when a value is chosen. */
+/* Reproduces .filterSelectActive when a value is chosen. The accent stays on
+   the border + background tint; the text itself is ink, not red. */
 .trigger[data-active-value] {
   border-color: var(--dd-accent);
-  color: var(--dd-accent);
+  color: var(--dd-text);
   background-color: var(--dd-accent-soft);
 }
 
@@ -199,9 +200,11 @@
   background: var(--dd-surface-hover);
 }
 
+/* Selected option: bold ink rather than red text; the checkmark-less cue is
+   the weight plus the highlighted background. */
 .option[data-selected] {
-  color: var(--dd-accent);
-  font-weight: 500;
+  color: var(--dd-text);
+  font-weight: 600;
 }
 
 .option[data-selected][data-highlighted] {

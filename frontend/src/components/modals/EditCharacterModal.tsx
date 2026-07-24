@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 interface LookupItem {
   id: number;
@@ -13,8 +14,8 @@ interface FormState {
 }
 
 // The shape of character data this modal needs to pre-fill. Matches (a
-// superset of) CharacterPage's `Character` interface — note operaId comes
-// through as a real number, so no name-matching stopgap is needed here.
+// superset of) CharacterPage's `Character` interface — operaId comes through
+// as a real number, so no name-matching stopgap is needed here.
 export interface CharacterForEdit {
   id: number;
   name: string;
@@ -28,47 +29,59 @@ interface Props {
   character: CharacterForEdit;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#111",
-  background: "#fff",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
-
-// Modal-sized, full width, portalled out of the modal's overflow container,
-// and pinned light because the modal is hardcoded white.
+// Full-width, portalled dropdown; theme "auto" so it follows the app theme
+// like the modal now does.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
 
 const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) => {
+  const { isDark, colors } = useTheme();
   const [form, setForm] = useState<FormState>({ name: "", operaId: "" });
   const [operas, setOperas] = useState<LookupItem[]>([]);
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -116,9 +129,6 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
     setError(null);
 
     try {
-      // Update requires `id` in the body, same pattern as the Person and
-      // Production update endpoints — the controller 400s if it doesn't
-      // match the route id.
       const res = await api.put(`/api/characters/${character.id}`, {
         id: character.id,
         name: form.name.trim(),
@@ -148,7 +158,7 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -157,12 +167,15 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "480px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -176,14 +189,14 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
             marginBottom: "1.5rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Edit Character
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -199,7 +212,7 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
               textAlign: "center",
               padding: "2rem 0",
               fontSize: "13px",
-              color: "#6b7280",
+              color: textSecondary,
             }}
           >
             Loading form options...
@@ -245,9 +258,9 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
                   color: "#9B1C1C",
                   marginBottom: "1rem",
                   padding: "8px 12px",
-                  background: "#fef2f2",
+                  background: dangerBg,
                   borderRadius: "6px",
-                  border: "1px solid #fecaca",
+                  border: `1px solid ${dangerBorder}`,
                 }}
               >
                 {error}
@@ -263,7 +276,7 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
                 marginTop: "1.5rem",
               }}
             >
-              <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "11px", color: textMuted }}>
                 <span style={{ color: "#9B1C1C" }}>*</span> Required fields
               </span>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -276,9 +289,9 @@ const EditCharacterModal = ({ isOpen, onClose, onSuccess, character }: Props) =>
                     padding: "8px 14px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
+                    border: `1px solid ${border}`,
+                    background: surface,
+                    color: textPrimary,
                     fontFamily: "Inter, sans-serif",
                   }}
                 >

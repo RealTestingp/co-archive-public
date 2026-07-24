@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 // UpdateProductionDto (backend) only touches these fields — performances,
 // cast, creative, crew, orchestra, and chorus are NOT editable through this
@@ -80,44 +81,16 @@ interface Props {
   production: ProductionForEdit;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#111",
-  background: "#fff",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
-
-const MAX_PDF_BYTES = 50 * 1024 * 1024;
-const ACCEPTED_PDF_TYPE = "application/pdf";
-
-// Every dropdown in this modal shares the same config: modal-sized, full
-// width, portalled out of the modal's overflow container, and pinned light
-// because the modal itself is hardcoded white.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
+
+const MAX_PDF_BYTES = 50 * 1024 * 1024;
+const ACCEPTED_PDF_TYPE = "application/pdf";
 
 const EditProductionModal = ({
   isOpen,
@@ -125,6 +98,7 @@ const EditProductionModal = ({
   onSuccess,
   production,
 }: Props) => {
+  const { isDark, colors } = useTheme();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [lookups, setLookups] = useState<Lookups>({
     seasons: [],
@@ -141,10 +115,45 @@ const EditProductionModal = ({
   const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
+
   useEffect(() => {
     if (!isOpen) return;
 
-    // Clear any leftover selection from a previous time this modal was open
     setProgramPdfFile(null);
     setPdfError(null);
 
@@ -165,9 +174,7 @@ const EditProductionModal = ({
         // NOTE: GET /api/productions/{id} returns season/eventType/venue/
         // opera/languages as display-name strings, not IDs. We match those
         // back against the lookup lists to recover the IDs the form (and
-        // UpdateProductionDto) need. Same stopgap as EditPersonModal — if
-        // two lookup entries ever share a display name this will misfire.
-        // Ideally the API would return the *Id fields directly.
+        // UpdateProductionDto) need. Same stopgap as EditPersonModal.
         const matchedSeason = (seasons as LookupItem[]).find(
           (s) => s.label === production.season,
         );
@@ -222,7 +229,6 @@ const EditProductionModal = ({
     ) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  // Dropdown gives us the value directly rather than an event.
   const setValue = (field: keyof FormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -291,11 +297,9 @@ const EditProductionModal = ({
     setError(null);
 
     try {
-      // Update requires `id` in the body (UpdateProductionDto), same as
-      // persons — the controller 400s if it doesn't match the route id.
-      // Also passing programPdfUrl through unchanged, since this modal
-      // doesn't support editing it directly via this endpoint — a new
-      // upload (below) is what actually updates ProgramPdfUrl.
+      // Update requires `id` in the body (UpdateProductionDto). Also passing
+      // programPdfUrl through unchanged — a new upload (below) is what
+      // actually updates ProgramPdfUrl.
       const res = await api.put(`/api/productions/${production.id}`, {
         id: production.id,
         title: form.title.trim(),
@@ -315,10 +319,6 @@ const EditProductionModal = ({
       });
 
       if (!res.ok) throw new Error("Failed to update production.");
-
-      // Upload the new program PDF, if one was selected. Awaited since the
-      // user is looking at this production's page right now and expects
-      // to see the new PDF link once the modal closes.
 
       if (programPdfFile) {
         try {
@@ -366,7 +366,7 @@ const EditProductionModal = ({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -375,12 +375,15 @@ const EditProductionModal = ({
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "500px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -393,14 +396,14 @@ const EditProductionModal = ({
             marginBottom: "1.5rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Edit Production
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -416,7 +419,7 @@ const EditProductionModal = ({
               textAlign: "center",
               padding: "2rem 0",
               fontSize: "13px",
-              color: "#6b7280",
+              color: textSecondary,
             }}
           >
             Loading form options...
@@ -561,11 +564,11 @@ const EditProductionModal = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    border: "1px solid #e5e7eb",
+                    border: `1px solid ${border}`,
                     borderRadius: "6px",
                     padding: "8px 12px",
                     fontSize: "13px",
-                    color: "#374151",
+                    color: textPrimary,
                   }}
                 >
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -575,7 +578,7 @@ const EditProductionModal = ({
                     onClick={() => setProgramPdfFile(null)}
                     style={{
                       fontSize: "12px",
-                      color: "#9ca3af",
+                      color: textMuted,
                       background: "none",
                       border: "none",
                       cursor: "pointer",
@@ -590,7 +593,7 @@ const EditProductionModal = ({
                     <div
                       style={{
                         fontSize: "12px",
-                        color: "#6b7280",
+                        color: textSecondary,
                         marginBottom: "6px",
                       }}
                     >
@@ -599,7 +602,7 @@ const EditProductionModal = ({
                         href={production.programPdfUrl}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#9B1C1C" }}
+                        style={{ color: textPrimary, textDecoration: "underline" }}
                       >
                         View existing PDF
                       </a>
@@ -610,11 +613,11 @@ const EditProductionModal = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      border: "1px dashed #d1d5db",
+                      border: `1px dashed ${border}`,
                       borderRadius: "6px",
                       padding: "10px 12px",
                       fontSize: "13px",
-                      color: "#9ca3af",
+                      color: textMuted,
                       cursor: "pointer",
                     }}
                   >
@@ -646,9 +649,9 @@ const EditProductionModal = ({
                   color: "#9B1C1C",
                   marginBottom: "1rem",
                   padding: "8px 12px",
-                  background: "#fef2f2",
+                  background: dangerBg,
                   borderRadius: "6px",
-                  border: "1px solid #fecaca",
+                  border: `1px solid ${dangerBorder}`,
                 }}
               >
                 {error}
@@ -672,9 +675,9 @@ const EditProductionModal = ({
                   padding: "8px 14px",
                   borderRadius: "6px",
                   cursor: "pointer",
-                  border: "1px solid #e5e7eb",
-                  background: "#fff",
-                  color: "#374151",
+                  border: `1px solid ${border}`,
+                  background: surface,
+                  color: textPrimary,
                   fontFamily: "Inter, sans-serif",
                 }}
               >

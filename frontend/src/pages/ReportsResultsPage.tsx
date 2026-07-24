@@ -199,16 +199,23 @@ const ReportResultsPage = () => {
             >
               Report Results
             </h1>
+            {/* "Edit criteria" is a link — primary ink, not red. */}
             <button
               onClick={() =>
                 navigate("/reports", {
                   state: { selected: state.selected, mode: state.mode },
                 })
               }
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
               style={{
                 fontSize: "12px",
                 fontWeight: 500,
-                color: "#9B1C1C",
+                color: textPrimary,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -268,7 +275,7 @@ const ReportResultsPage = () => {
           </div>
         </div>
 
-        {/* Criteria summary */}
+        {/* Criteria summary — chips are badges, kept as a red accent. */}
         <div
           style={{
             display: "flex",
@@ -320,11 +327,12 @@ const ReportResultsPage = () => {
               background: surface,
             }}
           >
+            {/* Big count is reading text — ink, not red. */}
             <div
               style={{
                 fontSize: "48px",
                 fontWeight: 700,
-                color: "#9B1C1C",
+                color: textPrimary,
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
               }}

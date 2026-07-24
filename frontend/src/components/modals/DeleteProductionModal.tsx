@@ -1,3 +1,5 @@
+import { useTheme } from "../../context/ThemeContext";
+
 interface Props {
   isOpen: boolean;
   productionTitle: string;
@@ -27,6 +29,8 @@ const DeleteProductionModal = ({
   performanceCount = 0,
   personnelCount = 0,
 }: Props) => {
+  const { isDark, colors } = useTheme();
+
   if (!isOpen) return null;
 
   const isBlocked = performanceCount > 0 || personnelCount > 0;
@@ -43,12 +47,21 @@ const DeleteProductionModal = ({
     );
   }
 
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -57,12 +70,15 @@ const DeleteProductionModal = ({
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "1.75rem",
           width: "100%",
           maxWidth: "400px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
         }}
       >
         <div
@@ -73,12 +89,14 @@ const DeleteProductionModal = ({
             marginBottom: "1rem",
           }}
         >
+          {/* Danger icon — red kept as a destructive-action signal. */}
           <div
             style={{
               width: "36px",
               height: "36px",
               borderRadius: "50%",
-              background: "#fef2f2",
+              background: dangerBg,
+              border: `1px solid ${dangerBorder}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -105,7 +123,7 @@ const DeleteProductionModal = ({
               style={{
                 fontSize: "15px",
                 fontWeight: 600,
-                color: "#111",
+                color: textPrimary,
                 marginBottom: "4px",
               }}
             >
@@ -113,7 +131,7 @@ const DeleteProductionModal = ({
                 ? `Can't delete ${productionTitle}`
                 : `Delete ${productionTitle}?`}
             </h2>
-            <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "13px", color: textSecondary, lineHeight: 1.5 }}>
               {isBlocked
                 ? "This production cannot be deleted because it has performance and cast/crew history on record. Remove these records first, then try deleting again."
                 : `This will permanently delete ${productionTitle} from the archive. This action cannot be undone.`}
@@ -126,8 +144,8 @@ const DeleteProductionModal = ({
             style={{
               fontSize: "12px",
               color: "#9B1C1C",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: dangerBg,
+              border: `1px solid ${dangerBorder}`,
               borderRadius: "6px",
               padding: "8px 12px",
               marginBottom: "1rem",
@@ -144,9 +162,9 @@ const DeleteProductionModal = ({
               color: "#9B1C1C",
               marginBottom: "1rem",
               padding: "8px 12px",
-              background: "#fef2f2",
+              background: dangerBg,
               borderRadius: "6px",
-              border: "1px solid #fecaca",
+              border: `1px solid ${dangerBorder}`,
             }}
           >
             {error}
@@ -170,9 +188,9 @@ const DeleteProductionModal = ({
               padding: "8px 14px",
               borderRadius: "6px",
               cursor: "pointer",
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
+              border: `1px solid ${border}`,
+              background: surface,
+              color: textPrimary,
               fontFamily: "Inter, sans-serif",
             }}
           >

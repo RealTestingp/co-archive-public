@@ -25,6 +25,7 @@
   white-space: nowrap;
 }
 
+/* Wordmark accent — branding, kept red. */
 .brandAccent {
   color: #9B1C1C;
 }
@@ -84,6 +85,7 @@
   color: #9b9b9b;
 }
 
+/* Focus ring — accent, kept red. */
 .searchInput:focus {
   border-color: #9B1C1C;
   background: #ffffff;
@@ -120,9 +122,10 @@
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
+/* Icon-button hover: red border accent kept, icon goes ink not red. */
 .searchIconBtn:hover {
   border-color: #9B1C1C;
-  color: #9B1C1C;
+  color: #111111;
 }
 
 .link {
@@ -149,16 +152,18 @@
   user-select: none;
 }
 
+/* Links are ink, not red. Hover darkens; active is bold ink — the weight
+   jump from 400 → 700 marks the current page without colour. */
 .link:hover {
-  color: #9B1C1C;
+  color: #111111;
 }
 
 .linkActive {
-  color: #9B1C1C;
+  color: #111111;
   font-weight: 700;
 }
 
-/* ── Admin badge ── */
+/* ── Admin badge ── (badge accent, kept red) */
 .adminBadge {
   background: #f3e8e8;
   color: #9B1C1C;
@@ -169,7 +174,7 @@
   border: 0.5px solid rgba(155, 28, 28, 0.25);
 }
 
-/* ── Avatar + dropdown ── */
+/* ── Avatar + dropdown ── (avatar is a decorative accent, kept red) */
 .avatarWrap {
   position: relative;
 }
@@ -264,8 +269,9 @@
   color: #f9f9f9;
 }
 
+/* Active nav link in dark mode is ink (near-white), not red. */
 [data-theme="dark"] .linkActive {
-  color: #c0392b;
+  color: #f9f9f9;
 }
 
 [data-theme="dark"] .searchInput {

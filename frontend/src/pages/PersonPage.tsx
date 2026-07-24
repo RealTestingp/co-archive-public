@@ -186,7 +186,7 @@ const PersonPage = () => {
               <div
                 style={{ display: "flex", alignItems: "center", gap: "1rem" }}
               >
-                {/* Avatar — display only */}
+                {/* Avatar — display only. Initials are a decorative accent. */}
                 <div
                   style={{
                     width: "56px",
@@ -282,6 +282,7 @@ const PersonPage = () => {
                     >
                       Edit Profile
                     </button>
+                    {/* Delete keeps red as a destructive-action signal. */}
                     <button
                       onClick={() => setShowDeleteModal(true)}
                       disabled={!person}
@@ -483,8 +484,7 @@ const PersonPage = () => {
                           : "none",
                     }}
                   >
-                    {/* The title is the link — same red + underline-on-hover
-                        behaviour as every other link in the app. */}
+                    {/* Title link — primary ink, not red; hover underlines it. */}
                     <span
                       role="link"
                       tabIndex={0}
@@ -505,7 +505,7 @@ const PersonPage = () => {
                         flex: 1,
                         fontSize: "13px",
                         fontWeight: 500,
-                        color: "#9B1C1C",
+                        color: textPrimary,
                         cursor: "pointer",
                         outline: "none",
                       }}

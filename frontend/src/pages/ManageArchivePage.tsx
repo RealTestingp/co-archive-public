@@ -255,7 +255,8 @@ const ManageArchivePage = () => {
         flex: 2,
         fontSize: "13px",
         fontWeight: 500,
-        color: "#9B1C1C",
+        // Link uses primary ink, not red — hover underline signals it.
+        color: textPrimary,
         cursor: "pointer",
         outline: "none",
       }}
@@ -491,10 +492,12 @@ const ManageArchivePage = () => {
               onClick={() => handleTabChange(tab)}
               style={{
                 fontSize: "13px",
-                fontWeight: 500,
                 padding: "8px 16px",
                 cursor: "pointer",
-                color: activeTab === tab ? "#9B1C1C" : textSecondary,
+                // Active tab text is ink, not red; the red underline bar is
+                // the accent that marks the active tab.
+                color: activeTab === tab ? textPrimary : textSecondary,
+                fontWeight: activeTab === tab ? 600 : 500,
                 background: "none",
                 border: "none",
                 borderBottom:

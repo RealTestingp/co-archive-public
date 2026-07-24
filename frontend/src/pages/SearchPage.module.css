@@ -15,6 +15,7 @@
   text-align: center;
 }
 
+/* Eyebrow is a brand label — kept red as an accent. */
 .eyebrow {
   font-size: 12px;
   font-weight: 500;
@@ -64,10 +65,12 @@
   border-right: none;
 }
 
+/* Tab hover text is ink, not red. */
 .heroTab:hover {
-  color: #9B1C1C;
+  color: #111111;
 }
 
+/* Active hero tab is a solid red button — accent kept. */
 .heroTabActive {
   background: #9B1C1C;
   color: #fff;
@@ -164,6 +167,7 @@
   color: #9b9b9b;
 }
 
+/* Focus ring — accent kept red. */
 .compactInput:focus {
   border-color: #9B1C1C;
   background: #fff;
@@ -203,8 +207,9 @@
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
+/* Hover: red border accent kept, text goes ink. */
 .clearAllBtn:hover {
-  color: #9B1C1C;
+  color: #111111;
   border-color: #9B1C1C;
 }
 
@@ -286,13 +291,15 @@
   transition: color 0.15s ease;
 }
 
+/* Tab hover text is ink. */
 .tab:hover {
-  color: #9B1C1C;
+  color: #111111;
 }
 
+/* Active tab: ink text, red underline bar is the accent that marks it. */
 .tabActive {
-  color: #9B1C1C;
-  font-weight: 500;
+  color: #111111;
+  font-weight: 600;
   border-bottom-color: #9B1C1C;
 }
 
@@ -304,6 +311,7 @@
   border-radius: 10px;
 }
 
+/* Count pill on the active tab — a badge, kept as a red accent. */
 .tabCountActive {
   background: rgba(155, 28, 28, 0.1);
   color: #9B1C1C;
@@ -381,9 +389,10 @@
   box-shadow: 0 0 0 3px rgba(155, 28, 28, 0.1);
 }
 
+/* Active filter: red border + tint accent kept; text is ink. */
 .filterSelectActive {
   border-color: #9B1C1C;
-  color: #9B1C1C;
+  color: #111111;
   background-color: rgba(155, 28, 28, 0.05);
 }
 
@@ -398,8 +407,9 @@
   transition: color 0.15s ease;
 }
 
+/* Clear-filters link hover is ink. */
 .filterClear:hover {
-  color: #9B1C1C;
+  color: #111111;
 }
 
 /* Result groups */
@@ -451,10 +461,12 @@
   border-bottom: 0.5px solid #f3f4f6;
 }
 
+/* Hover underlines the name (link affordance) instead of turning it red. */
 .resultCard:hover .cardName {
-  color: #9B1C1C;
+  text-decoration: underline;
 }
 
+/* Card avatar — decorative accent, kept red. */
 .avatar {
   width: 44px;
   height: 44px;
@@ -517,6 +529,7 @@
   white-space: nowrap;
 }
 
+/* Chip badge — kept as a red accent. */
 .cardChipRed {
   background: rgba(155, 28, 28, 0.08);
   color: #9B1C1C;
@@ -544,9 +557,10 @@
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
+/* Hover: red border accent kept, text ink. */
 .pageBtn:hover:not(:disabled) {
   border-color: #9B1C1C;
-  color: #9B1C1C;
+  color: #111111;
 }
 
 .pageBtn:disabled {
@@ -638,7 +652,7 @@
 }
 
 [data-theme="dark"] .clearAllBtn:hover {
-  color: #c0392b;
+  color: #f9f9f9;
   border-color: #c0392b;
 }
 
@@ -669,7 +683,7 @@
 }
 
 [data-theme="dark"] .tabActive {
-  color: #c0392b;
+  color: #f9f9f9;
   border-bottom-color: #c0392b;
 }
 
@@ -691,7 +705,7 @@
 
 [data-theme="dark"] .filterSelectActive {
   background-color: rgba(192, 57, 43, 0.1);
-  color: #c0392b;
+  color: #f9f9f9;
   border-color: #c0392b;
 }
 
@@ -714,10 +728,6 @@
 
 [data-theme="dark"] .cardName {
   color: #f9f9f9;
-}
-
-[data-theme="dark"] .resultCard:hover .cardName {
-  color: #c0392b;
 }
 
 [data-theme="dark"] .cardMeta {
@@ -761,7 +771,7 @@
 
 [data-theme="dark"] .pageBtn:hover:not(:disabled) {
   border-color: #c0392b;
-  color: #c0392b;
+  color: #f9f9f9;
 }
 
 [data-theme="dark"] .pageInfo {

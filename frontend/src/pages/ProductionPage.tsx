@@ -162,8 +162,10 @@ const ProductionPage = () => {
       style={{
         flex,
         fontSize: "13px",
-        fontWeight: flex === 1 ? 400 : 500,
-        color: "#9B1C1C",
+        // Links use the primary ink colour, not red — the underline-on-hover
+        // and pointer cursor carry the "clickable" signal instead.
+        fontWeight: 500,
+        color: textPrimary,
         cursor: "pointer",
         outline: "none",
       }}
@@ -399,7 +401,7 @@ const ProductionPage = () => {
                     gap: "6px",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#9B1C1C",
+                    color: textPrimary,
                     textDecoration: "none",
                     padding: "6px 12px",
                     borderRadius: "6px",

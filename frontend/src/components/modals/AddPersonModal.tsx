@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+import { useTheme } from "../../context/ThemeContext";
 
 interface LookupItem {
   id: number;
@@ -33,38 +34,11 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#111",
-  background: "#fff",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#6b7280",
-  marginBottom: "5px",
-  display: "block",
-};
-
-const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
-
-// Modal-sized, full width, portalled out of the modal's overflow container,
-// and pinned light because the modal is hardcoded white.
 const DD = {
   size: "md",
   block: true,
   portal: true,
-  theme: "light",
+  theme: "auto",
   highlightWhenSet: false,
 } as const;
 
@@ -72,6 +46,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
+  const { isDark, colors } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [voiceTypes, setVoiceTypes] = useState<LookupItem[]>([]);
@@ -84,6 +59,43 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [avatarHovered, setAvatarHovered] = useState(false);
+
+  // ── Theme tokens ──
+  const overlay = "rgba(0,0,0,0.5)";
+  const surface = isDark ? "#1c1c1c" : "#fff";
+  const border = isDark ? "#2a2a2a" : "#e5e7eb";
+  const inputBg = isDark ? "#161616" : "#fff";
+  const textPrimary = colors.textPrimary;
+  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
+  const textMuted = isDark ? "#6b7280" : "#9ca3af";
+  const dangerBg = isDark ? "#2a1414" : "#fef2f2";
+  const dangerBorder = isDark ? "#4a2020" : "#fecaca";
+  const avatarBg = isDark ? "#2a2a2a" : "#f3e8e8";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontFamily: "Inter, sans-serif",
+    border: `1px solid ${border}`,
+    borderRadius: "6px",
+    outline: "none",
+    boxSizing: "border-box",
+    color: textPrimary,
+    background: inputBg,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: textSecondary,
+    marginBottom: "5px",
+    display: "block",
+  };
+
+  const fieldWrap: React.CSSProperties = { marginBottom: "1.1rem" };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -144,7 +156,6 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Derive initials from form for preview
   const previewInitials = [form.firstName[0], form.lastName[0]]
     .filter(Boolean)
     .join("")
@@ -160,7 +171,6 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setError(null);
 
     try {
-      // 1. Create the person
       const res = await api.post(`/api/persons`, {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
@@ -174,8 +184,6 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
 
       if (!res.ok) throw new Error("Failed to create person.");
       const created = await res.json();
-
-      // 2. Upload image if one was selected
 
       if (imageFile && created.id) {
         // Fire and forget — don't block on image upload failure
@@ -212,7 +220,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.3)",
+        background: overlay,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -221,12 +229,15 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     >
       <div
         style={{
-          background: "#fff",
+          background: surface,
+          border: `1px solid ${border}`,
           borderRadius: "10px",
           padding: "2rem",
           width: "100%",
           maxWidth: "500px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: isDark
+            ? "0 20px 60px rgba(0,0,0,0.6)"
+            : "0 20px 60px rgba(0,0,0,0.15)",
           maxHeight: "90vh",
           overflowY: "auto",
         }}
@@ -240,14 +251,14 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
             marginBottom: "1.5rem",
           }}
         >
-          <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: 600, color: textPrimary }}>
             Add Person
           </h2>
           <button
             onClick={handleClose}
             style={{
               fontSize: "18px",
-              color: "#9ca3af",
+              color: textMuted,
               cursor: "pointer",
               background: "none",
               border: "none",
@@ -263,7 +274,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
               textAlign: "center",
               padding: "2rem 0",
               fontSize: "13px",
-              color: "#6b7280",
+              color: textSecondary,
             }}
           >
             Loading form options...
@@ -296,10 +307,10 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     height: "64px",
                     borderRadius: "50%",
                     overflow: "hidden",
-                    border: `1.5px ${imagePreview || avatarHovered ? "solid #9B1C1C" : "dashed #d1d5db"}`,
+                    border: `1.5px ${imagePreview || avatarHovered ? "solid #9B1C1C" : `dashed ${border}`}`,
                     cursor: "pointer",
                     position: "relative",
-                    background: "#f3e8e8",
+                    background: avatarBg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -332,7 +343,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       height="20"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#9ca3af"
+                      stroke={textMuted}
                       strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -373,7 +384,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+                <span style={{ fontSize: "11px", color: textMuted }}>
                   {imageFile ? imageFile.name : "Add photo (optional)"}
                 </span>
                 <input
@@ -474,11 +485,9 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                         padding: "4px 10px",
                         borderRadius: "4px",
                         cursor: "pointer",
-                        border: selected
-                          ? "1px solid #9B1C1C"
-                          : "1px solid #e5e7eb",
-                        background: selected ? "#fef2f2" : "#fff",
-                        color: selected ? "#9B1C1C" : "#6b7280",
+                        border: `1px solid ${selected ? "#9B1C1C" : border}`,
+                        background: selected ? dangerBg : inputBg,
+                        color: selected ? "#9B1C1C" : textSecondary,
                         fontFamily: "Inter, sans-serif",
                       }}
                     >
@@ -511,7 +520,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 htmlFor="isActive"
                 style={{
                   fontSize: "12px",
-                  color: "#374151",
+                  color: textPrimary,
                   cursor: "pointer",
                 }}
               >
@@ -527,9 +536,9 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   color: "#9B1C1C",
                   marginBottom: "1rem",
                   padding: "8px 12px",
-                  background: "#fef2f2",
+                  background: dangerBg,
                   borderRadius: "6px",
-                  border: "1px solid #fecaca",
+                  border: `1px solid ${dangerBorder}`,
                 }}
               >
                 {error}
@@ -545,7 +554,7 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 marginTop: "1.5rem",
               }}
             >
-              <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "11px", color: textMuted }}>
                 <span style={{ color: "#9B1C1C" }}>*</span> Required fields
               </span>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -558,9 +567,9 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     padding: "8px 14px",
                     borderRadius: "6px",
                     cursor: "pointer",
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
+                    border: `1px solid ${border}`,
+                    background: surface,
+                    color: textPrimary,
                     fontFamily: "Inter, sans-serif",
                   }}
                 >
