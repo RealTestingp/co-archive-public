@@ -100,6 +100,7 @@ namespace COArchive.API.Controllers
                 Season = production.Season.Label,
                 EventType = production.EventType.Name,
                 Venue = production.Venue.Name,
+                OperaId = production.Opera?.Id,
                 Opera = production.Opera?.Title,
                 Composers = production.Opera?.Composers
                     .Select(c => c.Name).ToList() ?? new List<string>(),
@@ -116,6 +117,7 @@ namespace COArchive.API.Controllers
                              || a.ContributorType.Name == "McPhee")
                     .Select(a => new
                     {
+                        AppearanceId = a.Id,
                         PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
@@ -130,6 +132,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Creative")
                     .Select(a => new
                     {
+                        AppearanceId = a.Id,
                         PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
@@ -141,6 +144,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Crew")
                     .Select(a => new
                     {
+                        AppearanceId = a.Id,
                         PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
@@ -152,6 +156,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Orchestra")
                     .Select(a => new
                     {
+                        AppearanceId = a.Id,
                         PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
@@ -162,6 +167,7 @@ namespace COArchive.API.Controllers
                     .Where(a => a.ContributorType.Name == "Chorus")
                     .Select(a => new
                     {
+                        AppearanceId = a.Id,
                         PersonId = a.Person.Id,
                         a.Person.FirstName,
                         a.Person.LastName,
