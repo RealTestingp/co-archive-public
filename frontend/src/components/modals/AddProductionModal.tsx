@@ -201,6 +201,13 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
+  // Step 1 — Performance dates. Individual dates for most event types; a
+  // start/end range for tours (backend stores it as one row).
+  const [performanceDates, setPerformanceDates] = useState<string[]>([]);
+  const [newDate, setNewDate] = useState("");
+  const [tourStartDate, setTourStartDate] = useState("");
+  const [tourEndDate, setTourEndDate] = useState("");
+
   // Step 2 — Characters
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>(
@@ -339,6 +346,27 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const requiresOpera = selectedEventType
     ? selectedEventType.trackMilestones
     : true;
+
+  // Tours record a date range; everything else records individual dates.
+  const isTour = /tour/i.test(selectedEventType?.name ?? "");
+
+  const addDate = () => {
+    if (!newDate) return;
+    setPerformanceDates((prev) =>
+      prev.includes(newDate) ? prev : [...prev, newDate].sort(),
+    );
+    setNewDate("");
+  };
+
+  const removeDate = (d: string) =>
+    setPerformanceDates((prev) => prev.filter((x) => x !== d));
+
+  const formatDate = (d: string) =>
+    new Date(`${d}T00:00:00`).toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   const selectedOpera = operas.find((o) => o.id === selectedOperaId);
 
   const operaCharacters = allCharacters.filter((c) => {
@@ -847,6 +875,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
           : null,
         notes: form.notes.trim() || null,
         programPdfUrl: null,
+        // Tours send a range; everything else sends the individual dates.
+        performanceDates:
+          isTour || performanceDates.length === 0 ? null : performanceDates,
+        tourStartDate: isTour ? tourStartDate || null : null,
+        tourEndDate: isTour ? tourEndDate || null : null,
         appearances: [...castAppearances, ...crewAppearances],
       });
       if (!prodRes.ok) throw new Error("Failed to create production.");
@@ -900,6 +933,10 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setLanguageError(null);
     setProgramPdfFile(null);
     setPdfError(null);
+    setPerformanceDates([]);
+    setNewDate("");
+    setTourStartDate("");
+    setTourEndDate("");
     setSelectedCharacterIds([]);
     setCastRows([]);
     setCrewRows([makeCrewRow()]);
@@ -1726,6 +1763,119 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 </p>
               </div>
             )}
+
+            {/* Performance dates — range for tours, individual dates otherwise. */}
+            <div style={fieldWrap}>
+              <label style={labelStyle}>
+                Performance Dates{isTour ? " (tour range)" : ""}
+              </label>
+              {isTour ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1rem",
+                  }}
+                >
+                  <div>
+                    <label style={{ ...labelStyle, marginBottom: "3px" }}>
+                      Start
+                    </label>
+                    <input
+                      type="date"
+                      style={inputStyle}
+                      value={tourStartDate}
+                      onChange={(e) => setTourStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, marginBottom: "3px" }}>
+                      End
+                    </label>
+                    <input
+                      type="date"
+                      style={inputStyle}
+                      value={tourEndDate}
+                      min={tourStartDate || undefined}
+                      onChange={(e) => setTourEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <input
+                      type="date"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addDate();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addDate}
+                      disabled={!newDate}
+                      style={{
+                        ...accordionSaveStyle,
+                        opacity: newDate ? 1 : 0.6,
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {performanceDates.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "6px",
+                        marginTop: "8px",
+                      }}
+                    >
+                      {performanceDates.map((d) => (
+                        <span
+                          key={d}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            border: `1px solid ${border}`,
+                            background: inputBg,
+                            color: textPrimary,
+                          }}
+                        >
+                          {formatDate(d)}
+                          <button
+                            type="button"
+                            onClick={() => removeDate(d)}
+                            aria-label={`Remove ${formatDate(d)}`}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: textMuted,
+                              cursor: "pointer",
+                              fontSize: "13px",
+                              lineHeight: 1,
+                              padding: 0,
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             <div style={fieldWrap}>
               <label style={labelStyle}>Runtime (minutes)</label>
