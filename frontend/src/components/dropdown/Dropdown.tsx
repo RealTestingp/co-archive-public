@@ -317,6 +317,10 @@ export default function Dropdown({
         </span>
       )}
 
+      {/* data-placeholder lets CSS tell a real selection apart from the
+          placeholder, so a chosen value renders in primary ink while the
+          placeholder stays muted. data-active-value can't do that job: modals
+          pass highlightWhenSet: false, so it is never set on form fields. */}
       <button
         ref={buttonRef}
         type="button"
@@ -330,6 +334,7 @@ export default function Dropdown({
         aria-label={!label ? (ariaLabel ?? placeholder) : undefined}
         aria-labelledby={label ? `${id}-label` : undefined}
         data-active-value={(highlightWhenSet && hasValue) || undefined}
+        data-placeholder={!hasValue || undefined}
       >
         <span className={styles.triggerText}>{displayLabel}</span>
         <svg
