@@ -40,7 +40,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); //redirects any HTTP to HTTPS for security
 app.UseStaticFiles();
 app.UseRouting();
 
