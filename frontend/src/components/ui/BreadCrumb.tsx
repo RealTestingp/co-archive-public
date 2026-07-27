@@ -6,18 +6,31 @@ interface Props {
   current: string;
 }
 
+/* Breadcrumb trail.
+   --fs-xs throughout. Trail links are ink-muted (30%); the current crumb is
+   full ink + semibold. No brand red here — breadcrumbs are structure, and
+   spending the 10% budget on them is what pushes red over its share.
+   Wraps on narrow screens instead of forcing horizontal overflow. */
 const BreadCrumb = ({ path, current }: Props) => {
   const navigate = useNavigate();
-  const { colors } = useTheme();
+  const { colors, type, weight } = useTheme();
 
-  // Current crumb is the primary ink colour (was red) — theme-aware so it's
-  // visible in both light and dark.
-  const currentColor = colors.textPrimary;
-  const hoverColor = colors.textPrimary;
-  const restColor = "#9ca3af";
+  const restColor = colors.inkMuted;
+  const hoverColor = colors.ink;
 
   return (
-    <div style={{ fontSize: "11px", color: restColor, marginBottom: "1.5rem" }}>
+    <div
+      style={{
+        fontSize: type.xs,
+        fontWeight: weight.regular,
+        color: restColor,
+        marginBottom: "1.5rem",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        rowGap: "2px",
+      }}
+    >
       {path.map((item, i) => {
         const isParent = i === path.length - 1;
         return (
@@ -49,7 +62,9 @@ const BreadCrumb = ({ path, current }: Props) => {
           </span>
         );
       })}
-      <span style={{ color: currentColor, fontWeight: 500 }}>{current}</span>
+      <span style={{ color: colors.ink, fontWeight: weight.semibold }}>
+        {current}
+      </span>
     </div>
   );
 };

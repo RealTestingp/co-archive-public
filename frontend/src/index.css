@@ -1,89 +1,335 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   COA DESIGN TOKENS
+   --------------------------------------------------------------------------
+   Type scale ....... 6 sizes  (professor requirement: max 4–6)
+   Font weights ..... 2        (professor requirement: exactly 2)
+   Colour ........... 60 / 30 / 10
+                        60% = surfaces      (--c-bg, --c-surface)
+                        30% = ink + borders (--c-ink*, --c-border*)
+                        10% = brand red     (--c-brand*)  ← rationed, see rules
+   ========================================================================== */
+
+:root {
+  /* ── Typography: family ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ── Typography: 6-step scale ──
+     xs  11px  overline, chips, counts, table meta
+     sm  13px  DEFAULT body / all UI text
+     md  15px  emphasised body, card titles, inputs
+     lg  20px  section headings
+     xl  26px  page titles
+     display 40px  hero + 404 only                                        */
+  --fs-xs: 0.6875rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.9375rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.625rem;
+  --fs-display: 2.5rem;
+
+  /* ── Typography: 2 weights ── */
+  --fw-regular: 400;
+  --fw-semibold: 600;
+
+  /* ── Typography: line heights (not part of the size count) ── */
+  --lh-tight: 1.15;
+  --lh-normal: 1.5;
+
+  /* ── Letter spacing ── */
+  --ls-tight: -0.02em;
+  --ls-wide: 0.08em;
+
+  /* ══ 60% — SURFACES ══ */
+  --c-bg: #ffffff;
+  --c-surface: #f9fafb;
+  --c-surface-hover: #f3f4f6;
+
+  /* ══ 30% — INK & STRUCTURE ══
+     Only TWO ink tones carry text. A third grey light enough to read as
+     "tertiary" cannot clear 4.5:1 on white, so hierarchy below --c-ink-muted
+     is expressed with SIZE + UPPERCASE instead of another colour.
+     --c-ink-faint is decorative only: icons, dividers, disabled states.     */
+  --c-ink: #111111;         /* 5.21–18.88:1 — primary text                   */
+  --c-ink-muted: #666d7a;   /* 4.73–5.21:1 — ALL secondary text              */
+  --c-ink-faint: #9ca3af;   /* NON-TEXT ONLY — fails AA as text              */
+  --c-border: #e5e7eb;      /* decorative dividers                           */
+  --c-border-strong: #828994; /* 3.20:1 — form-control outlines (WCAG 1.4.11)*/
+  --c-border-subtle: #f3f4f6;
+
+  /* ══ 10% — BRAND ══
+     --c-brand      solid fills only (white label on it = 8.15:1)
+     --c-brand-text brand-coloured TEXT, icons and 1px lines                 */
+  --c-brand: #9B1C1C;
+  --c-brand-text: #9B1C1C;
+  --c-brand-hover: #7a1515;
+  --c-brand-tint: rgba(155, 28, 28, 0.08);
+  --c-brand-ring: rgba(155, 28, 28, 0.20);
+  --c-brand-on: #ffffff;
+
+  /* ── Functional (outside 60/30/10 — status only, never decorative) ── */
+  --c-success: #16a34a;
+  --c-success-tint: #f0fdf4;
+
+  /* ── Shape & elevation ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+  --shadow-overlay: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* ── Layout ── */
+  --page-max: 960px;
+  --page-pad: 2rem;
+  --tap-min: 44px; /* WCAG 2.5.8 minimum touch target */
+}
+
+[data-theme="dark"] {
+  --c-bg: #111111;
+  --c-surface: #1c1c1c;
+  --c-surface-hover: #242424;
+
+  --c-ink: #f9f9f9;         /* 14.74–17.94:1                                 */
+  --c-ink-muted: #9ca3af;   /* 6.11–7.44:1                                   */
+  --c-ink-faint: #6b7280;   /* NON-TEXT ONLY                                 */
+  --c-border: #2a2a2a;
+  --c-border-strong: #757575; /* 3.37:1                                      */
+  --c-border-subtle: #222222;
+
+  /* #c0392b reads at only 3.47:1 on #111 — fine as a FILL behind white text
+     (5.44:1), but it fails AA as text. --c-brand-text is the lifted red used
+     for any red glyph or line in dark mode (4.77–5.80:1).                   */
+  --c-brand: #c0392b;
+  --c-brand-text: #e26a5c;
+  --c-brand-hover: #a93226;
+  --c-brand-tint: rgba(192, 57, 43, 0.18);
+  --c-brand-ring: rgba(226, 106, 92, 0.30);
+  --c-brand-on: #ffffff;
+
+  --c-success: #22c55e;
+  --c-success-tint: #052e16;
+
+  --shadow-overlay: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --scrim: rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%; /* stop iOS enlarging text in landscape */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  background-color: var(--c-bg);
+  color: var(--c-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Only two weights exist — headings pick the semibold one. */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  margin: 0;
+}
+
+h1 { font-size: var(--fs-xl); letter-spacing: var(--ls-tight); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+h4, h5, h6 { font-size: var(--fs-sm); }
+
+/* Nothing should ever overflow the viewport horizontally. */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Long opera titles / emails must wrap rather than blow out the layout. */
+p, td, th, li, dd, dt {
+  overflow-wrap: break-word;
+}
+
+/* One consistent, brand-coloured focus ring everywhere. Uses --c-brand-text
+   (not --c-brand) so the ring still clears 3:1 against a dark hovered row. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--c-brand-text);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
+  0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
-/* ── Dark mode global ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE — global safety net
+   --------------------------------------------------------------------------
+   The app still styles most things with React inline `style={{ }}` objects,
+   which media queries cannot reach directly. These attribute selectors are a
+   BRIDGE so the app is usable on a phone today; the real fix is moving each
+   page to a CSS Module. See DESIGN-SYSTEM.md → "Migration order".
+   ========================================================================== */
+
+/* ── Tablet and below ── */
+@media (max-width: 900px) {
+  /* Three-column inline grids drop to two. */
+  [style*="grid-template-columns: repeat(3, 1fr)"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── Phone ── */
+@media (max-width: 640px) {
+  /* Page wrappers: 2rem side padding leaves only 311px of content on a
+     375px screen. Halve it. */
+  [style*="max-width: 960px"] {
+    padding: 1.25rem 1rem !important;
+  }
+
+  /* Every inline multi-column grid collapses to a single column. */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Header/action rows stack instead of squeezing. */
+  [style*="justify-content: space-between"][style*="display: flex"] {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* iOS Safari auto-zooms any focused input under 16px. Bump on small
+     screens only, so the 13px desktop scale is preserved. */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Touch targets. */
+  button,
+  [role="button"],
+  a[class*="Btn"],
+  a[class*="btn"] {
+    min-height: var(--tap-min);
+  }
+
+  /* Modals: full-bleed sheets rather than centred cards that overflow. */
+  [style*="max-width: 500px"],
+  [style*="max-width: 520px"],
+  [style*="max-width: 580px"],
+  [style*="max-width: 480px"],
+  [style*="max-width: 400px"],
+  [style*="max-width: 360px"],
+  [style*="max-width: 320px"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Wide report tables scroll instead of breaking the page. */
+  [style*="min-width: 760px"] {
+    min-width: 640px !important;
+  }
+}
+
+/* ==========================================================================
+   DARK MODE — inline-style bridge
+   --------------------------------------------------------------------------
+   Same caveat as above: these exist only because colours are still written
+   inline. Each one disappears as its page moves onto tokens.
+   ========================================================================== */
+
 [data-theme="dark"] body {
-  background-color: #111111;
-  color: #f9f9f9;
+  background-color: var(--c-bg);
+  color: var(--c-ink);
 }
 
-[data-theme="dark"] * {
-  border-color: #2a2a2a !important;
-}
-
-[data-theme="dark"] h1,
-[data-theme="dark"] h2,
-[data-theme="dark"] h3,
-[data-theme="dark"] h4,
-[data-theme="dark"] p,
-[data-theme="dark"] span,
-[data-theme="dark"] div,
-[data-theme="dark"] li,
-[data-theme="dark"] td,
-[data-theme="dark"] th,
-[data-theme="dark"] label,
-[data-theme="dark"] button:not([class*="red"]):not([style*="background: #9B1C1C"]):not([style*="background: rgb(155"]) {
-  color: inherit;
-}
-
-/* Page backgrounds */
+/* Surfaces */
 [data-theme="dark"] div[style*="background: #fff"],
 [data-theme="dark"] div[style*="background:#fff"],
 [data-theme="dark"] div[style*="background: white"],
+[data-theme="dark"] div[style*="background: #ffffff"],
 [data-theme="dark"] div[style*="background: rgb(255, 255, 255)"] {
-  background-color: #111111 !important;
+  background-color: var(--c-bg) !important;
 }
 
 [data-theme="dark"] div[style*="background: #f9fafb"],
-[data-theme="dark"] div[style*="background: rgb(249, 250, 251)"],
-[data-theme="dark"] div[style*="background: #ffffff"],
 [data-theme="dark"] div[style*="background: #f3f4f6"],
+[data-theme="dark"] div[style*="background: #fafafa"],
+[data-theme="dark"] div[style*="background: rgb(249, 250, 251)"],
 [data-theme="dark"] div[style*="background: rgb(243, 244, 246)"] {
-  background-color: #1c1c1c !important;
+  background-color: var(--c-surface) !important;
 }
 
-/* Force text colours */
+/* Ink */
 [data-theme="dark"] *[style*="color: #111111"],
 [data-theme="dark"] *[style*="color: #111"],
 [data-theme="dark"] *[style*="color: rgb(17, 17, 17)"] {
-  color: #f9f9f9 !important;
+  color: var(--c-ink) !important;
 }
 
 [data-theme="dark"] *[style*="color: #374151"],
-[data-theme="dark"] *[style*="color: rgb(55, 65, 81)"] {
-  color: #d1d5db !important;
-}
-
 [data-theme="dark"] *[style*="color: #6b7280"],
+[data-theme="dark"] *[style*="color: rgb(55, 65, 81)"],
 [data-theme="dark"] *[style*="color: rgb(107, 114, 128)"] {
-  color: #9ca3af !important;
+  color: var(--c-ink-muted) !important;
 }
 
-/* Input fields */
-[data-theme="dark"] input[style],
-[data-theme="dark"] input {
-  background-color: #1c1c1c !important;
-  color: #f9f9f9 !important;
-  border-color: #2a2a2a !important;
+[data-theme="dark"] *[style*="color: #9ca3af"] {
+  color: var(--c-ink-muted) !important;
 }
 
-[data-theme="dark"] input::placeholder {
-  color: #6b7280 !important;
+/* Borders */
+[data-theme="dark"] *[style*="border: 1px solid #e5e7eb"],
+[data-theme="dark"] *[style*="border: 0.5px solid #e5e7eb"],
+[data-theme="dark"] *[style*="border-color: #e5e7eb"] {
+  border-color: var(--c-border) !important;
 }
 
-/* Buttons — don't override red ones */
+/* Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--c-surface) !important;
+  color: var(--c-ink) !important;
+  border-color: var(--c-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--c-ink-muted) !important;
+}
+
+/* Neutral buttons — brand-red buttons are deliberately left alone. */
 [data-theme="dark"] button[style*="background: #fff"],
 [data-theme="dark"] button[style*="background: white"] {
-  background-color: #1c1c1c !important;
-  color: #d1d5db !important;
-  border-color: #2a2a2a !important;
-}
-
-/* Table rows hover */
-[data-theme="dark"] div[style*="background: #fafafa"] {
-  background-color: #1a1a1a !important;
+  background-color: var(--c-surface) !important;
+  color: var(--c-ink-muted) !important;
+  border-color: var(--c-border) !important;
 }

@@ -1,3 +1,16 @@
+/* ============================================================================
+   NAVBAR
+   ----------------------------------------------------------------------------
+   All values come from the tokens in index.css, so the entire
+   [data-theme="dark"] block that used to live at the bottom of this file is
+   gone — 90 lines of duplicated colour deleted. The tokens flip themselves.
+
+   Type: --fs-xs and --fs-sm only.  Weights: regular + semibold only.
+   Brand red (10%) appears in exactly four places here: the wordmark accent,
+   the focus ring, the admin badge, and the avatar. Nav links are ink, and the
+   active link is marked by WEIGHT, not colour.
+   ========================================================================== */
+
 .nav {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -5,8 +18,9 @@
   gap: 1.5rem;
   padding: 0 2rem;
   height: 52px;
-  border-bottom: 1px solid #e5e7eb;
-  font-family: 'Inter', sans-serif;
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-border);
+  font-family: var(--font-sans);
 }
 
 /* ── Brand ── */
@@ -17,17 +31,17 @@
 }
 
 .brandLink {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
-  color: #111111;
+  color: var(--c-ink);
   text-decoration: none;
   white-space: nowrap;
 }
 
-/* Wordmark accent — branding, kept red. */
+/* Wordmark accent — 10% brand. */
 .brandAccent {
-  color: #9B1C1C;
+  color: var(--c-brand-text);
 }
 
 /* ── Centre nav links ── */
@@ -36,6 +50,41 @@
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
+  min-width: 0;
+}
+
+.link {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+  /* Stack the visible label over a hidden semibold copy so the link's width is
+     always the SEMIBOLD width — the active state no longer reflows the row. */
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.link::after {
+  content: attr(data-text);
+  height: 0;
+  font-weight: var(--fw-semibold);
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.link:hover {
+  color: var(--c-ink);
+}
+
+/* Active page marked by weight + ink, no colour spend. */
+.linkActive {
+  color: var(--c-ink);
+  font-weight: var(--fw-semibold);
 }
 
 /* ── Right side ── */
@@ -46,7 +95,7 @@
   gap: 1rem;
 }
 
-/* ── Search (link + input together) ── */
+/* ── Search ── */
 .searchWrap {
   display: flex;
   align-items: center;
@@ -63,39 +112,159 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9b9b9b;
+  color: var(--c-ink-muted);
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
   height: 32px;
-  border: 0.5px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
   padding: 0 12px 0 32px;
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  background: #f9f9f9;
-  color: #111111;
+  font-size: var(--fs-sm);
+  font-family: var(--font-sans);
+  background: var(--c-surface);
+  color: var(--c-ink);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .searchInput::placeholder {
-  color: #9b9b9b;
+  color: var(--c-ink-muted);
 }
 
-/* Focus ring — accent, kept red. */
+/* Focus ring — 10% brand. */
 .searchInput:focus {
-  border-color: #9B1C1C;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(155, 28, 28, 0.1);
+  border-color: var(--c-brand-text);
+  background: var(--c-bg);
+  box-shadow: 0 0 0 3px var(--c-brand-ring);
 }
 
-/* ── Responsive ── */
+.searchIconBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-ink-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.searchIconBtn:hover {
+  border-color: var(--c-brand-text);
+  color: var(--c-ink);
+}
+
+/* ── Admin badge ── (10% brand) */
+.adminBadge {
+  background: var(--c-brand-tint);
+  color: var(--c-brand-text);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-brand-ring);
+  white-space: nowrap;
+}
+
+/* ── Avatar + dropdown ── (10% brand) */
+.avatarWrap {
+  position: relative;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--c-brand-tint);
+  border: 1.5px solid var(--c-brand-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-brand-text);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.avatar:hover {
+  background: var(--c-brand-ring);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  width: 210px;
+  max-width: calc(100vw - 2rem);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdownHeader {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.dropdownName {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink);
+}
+
+.dropdownEmail {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+  margin-top: 2px;
+  overflow-wrap: break-word;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-sans);
+  transition: background 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background: var(--c-surface);
+  color: var(--c-ink);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+/* ── Tablet: swap the inline search field for an icon button ── */
 @media (max-width: 900px) {
   .nav {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 1.25rem;
+    gap: 1rem;
   }
 
   .searchInputWrap {
@@ -105,238 +274,61 @@
   .searchIconBtn {
     display: flex;
   }
+
+  .links {
+    gap: 1.25rem;
+  }
 }
 
-.searchIconBtn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 0.5px solid #d1d5db;
-  border-radius: 6px;
-  background: #f9f9f9;
-  color: #6b7280;
-  cursor: pointer;
-  text-decoration: none;
-  transition: border-color 0.15s ease, color 0.15s ease;
+/* ── Phone: nav links become a swipeable strip ── */
+@media (max-width: 640px) {
+  .nav {
+    padding: 0 1rem;
+    height: 56px; /* taller so 44px tap targets fit */
+    gap: 0.75rem;
+  }
+
+  .links {
+    justify-content: flex-start;
+    gap: 1rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Fade the right edge so it reads as scrollable. */
+    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+  }
+
+  .links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .link {
+    padding: 6px 0;
+  }
+
+  .right {
+    gap: 0.625rem;
+  }
+
+  /* The badge text is redundant next to the avatar on a phone. */
+  .adminBadge {
+    display: none;
+  }
+
+  .searchIconBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dropdown {
+    width: 240px;
+  }
 }
 
-/* Icon-button hover: red border accent kept, icon goes ink not red. */
-.searchIconBtn:hover {
-  border-color: #9B1C1C;
-  color: #111111;
-}
-
-.link {
-  font-size: 13px;
-  color: #6b7280;
-  text-decoration: none;
-  font-weight: 400;
-  white-space: nowrap;
-  transition: color 0.15s ease;
-  /* Stack the visible label over a hidden bold copy so the link's width
-     is always the BOLD width — active state no longer reflows the row. */
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.link::after {
-  content: attr(data-text);
-  height: 0;
-  font-weight: 700;
-  visibility: hidden;
-  overflow: hidden;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Links are ink, not red. Hover darkens; active is bold ink — the weight
-   jump from 400 → 700 marks the current page without colour. */
-.link:hover {
-  color: #111111;
-}
-
-.linkActive {
-  color: #111111;
-  font-weight: 700;
-}
-
-/* ── Admin badge ── (badge accent, kept red) */
-.adminBadge {
-  background: #f3e8e8;
-  color: #9B1C1C;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 4px;
-  border: 0.5px solid rgba(155, 28, 28, 0.25);
-}
-
-/* ── Avatar + dropdown ── (avatar is a decorative accent, kept red) */
-.avatarWrap {
-  position: relative;
-}
-
-.avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #f3e8e8;
-  border: 1.5px solid #9B1C1C;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 500;
-  color: #9B1C1C;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: background 0.15s ease;
-}
-
-.avatar:hover {
-  background: #ead8d8;
-}
-
-.dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: #ffffff;
-  border: 0.5px solid #e5e7eb;
-  border-radius: 8px;
-  width: 210px;
-  z-index: 100;
-  overflow: hidden;
-}
-
-.dropdownHeader {
-  padding: 12px 14px;
-  border-bottom: 0.5px solid #e5e7eb;
-}
-
-.dropdownName {
-  font-size: 13px;
-  font-weight: 500;
-  color: #111111;
-}
-
-.dropdownEmail {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 2px;
-}
-
-.dropdownItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 9px 14px;
-  font-size: 13px;
-  font-weight: 400;
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: 'Inter', sans-serif;
-  transition: background 0.15s ease;
-}
-
-.dropdownItem:hover {
-  background: #f9f9f9;
-  color: #111111;
-}
-
-/* ── Dark mode ── */
-[data-theme="dark"] .nav {
-  background: #111111;
-  border-bottom-color: #2a2a2a;
-}
-
-[data-theme="dark"] .brandLink {
-  color: #f9f9f9;
-}
-
-[data-theme="dark"] .link {
-  color: #9ca3af;
-}
-
-[data-theme="dark"] .link:hover {
-  color: #f9f9f9;
-}
-
-/* Active nav link in dark mode is ink (near-white), not red. */
-[data-theme="dark"] .linkActive {
-  color: #f9f9f9;
-}
-
-[data-theme="dark"] .searchInput {
-  background: #1c1c1c;
-  border-color: #2a2a2a;
-  color: #f9f9f9;
-}
-
-[data-theme="dark"] .searchInput:focus {
-  background: #222222;
-  border-color: #c0392b;
-}
-
-[data-theme="dark"] .searchInput::placeholder {
-  color: #6b7280;
-}
-
-[data-theme="dark"] .searchIcon {
-  color: #6b7280;
-}
-
-[data-theme="dark"] .searchIconBtn {
-  border-color: #2a2a2a;
-  background: #1c1c1c;
-  color: #9ca3af;
-}
-
-[data-theme="dark"] .adminBadge {
-  background: rgba(192, 57, 43, 0.15);
-  border-color: rgba(192, 57, 43, 0.3);
-  color: #c0392b;
-}
-
-[data-theme="dark"] .avatar {
-  background: rgba(192, 57, 43, 0.15);
-  border-color: #c0392b;
-  color: #c0392b;
-}
-
-[data-theme="dark"] .avatar:hover {
-  background: rgba(192, 57, 43, 0.25);
-}
-
-[data-theme="dark"] .dropdown {
-  background: #1c1c1c;
-  border-color: #2a2a2a;
-}
-
-[data-theme="dark"] .dropdownHeader {
-  border-bottom-color: #2a2a2a;
-}
-
-[data-theme="dark"] .dropdownName {
-  color: #f9f9f9;
-}
-
-[data-theme="dark"] .dropdownEmail {
-  color: #9ca3af;
-}
-
-[data-theme="dark"] .dropdownItem {
-  color: #9ca3af;
-}
-
-[data-theme="dark"] .dropdownItem:hover {
-  background: #242424;
-  color: #f9f9f9;
+/* ── Very narrow (≤380px): drop the wordmark tagline weight ── */
+@media (max-width: 380px) {
+  .brandLink {
+    font-size: var(--fs-xs);
+  }
 }
