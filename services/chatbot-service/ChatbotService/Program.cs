@@ -4,10 +4,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Register HttpClientFactory for calling the Foundry agent endpoint
-builder.Services.AddHttpClient();
+// CORS: allows requests from these origins to call this service directly.
 
-// CORS — allow React frontend
+// In practice, this almost never applies in production. The browser
+// only ever talks to the gateway, and the gateway forwards requests to
+// this service server-to-server, which isn't subject to CORS at all
+
+// This policy really only matters if someone tests
+// chatbot-service directly from a browser at localhost, bypassing the
+// gateway entirely.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
