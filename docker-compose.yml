@@ -1,5 +1,6 @@
 services:
   frontend:
+    # Lets `docker compose push` send this straight to our Azure registry
     image: coarchiveregistry.azurecr.io/frontend:latest
     build:
       context: ./frontend
@@ -7,8 +8,10 @@ services:
       args:
         - VITE_ENTRA_CLIENT_ID=${VITE_ENTRA_CLIENT_ID}
         - VITE_ENTRA_TENANT_ID=${VITE_ENTRA_TENANT_ID}
+        # Gateway URL, baked in at build time
         - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     ports:
+      # host:container — nginx listens on 80 inside
       - "5173:80"
     depends_on:
       - gateway
@@ -34,6 +37,7 @@ services:
       - "7136:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      # Pulled from .env locally; from Container App secrets in Azure
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
       - AzureAd__TenantId=${AZURE_TENANT_ID}
       - AzureAd__ClientId=${AZURE_CLIENT_ID}
@@ -50,6 +54,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      # core-api's Docker service name; its real URL once deployed
       - CoreApi__BaseUrl=http://core-api:8080
 
   chatbot-service:
