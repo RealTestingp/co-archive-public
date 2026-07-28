@@ -4,6 +4,7 @@ using COArchive.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace COArchive.API.Controllers
 {
@@ -97,6 +98,8 @@ namespace COArchive.API.Controllers
                     .ThenInclude(pr => pr.Season)
                 .Include(a => a.Production)
                     .ThenInclude(pr => pr.EventType)
+                .Include(a => a.Production)
+                    .ThenInclude(pr => pr.Performances)
                 .Include(a => a.ContributorType)
                 .Include(a => a.Position)
                 .Include(a => a.Character)
@@ -144,8 +147,8 @@ namespace COArchive.API.Controllers
                 PerformanceCount = appearances
                     .Where(a => a.ContributorType.TrackPerformances
                              && a.Production.EventType.TrackMilestones)
-                    .Select(a => a.ProductionId)
-                    .Distinct()
+                    .SelectMany(a => a.Production.Performances)
+                    .DistinctBy(perf => perf.Id)
                     .Count(),
             };
 

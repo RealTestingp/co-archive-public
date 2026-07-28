@@ -4,9 +4,19 @@ import ChatPanel, { type ChatMessage } from "./ChatPanel";
 import styles from "./ChatWidget.module.css";
 import { api } from "../../api";
 
+// ChatWidget is the "container" component. It owns all the real state (is the panel open, what messages exist,
+// are we waiting on a reply) and passes that down as props to ChatBubble and ChatPanel, which are both
+// simple components that just render based on what they're given.
+
+// This keeps the state in one place instead of scattered across components,
+// which matters here specifically because both the bubble (open/close)
+// and the panel (messages) need to react to the same shared state.
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // isSending tracks if we're currently waiting on a reply from the
+  // backend. This drives the typing indicator in ChatPanel and disables
+  // the input/send button while a request is in flight.
   const [isSending, setIsSending] = useState(false);
 
   const handleSend = async (text: string) => {
@@ -15,12 +25,28 @@ const ChatWidget = () => {
       role: "user",
       content: text,
     };
+
+    // Conversation memory: before adding the new message to state, we
+    // convert everything already in `messages` into a plain history array
+    // and send it along with the new message. Without this, every message
+    // would be sent to the backend in total isolation.
+
+    // This history resets naturally on page refresh or when the widget is
+    // closed and reopened, since it only lives in this component's state,
+    // not in any persistent storage. This was an intentional and accepted
+    // tradeoff for simplicity.
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
 
+    // Add the user's message to the UI immediately, before we even hear
+    // back from the server. Makes the chat feel responsive instead
+    // of waiting on a network round trip before showing what was typed.
     setMessages((prev) => [...prev, userMessage]);
     setIsSending(true);
 
     try {
+      // api.post is our shared fetch wrapper (api.ts). It points at
+      // the gateway's real URL (via VITE_API_BASE_URL) rather than a
+      // relative path, since the frontend calls the gateway directly.
       const res = await api.post("/api/chat", { message: text, history });
 
       if (!res.ok)
@@ -33,6 +59,9 @@ const ChatWidget = () => {
         { id: crypto.randomUUID(), role: "assistant", content: data.reply },
       ]);
     } catch (err) {
+      // If the request fails for any reason, this shows a generic fallback message
+      // in the chat instead of leaving the user staring at a stuck typing indicator
+      // with no explanation.
       console.error("Chat request failed:", err);
       setMessages((prev) => [
         ...prev,
@@ -43,12 +72,18 @@ const ChatWidget = () => {
         },
       ]);
     } finally {
+      // Runs whether the request succeeded or failed, so the input/button
+      // always get re-enabled and the typing indicator always disappears —
+      // no scenario where the UI gets stuck waiting forever.
       setIsSending(false);
     }
   };
 
   return (
     <div className={styles.widget}>
+      {/* The panel only renders when isOpen is true. The panel
+          (and its message list) doesn't exist in the DOM at all until the
+          user opens it. */}
       {isOpen && (
         <ChatPanel
           messages={messages}

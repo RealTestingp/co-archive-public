@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
+// Adjust this path to sit next to your Dropdown (e.g. "../dropdown/MultiSelect"
+// if you moved them into a dropdown/ folder).
+import MultiSelect from "../dropdown/MultiSelect";
 import { useTheme } from "../../context/ThemeContext";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -145,11 +148,24 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const [operas, setOperas] = useState<Opera[]>([]);
   const [selectedOperaId, setSelectedOperaId] = useState<number | null>(null);
   const [showAddOpera, setShowAddOpera] = useState(false);
-  const [newOpera, setNewOpera] = useState({
+  const [newOpera, setNewOpera] = useState<{
+    title: string;
+    composerIds: string[];
+    librettistIds: string[];
+  }>({
     title: "",
-    composer: "",
-    librettist: "",
+    composerIds: [],
+    librettistIds: [],
   });
+  // Composer/librettist lookups + inline-add fields.
+  const [composers, setComposers] = useState<{ id: number; name: string }[]>(
+    [],
+  );
+  const [librettists, setLibrettists] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [newComposerName, setNewComposerName] = useState("");
+  const [newLibrettistName, setNewLibrettistName] = useState("");
   const [savingOpera, setSavingOpera] = useState(false);
   const [operaError, setOperaError] = useState<string | null>(null);
 
@@ -184,6 +200,13 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   // Step 1 — Program PDF
   const [programPdfFile, setProgramPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Step 1 — Performance dates. Individual dates for most event types; a
+  // start/end range for tours (backend stores it as one row).
+  const [performanceDates, setPerformanceDates] = useState<string[]>([]);
+  const [newDate, setNewDate] = useState("");
+  const [tourStartDate, setTourStartDate] = useState("");
+  const [tourEndDate, setTourEndDate] = useState("");
 
   // Step 2 — Characters
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
@@ -323,6 +346,27 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const requiresOpera = selectedEventType
     ? selectedEventType.trackMilestones
     : true;
+
+  // Tours record a date range; everything else records individual dates.
+  const isTour = /tour/i.test(selectedEventType?.name ?? "");
+
+  const addDate = () => {
+    if (!newDate) return;
+    setPerformanceDates((prev) =>
+      prev.includes(newDate) ? prev : [...prev, newDate].sort(),
+    );
+    setNewDate("");
+  };
+
+  const removeDate = (d: string) =>
+    setPerformanceDates((prev) => prev.filter((x) => x !== d));
+
+  const formatDate = (d: string) =>
+    new Date(`${d}T00:00:00`).toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   const selectedOpera = operas.find((o) => o.id === selectedOperaId);
 
   const operaCharacters = allCharacters.filter((c) => {
@@ -346,6 +390,16 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const operaOptions = useMemo(
     () => operas.map((o) => ({ value: String(o.id), label: o.title })),
     [operas],
+  );
+
+  const composerOptions = useMemo(
+    () => composers.map((c) => ({ value: String(c.id), label: c.name })),
+    [composers],
+  );
+
+  const librettistOptions = useMemo(
+    () => librettists.map((l) => ({ value: String(l.id), label: l.name })),
+    [librettists],
   );
 
   const eventTypeOptions = useMemo(
@@ -394,6 +448,19 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     try {
       const res = await api.get("/api/operas");
       if (res.ok) setOperas(await res.json());
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const fetchComposersLibrettists = async () => {
+    try {
+      const [c, l] = await Promise.all([
+        api.get("/api/composers").then((r) => (r.ok ? r.json() : [])),
+        api.get("/api/librettists").then((r) => (r.ok ? r.json() : [])),
+      ]);
+      setComposers(c);
+      setLibrettists(l);
     } catch {
       /* ignore */
     }
@@ -449,6 +516,7 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   useEffect(() => {
     if (!isOpen) return;
     fetchOperas();
+    fetchComposersLibrettists();
     fetchLookups();
     fetchAllCharacters();
     setCrewRows([makeCrewRow()]);
@@ -463,10 +531,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setSavingOpera(true);
     setOperaError(null);
     try {
+      // Composers/librettists are lookup entities linked by id, not free text.
       const res = await api.post("/api/operas", {
         title: newOpera.title.trim(),
-        composer: newOpera.composer.trim() || null,
-        librettist: newOpera.librettist.trim() || null,
+        composerIds: newOpera.composerIds.map(Number),
+        librettistIds: newOpera.librettistIds.map(Number),
       });
       if (!res.ok) throw new Error();
       const created = await res.json();
@@ -474,11 +543,48 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       setSelectedOperaId(created.id);
       setForm((prev) => ({ ...prev, title: created.title }));
       setShowAddOpera(false);
-      setNewOpera({ title: "", composer: "", librettist: "" });
+      setNewOpera({ title: "", composerIds: [], librettistIds: [] });
     } catch {
       setOperaError("Failed to save opera. Is the API running?");
     } finally {
       setSavingOpera(false);
+    }
+  };
+
+  // Inline-create a composer/librettist and select it on the new opera.
+  const handleAddComposer = async () => {
+    const name = newComposerName.trim();
+    if (!name) return;
+    try {
+      const res = await api.post("/api/composers", { name });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setComposers((prev) => [...prev, created]);
+      setNewOpera((p) => ({
+        ...p,
+        composerIds: [...p.composerIds, String(created.id)],
+      }));
+      setNewComposerName("");
+    } catch {
+      setOperaError("Failed to add composer.");
+    }
+  };
+
+  const handleAddLibrettist = async () => {
+    const name = newLibrettistName.trim();
+    if (!name) return;
+    try {
+      const res = await api.post("/api/librettists", { name });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setLibrettists((prev) => [...prev, created]);
+      setNewOpera((p) => ({
+        ...p,
+        librettistIds: [...p.librettistIds, String(created.id)],
+      }));
+      setNewLibrettistName("");
+    } catch {
+      setOperaError("Failed to add librettist.");
     }
   };
 
@@ -753,6 +859,39 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setSubmitError(null);
     setPdfUploadWarning(null);
     try {
+      // Cast appearances need the Artist contributor type — the field the old
+      // per-row POST was silently dropping. Crew carries its own type.
+      const artistType = lookups.contributorTypes.find((t) =>
+        /^artist$/i.test(t.name ?? ""),
+      );
+      if (!artistType) {
+        setSubmitError("Couldn't resolve the Artist contributor type.");
+        setSubmitting(false);
+        return;
+      }
+
+      // productionId is sent as 0 — the backend ignores it and uses the id of
+      // the production it creates in the same transaction.
+      const castAppearances = castRows
+        .filter((r) => r.personId)
+        .map((r) => ({
+          personId: Number(r.personId),
+          productionId: 0,
+          contributorTypeId: artistType.id,
+          characterId: r.characterId,
+        }));
+
+      const crewAppearances = crewRows
+        .filter((r) => r.personId && r.contributorTypeId)
+        .map((r) => ({
+          personId: Number(r.personId),
+          productionId: 0,
+          contributorTypeId: Number(r.contributorTypeId),
+          positionId: r.positionId ? Number(r.positionId) : null,
+        }));
+
+      // One atomic call: production + all appearances in a single transaction.
+      // If anything fails the whole thing rolls back — nothing is orphaned.
       const prodRes = await api.post("/api/productions", {
         title: form.title.trim(),
         seasonId: Number(form.seasonId),
@@ -770,33 +909,18 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
           : null,
         notes: form.notes.trim() || null,
         programPdfUrl: null,
+        // Tours send a range; everything else sends the individual dates.
+        performanceDates:
+          isTour || performanceDates.length === 0 ? null : performanceDates,
+        tourStartDate: isTour ? tourStartDate || null : null,
+        tourEndDate: isTour ? tourEndDate || null : null,
+        appearances: [...castAppearances, ...crewAppearances],
       });
       if (!prodRes.ok) throw new Error("Failed to create production.");
       const created = await prodRes.json();
 
-      const castAppearances = castRows
-        .filter((r) => r.personId)
-        .map((r) =>
-          api.post("/api/appearances", {
-            productionId: created.id,
-            personId: Number(r.personId),
-            characterId: r.characterId,
-          }),
-        );
-
-      const crewAppearances = crewRows
-        .filter((r) => r.personId && r.contributorTypeId)
-        .map((r) =>
-          api.post("/api/appearances", {
-            productionId: created.id,
-            personId: Number(r.personId),
-            contributorTypeId: Number(r.contributorTypeId),
-            positionId: r.positionId ? Number(r.positionId) : null,
-          }),
-        );
-
-      await Promise.allSettled([...castAppearances, ...crewAppearances]);
-
+      // Program PDF is a separate file upload, outside the transaction — its
+      // failure is a warning, not a rollback, since the production saved fine.
       if (programPdfFile) {
         try {
           const uploadRes = await uploadFile(
@@ -828,7 +952,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setStep(0);
     setSelectedOperaId(null);
     setShowAddOpera(false);
-    setNewOpera({ title: "", composer: "", librettist: "" });
+    setNewOpera({ title: "", composerIds: [], librettistIds: [] });
+    setNewComposerName("");
+    setNewLibrettistName("");
     setForm(EMPTY_PRODUCTION);
     setShowAddSeason(false);
     setNewSeasonLabel("");
@@ -841,6 +967,10 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setLanguageError(null);
     setProgramPdfFile(null);
     setPdfError(null);
+    setPerformanceDates([]);
+    setNewDate("");
+    setTourStartDate("");
+    setTourEndDate("");
     setSelectedCharacterIds([]);
     setCastRows([]);
     setCrewRows([makeCrewRow()]);
@@ -1204,40 +1334,91 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     }
                   />
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "1rem",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  <div>
-                    <label style={labelStyle}>Composer</label>
+                {/* Composers — select existing (multiple) or add new inline. */}
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>Composers</label>
+                  <MultiSelect
+                    size="md"
+                    block
+                    portal
+                    theme="auto"
+                    placeholder="Select composers"
+                    ariaLabel="Composers"
+                    value={newOpera.composerIds}
+                    options={composerOptions}
+                    onChange={(v) =>
+                      setNewOpera((p) => ({ ...p, composerIds: v }))
+                    }
+                  />
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
                     <input
                       type="text"
-                      placeholder="e.g. Verdi"
-                      style={inputStyle}
-                      value={newOpera.composer}
-                      onChange={(e) =>
-                        setNewOpera((p) => ({ ...p, composer: e.target.value }))
-                      }
+                      placeholder="Add new composer…"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={newComposerName}
+                      onChange={(e) => setNewComposerName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddComposer();
+                        }
+                      }}
                     />
+                    <button
+                      type="button"
+                      onClick={handleAddComposer}
+                      disabled={!newComposerName.trim()}
+                      style={{
+                        ...accordionSaveStyle,
+                        opacity: newComposerName.trim() ? 1 : 0.6,
+                      }}
+                    >
+                      Add
+                    </button>
                   </div>
-                  <div>
-                    <label style={labelStyle}>Librettist</label>
+                </div>
+
+                {/* Librettists — same pattern. */}
+                <div style={fieldWrap}>
+                  <label style={labelStyle}>Librettists</label>
+                  <MultiSelect
+                    size="md"
+                    block
+                    portal
+                    theme="auto"
+                    placeholder="Select librettists"
+                    ariaLabel="Librettists"
+                    value={newOpera.librettistIds}
+                    options={librettistOptions}
+                    onChange={(v) =>
+                      setNewOpera((p) => ({ ...p, librettistIds: v }))
+                    }
+                  />
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
                     <input
                       type="text"
-                      placeholder="e.g. Piave"
-                      style={inputStyle}
-                      value={newOpera.librettist}
-                      onChange={(e) =>
-                        setNewOpera((p) => ({
-                          ...p,
-                          librettist: e.target.value,
-                        }))
-                      }
+                      placeholder="Add new librettist…"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={newLibrettistName}
+                      onChange={(e) => setNewLibrettistName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddLibrettist();
+                        }
+                      }}
                     />
+                    <button
+                      type="button"
+                      onClick={handleAddLibrettist}
+                      disabled={!newLibrettistName.trim()}
+                      style={{
+                        ...accordionSaveStyle,
+                        opacity: newLibrettistName.trim() ? 1 : 0.6,
+                      }}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
                 {operaError && (
@@ -1616,6 +1797,119 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 </p>
               </div>
             )}
+
+            {/* Performance dates — range for tours, individual dates otherwise. */}
+            <div style={fieldWrap}>
+              <label style={labelStyle}>
+                Performance Dates{isTour ? " (tour range)" : ""}
+              </label>
+              {isTour ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1rem",
+                  }}
+                >
+                  <div>
+                    <label style={{ ...labelStyle, marginBottom: "3px" }}>
+                      Start
+                    </label>
+                    <input
+                      type="date"
+                      style={inputStyle}
+                      value={tourStartDate}
+                      onChange={(e) => setTourStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, marginBottom: "3px" }}>
+                      End
+                    </label>
+                    <input
+                      type="date"
+                      style={inputStyle}
+                      value={tourEndDate}
+                      min={tourStartDate || undefined}
+                      onChange={(e) => setTourEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <input
+                      type="date"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addDate();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addDate}
+                      disabled={!newDate}
+                      style={{
+                        ...accordionSaveStyle,
+                        opacity: newDate ? 1 : 0.6,
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {performanceDates.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "6px",
+                        marginTop: "8px",
+                      }}
+                    >
+                      {performanceDates.map((d) => (
+                        <span
+                          key={d}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "12px",
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            border: `1px solid ${border}`,
+                            background: inputBg,
+                            color: textPrimary,
+                          }}
+                        >
+                          {formatDate(d)}
+                          <button
+                            type="button"
+                            onClick={() => removeDate(d)}
+                            aria-label={`Remove ${formatDate(d)}`}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: textMuted,
+                              cursor: "pointer",
+                              fontSize: "13px",
+                              lineHeight: 1,
+                              padding: 0,
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             <div style={fieldWrap}>
               <label style={labelStyle}>Runtime (minutes)</label>
