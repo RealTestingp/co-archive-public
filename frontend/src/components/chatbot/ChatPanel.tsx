@@ -1,3 +1,20 @@
+/* ChatPanel.tsx
+   The chat window itself. Presentational: it holds the draft message and
+   scrolling, while ChatWidget owns the conversation and the API call.
+
+   Not my file, but two things in it are worth knowing.
+
+   The effect on messages scrolls to the bottom whenever the list changes, so a
+   new reply is visible without the user scrolling. block behaviour is smooth
+   rather than instant so it reads as the conversation moving rather than
+   jumping.
+
+   Replies render through react-markdown rather than being injected as HTML. The
+   assistant returns markdown, and react-markdown parses it to React elements
+   instead of setting innerHTML, so model output cannot inject script into the
+   page. That is the right answer if anyone asks how you handle untrusted text
+   from an AI service.
+*/
 import { useState, useRef, useEffect, type SyntheticEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import styles from "./ChatWidget.module.css";

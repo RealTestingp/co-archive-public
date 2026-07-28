@@ -1,3 +1,25 @@
+/* ProductionPage.tsx
+   The detail view for one production. Reached at /productions/:id, so it is
+   linkable and shareable, and it is the second stop in the demo path.
+
+   Shows the production's details, its program PDF, and everyone involved,
+   split into cast, crew and ensemble. Those three come from the same
+   appearances table on the backend, separated here by contributor type, which
+   is why one endpoint returns all of them.
+
+   Everything is loaded from a single GET /api/productions/{id} rather than one
+   request per section. The backend assembles the whole thing, so the page makes
+   one call and renders when it lands.
+
+   The cast rows carry personId and characterId, which is what lets the names
+   link through to the person and character pages. That cross linking is the
+   point of the archive: from a production you can reach a performer, and from
+   them every other production they appeared in.
+
+   Admin only actions, edit, delete and manage cast, are gated on useAuth().
+   isAdmin. That hides the buttons. It does not stop the API accepting the call,
+   which is the backend's job.
+*/
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";

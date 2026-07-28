@@ -1,3 +1,15 @@
+/* EditCharacterModal.tsx
+   Edits an existing character.
+
+   Same form as AddCharacterModal, pre-filled from the character prop in an
+   effect rather than initial state, because the modal stays mounted between
+   openings and initial state is only read once.
+
+   Editing a character changes it everywhere at once, since productions do not
+   own their own copy of a role. Correcting a spelling fixes it across every
+   staging, which is the point of storing characters against the opera. It also
+   means a careless edit propagates just as widely.
+*/
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
 import Dropdown from "../dropdown/Dropdown";

@@ -1,13 +1,24 @@
+/* MultiSelect.tsx
+   The multi select sibling of Dropdown. Shares Dropdown.module.css so the two
+   are visually identical, and repeats the same placement logic: flip up when
+   cramped, shrink to fit, reposition on scroll.
+
+   Kept as a separate component rather than a mode on Dropdown because the value
+   type differs, string versus string[], and about half the behaviour changes
+   with it. Merging them would mean branching on nearly every line. The honest
+   tradeoff is the duplicated geometry code, which is the part worth pulling into
+   a shared hook if this were revisited.
+
+   Differences from Dropdown:
+   - Selecting toggles an item and leaves the panel open
+   - The trigger shows a summary, collapsing to "N selected" once the list is long
+   - There is a clear row instead of a placeholder row
+   - No typeahead, since jumping by letter is ambiguous once several are checked
+*/
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./Dropdown.module.css";
 import type { DropdownOption } from "./Dropdown";
-
-/**
- * Multi-select sibling of Dropdown. Shares Dropdown.module.css so the two are
- * visually identical — same trigger metrics, same panel, same placement logic
- * (flip up when cramped, shrink to available space, reposition on scroll).
- */
 
 type Size = "xs" | "sm" | "md";
 
@@ -25,12 +36,15 @@ interface MultiSelectProps {
   theme?: "auto" | "light";
   label?: string;
   disabled?: boolean;
-  /** Tooltip shown when disabled — explains *why* it's unavailable. */
+  /** Tooltip shown when disabled. Explains why it is unavailable, rather than
+      just going grey, which is the frustrating version. */
   disabledHint?: string;
   className?: string;
   ariaLabel?: string;
 }
 
+/* Same panel sizing rules as Dropdown. MIN_HEIGHT is the floor below which the
+   panel flips above the trigger instead of squashing. */
 const MAX_HEIGHT: Record<Size, number> = { xs: 200, sm: 260, md: 260 };
 const MIN_HEIGHT = 140;
 const GAP = 4;
@@ -39,6 +53,7 @@ const VIEWPORT_MARGIN = 8;
 interface Geometry {
   dropUp: boolean;
   maxHeight: number;
+  /** Only used in portal mode. */
   left: number;
   width: number;
   top: number;
@@ -62,6 +77,8 @@ export default function MultiSelect({
   ariaLabel,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
+  /* Keyboard cursor position. Separate from value, since moving the cursor is
+     not the same as checking something. */
   const [highlighted, setHighlighted] = useState(-1);
   const [geo, setGeo] = useState<Geometry>({
     dropUp: false,
@@ -76,12 +93,18 @@ export default function MultiSelect({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
+  /* Stable unique id per instance, so aria-controls and aria-labelledby do not
+     collide when several of these are on one page. */
   const id = useId();
 
+  /* Derived from options rather than stored, so the labels cannot go stale if
+     the options list changes underneath a selection. */
   const selectedLabels = options
     .filter((o) => value.includes(o.value))
     .map((o) => o.label);
 
+  /* Trigger text. Names while the selection is short, a count once it is long,
+     so the trigger never grows or overflows its fixed width. */
   const summary =
     selectedLabels.length === 0
       ? placeholder
@@ -89,6 +112,13 @@ export default function MultiSelect({
         ? selectedLabels.join(", ")
         : `${selectedLabels.length} selected`;
 
+  /* Works out where the panel goes and how tall it can be.
+     - Measures the trigger on screen with getBoundingClientRect
+     - Flips above only when there is genuinely not enough room below AND more
+       room above, so it does not flip needlessly
+     - Clamps the height so the panel shrinks to fit rather than overflowing
+     - left/width/top/bottom are for portal mode, where the panel has no
+       positioned ancestor to anchor to */
   const measure = () => {
     const el = buttonRef.current;
     if (!el) return;
@@ -107,24 +137,32 @@ export default function MultiSelect({
       left: rect.left,
       width: rect.width,
       top: rect.bottom + GAP,
+      // Distance from the viewport bottom to the top of the trigger.
       bottom: window.innerHeight - rect.top + GAP,
     });
   };
 
   const openList = () => {
     if (disabled) return;
+    // Measure first, so the panel never paints in the wrong place.
     measure();
     setOpen(true);
+    // Nothing is "current" in a multi select, so the cursor starts at the top.
     setHighlighted(0);
   };
 
+  /* refocus returns focus to the trigger so keyboard users are not dropped at
+     the top of the page. Skipped when the trigger itself was clicked. */
   const closeList = (refocus = true) => {
     setOpen(false);
     setHighlighted(-1);
     if (refocus) buttonRef.current?.focus();
   };
 
-  // Selecting does NOT close the panel — that's the point of a multi-select.
+  /* Selecting does NOT close the panel. That is the whole point of a multi
+     select, and it is why there is no commit() here like Dropdown has.
+     Builds a new array rather than mutating, so React sees a new reference and
+     re-renders. Mutating value in place would change nothing on screen. */
   const toggle = (optionValue: string) =>
     onChange(
       value.includes(optionValue)
@@ -132,6 +170,11 @@ export default function MultiSelect({
         : [...value, optionValue],
     );
 
+  /* Close on a click outside.
+     In portal mode the panel is not a DOM descendant of the wrapper, so a click
+     inside the list would look like an outside click and close the panel before
+     the option's onClick fired. Hence checking listRef separately.
+     pointerdown rather than click so it runs before focus moves. */
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -145,6 +188,10 @@ export default function MultiSelect({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
+  /* Keep the panel pinned to the trigger while anything scrolls or resizes,
+     since the coordinates were measured once at open time and go stale.
+     The third argument is capture: true. Scroll events do not bubble, so without
+     it this would miss a modal's own scroll container and only catch the window. */
   useEffect(() => {
     if (!open) return;
     const onReflow = () => measure();
@@ -157,6 +204,9 @@ export default function MultiSelect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, size]);
 
+  /* Scroll the highlighted row into view when the arrow keys walk past the edge
+     of the visible area. block: "nearest" moves the minimum needed rather than
+     yanking the row to the centre. */
   useEffect(() => {
     if (!open || highlighted < 0) return;
     const node = listRef.current?.children[highlighted] as
@@ -165,6 +215,16 @@ export default function MultiSelect({
     node?.scrollIntoView({ block: "nearest" });
   }, [open, highlighted]);
 
+  /* Keyboard handling, the ARIA listbox pattern.
+     - Closed: arrows, Enter or Space open it.
+     - Open: Escape closes and refocuses, Tab closes without refocusing so focus
+       moves on normally, Home and End jump to the ends.
+     - Enter and Space toggle rather than select and close, matching toggle().
+     - Wrap-around uses modulo. The + options.length on ArrowUp is there because
+       JavaScript's % returns a negative for a negative left operand.
+     - preventDefault stops Space and the arrows scrolling the page underneath.
+     No typeahead here, unlike Dropdown. Typing to jump is ambiguous once several
+     items are checked, and the native element has no equivalent to match. */
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
@@ -210,6 +270,11 @@ export default function MultiSelect({
     }
   };
 
+  /* Inline mode only needs a max height, CSS handles the rest.
+     Portal mode needs the full geometry, because the panel sits on document.body
+     with nothing to anchor to. position: fixed rather than absolute so the
+     coordinates are viewport relative, matching getBoundingClientRect.
+     z-index 1000 because modal overlays sit at 50. */
   const listStyle: React.CSSProperties = portal
     ? {
         position: "fixed",
@@ -223,11 +288,14 @@ export default function MultiSelect({
       }
     : { maxHeight: `${geo.maxHeight}px` };
 
+  /* Built once as a variable, then rendered either inline or through a portal at
+     the bottom of the component, so the two modes cannot drift apart. */
   const list = (
     <ul
       ref={listRef}
       id={id}
       role="listbox"
+      // Tells screen readers more than one option can be chosen at a time.
       aria-multiselectable="true"
       className={[
         styles.list,
@@ -237,16 +305,21 @@ export default function MultiSelect({
         .filter(Boolean)
         .join(" ")}
       style={listStyle}
+      // Inline mode flips via CSS; portal mode already handled it inline above.
       data-drop-up={!portal && geo.dropUp ? "" : undefined}
+      // Focusable programmatically, but kept out of the tab order.
       tabIndex={-1}
       aria-label={!label ? (ariaLabel ?? placeholder) : undefined}
       aria-labelledby={label ? `${id}-label` : undefined}
       onKeyDown={onKeyDown}
     >
       {options.length === 0 ? (
+        // Never render an empty panel, it reads as broken rather than empty.
         <li className={styles.emptyRow}>No options available.</li>
       ) : (
         <>
+          {/* Only rendered when something is selected, so it does not take up a
+              row in the common empty case. */}
           {value.length > 0 && (
             <li>
               <button
@@ -266,11 +339,21 @@ export default function MultiSelect({
                 role="option"
                 aria-selected={checked}
                 className={`${styles.option} ${styles.optionCheckable}`}
+                /* State goes out as data-* attributes and CSS reacts to them.
+                   undefined rather than false removes the attribute entirely, so
+                   the CSS attribute selectors do not match. */
                 data-highlighted={i === highlighted || undefined}
                 data-selected={checked || undefined}
+                /* Hover drives the same highlight the keyboard uses, so mouse
+                   and keyboard never show two cursors at once. */
                 onMouseEnter={() => setHighlighted(i)}
                 onClick={() => toggle(option.value)}
               >
+                {/* Styled span, not a real <input type="checkbox">, so it looks
+                    the same in every browser. The accessibility contract is
+                    carried by role="option" and aria-selected on the row, which
+                    is the correct pattern inside a listbox. A real checkbox
+                    nested in role="option" would actually be invalid ARIA. */}
                 <span className={styles.checkbox} data-checked={checked || undefined}>
                   {checked && (
                     <svg width="9" height="7" viewBox="0 0 10 8" fill="none" aria-hidden="true">
@@ -313,6 +396,11 @@ export default function MultiSelect({
         </span>
       )}
 
+      {/* aria-haspopup, aria-expanded and aria-controls are what make this
+          announce as a collapsed listbox rather than a plain button.
+          The title attribute does double duty: the reason it is disabled when it
+          is, otherwise the full selection, since the visible text may have been
+          collapsed to a count. */}
       <button
         ref={buttonRef}
         type="button"
@@ -348,6 +436,7 @@ export default function MultiSelect({
         </svg>
       </button>
 
+      {/* Same panel, two places it can live. */}
       {open && (portal ? createPortal(list, document.body) : list)}
     </div>
   );

@@ -3,6 +3,24 @@ import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
 import { useTheme } from "../../context/ThemeContext";
 
+/* EditPersonModal.tsx
+   Edits an existing person: names, email, voice type, nationalities, active
+   status and profile image.
+
+   Same form as AddPersonModal but pre-filled, and with one meaningful
+   difference: the person already has an id, so a new image can be uploaded
+   without waiting for a create first.
+
+   Populated from the person prop in an effect rather than initial state,
+   because the modal stays mounted between openings and initial state is only
+   read on the first render. Without the effect, opening it for a second person
+   would show the first one's details.
+
+   isActive is a flag rather than a delete. Archive records are historical, so a
+   performer who is no longer active still needs to appear in every production
+   they were part of. Removing them would falsify the archive, which is why
+   deletion is separate and rare.
+*/
 interface LookupItem {
   id: number;
   name: string;

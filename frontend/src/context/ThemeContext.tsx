@@ -197,6 +197,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setModeState] = useState<ThemeMode>(getInitialMode);
   const [systemDark, setSystemDark] = useState<boolean>(prefersDark);
 
+  /* Watches the operating system setting so "system" mode follows it live. The
+     listener matters because macOS and Windows can switch automatically at
+     sunset, and without this the app would only notice on the next reload. */
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
@@ -204,9 +207,23 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     return () => mq.removeEventListener("change", handleChange);
   }, []);
 
+  /* Three modes collapse to two themes. mode is what the user chose and is what
+     gets stored, theme is what actually renders. Keeping them separate is what
+     lets "system" stay "system" rather than being silently rewritten to
+     whichever theme it resolved to at the time. */
   const theme: Theme = mode === "system" ? (systemDark ? "dark" : "light") : mode;
   const isDark = theme === "dark";
 
+  /* This effect is the bridge between React and CSS, and it is the answer to
+     "how does theming actually work".
+
+     Setting data-theme on <html> is the entire mechanism. Every stylesheet in
+     the app has a [data-theme="dark"] block that redefines its custom
+     properties, so changing this one attribute re-themes everything at once
+     with no component re-rendering and no props threaded anywhere.
+
+     colors in the context is only for the pages that style inline and cannot
+     read CSS variables. The attribute is the real system. */
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     // Lets the browser paint native controls (scrollbars, date pickers,

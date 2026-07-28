@@ -1,3 +1,28 @@
+/* ManageArchivePage.tsx
+   The admin hub. Three tabs over the three record types, with search,
+   pagination, and the entry point to every add modal.
+
+   Admin only. The route is wrapped in AdminRoute inside ProtectedRoute in
+   App.tsx, so a non admin is redirected to search before this ever renders.
+   Worth repeating that this is a UI guard, not a security boundary.
+
+   Two loading strategies, used deliberately:
+   - fetchAll runs once on mount and loads all three tabs together, so the tab
+     counts are correct immediately and switching tabs needs no request at all.
+   - fetchData reloads a single tab, used for search and after a record is added
+     or edited.
+
+   loadedTabs and searchedTabs are what make the tab switching feel instant.
+   loadedTabs means skeletons only show on a tab's first load, so afterwards the
+   existing rows stay on screen while data refreshes behind them rather than
+   flashing empty. searchedTabs tracks which tabs are showing filtered results,
+   so switching back to one restores the full list rather than leaving it
+   mysteriously short.
+
+   Both are Sets rather than booleans because the state is per tab, and both are
+   copied rather than mutated on update, since React compares by reference and
+   would not re-render on an in place Set.add.
+*/
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
@@ -160,7 +185,9 @@ const ManageArchivePage = () => {
   };
 
   const handleTabChange = (tab: Tab) => {
-    // Persons is the default, so keep its URL clean (no ?tab=).
+    /* Persons is the default, so keep its URL clean (no ?tab=).
+       replace: true so switching tabs does not fill the history stack. Back
+       should leave this page, not walk back through every tab you clicked. */
     setSearchParams(tab === "Persons" ? {} : { tab }, { replace: true });
     setSearch("");
     setPage(1);

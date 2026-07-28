@@ -1,3 +1,8 @@
+/* main.tsx
+   App entry point. Sets up MSAL, then mounts React inside the providers.
+
+   Provider order matters. MsalProvider is outermost since auth is the widest
+   concern, then ThemeProvider, then the app. */
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { PublicClientApplication } from "@azure/msal-browser";
@@ -9,20 +14,26 @@ import "./index.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
-// NOTE: this used to use top-level `await`, which makes this entry an async
-// module. Under the production build that let Rollup split shared modules
-// across chunks — producing two copies of NotificationsContext, so the
-// provider and the hook ended up with different React contexts and threw
-// "useNotifications must be used within a <NotificationsProvider>".
-// Initialising inside an async bootstrap keeps the module graph synchronous.
+/* This used to be a top level await, and it caused a bug that only showed up in
+   the production build.
+
+   Top level await makes this module async. Rollup then split shared modules
+   across chunks and NotificationsContext ended up duplicated, so the provider
+   and the hook were pointing at two different context objects. The lookup found
+   nothing and the app threw "useNotifications must be used within a
+   <NotificationsProvider>", even though it clearly was inside one. Dev mode was
+   fine because Vite serves modules unbundled.
+
+   Wrapping the await in a normal async function keeps the module graph
+   synchronous, which stops the split. Do not move this await back to the top
+   level. */
 async function bootstrap() {
   await msalInstance.initialize();
 
-  // Note: we intentionally do NOT call msalInstance.handleRedirectPromise()
-  // here. MsalProvider already calls it internally — calling it a second
-  // time here causes a race where the first call consumes the temporary
-  // cache entry MSAL needs, and the second (inside MsalProvider) throws
-  // BrowserAuthError: no_token_request_cache_error.
+  /* Deliberately not calling msalInstance.handleRedirectPromise() here.
+     MsalProvider already calls it internally. Calling it twice races: the first
+     call consumes the temporary cache entry the second one needs, and MSAL
+     throws BrowserAuthError: no_token_request_cache_error. */
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

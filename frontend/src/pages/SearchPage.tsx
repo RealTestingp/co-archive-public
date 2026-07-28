@@ -1,3 +1,24 @@
+/* SearchPage.tsx
+   The main entry point of the app, and the start of the demo path.
+
+   One search box queries three things at once: productions, people and
+   characters. Results are split across three tabs so the user can see how many
+   matches each category has without running three separate searches.
+
+   The design decision worth knowing: the query lives in the URL, not in state.
+   Typing updates a local input, but pressing Enter writes ?q= into the address
+   bar, and a separate effect reacts to that and fetches. So the URL is the
+   source of truth for what is being searched.
+
+   That costs an extra hop, and the payoff is:
+   - A search is shareable. Send someone the URL and they see your results.
+   - Back and forward move through searches, which is what users expect.
+   - A refresh keeps the search rather than emptying the page.
+
+   Filtering and pagination happen in the browser after the fetch, not on the
+   server. Fine at the archive's current size, and the honest limitation is that
+   it does not scale: every match is fetched before any of it is filtered.
+*/
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
@@ -102,6 +123,14 @@ const SearchPage = () => {
     fetchLookups();
   }, []);
 
+  /* The URL drives the search, not the input box.
+
+     handleSearch writes ?q= into the address bar, and this effect reacts to it.
+     That indirection is what makes the back button, refresh and shared links all
+     work, since every one of them changes the URL and lands here.
+
+     Syncing inputValue from urlQuery on the way in keeps the box showing the
+     search that actually ran, including after a back navigation. */
   useEffect(() => {
     setInputValue(urlQuery);
     const q = urlQuery.trim();
@@ -116,7 +145,10 @@ const SearchPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlQuery]);
 
-  // Reset page when tab or filters change
+  /* Switching tabs clears the filters as well as the page. The three tabs have
+     different filters, so a nationality left set from the Persons tab would keep
+     filtering invisibly after moving to Productions, and the user would see a
+     short list with no way to see why. */
   useEffect(() => {
     setPage(1);
     setSelectedVoiceType("");
@@ -135,6 +167,20 @@ const SearchPage = () => {
     pageSize,
   ]);
 
+  /* Searches all three record types in parallel.
+
+     Promise.all is right here, unlike the report filters, because all three
+     results are shown together as tab counts. A partial answer would show a
+     wrong count on one tab, which is worse than an error message.
+
+     The second Promise.all is a separate step because reading a response body
+     is itself asynchronous. Each res.ok check happens there, so an endpoint
+     returning an error contributes an empty array rather than throwing and
+     taking the other two down with it.
+
+     No cancellation here. A slow response for an old query can still land after
+     a newer one. resultsQuery above is what stops that showing as a wrong
+     "no results" flash, but the cleaner fix is an AbortController. */
   const fetchResults = async (q: string) => {
     setLoading(true);
     setError("");

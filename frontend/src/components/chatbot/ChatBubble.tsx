@@ -1,3 +1,12 @@
+/* ChatBubble.tsx
+   The floating button that opens and closes the assistant. Swaps between a
+   speech bubble and a close icon depending on state.
+
+   Not my file. Worth noting that it is a real <button> with aria-expanded and a
+   changing aria-label, so screen readers announce it as a toggle and say which
+   action it will perform. A styled div would have needed keyboard and role
+   handling added by hand.
+*/
 import styles from "./ChatWidget.module.css";
 
 interface ChatBubbleProps {

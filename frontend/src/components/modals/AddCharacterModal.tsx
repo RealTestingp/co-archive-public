@@ -1,3 +1,15 @@
+/* AddCharacterModal.tsx
+   Creates a character, meaning a role within an opera.
+
+   The opera is required, and that is the design decision here. A character
+   without an opera would be unattachable, since roles only exist inside a work.
+   Tying them to the opera rather than to a production is what lets every
+   staging of Madama Butterfly reuse the same Cio-Cio-San record, which is what
+   makes "everyone who has sung this role" answerable.
+
+   The simplest of the add modals: one record, no file upload, no dependent
+   rows, so it is a single POST with no ordering to worry about.
+*/
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
 import Dropdown from "../dropdown/Dropdown";

@@ -1,3 +1,21 @@
+/* NavBar.tsx
+   The top bar on every page except login: navigation, the notification bell,
+   the theme toggle and the user menu.
+
+   Manage Archive only renders for admins. That is presentation, not protection.
+   The route itself is guarded by AdminRoute, and the real enforcement has to be
+   on the backend. Hiding the link means ordinary users never see a door they
+   cannot open, which is a better experience than a permission error.
+
+   useLocation drives the active link styling, so the highlight follows the real
+   URL rather than being tracked separately, and it stays correct after a back
+   navigation or a direct link.
+
+   Sign out calls signOut from auth.ts, which clears the session store and
+   notifies every subscriber. Because the session is exposed through
+   useSyncExternalStore, the whole app re-renders as signed out immediately, and
+   the route guards redirect to login without a page reload.
+*/
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";

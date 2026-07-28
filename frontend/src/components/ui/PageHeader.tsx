@@ -1,3 +1,15 @@
+/* PageHeader.tsx
+   The title block at the top of every detail page: title, subtitle, and the
+   Edit, Delete and View History actions.
+
+   Shared so the three detail pages cannot drift apart in spacing, type size or
+   button order. Fixing the header once fixes it everywhere.
+
+   The handler-driven rendering below is the part worth knowing: passing a
+   handler shows the button, omitting it hides the button. That is also how the
+   pages gate admin actions, by passing onEdit and onDelete only when the user
+   is an admin, so there is no separate permission prop to keep in sync.
+*/
 import { useTheme } from "../../context/ThemeContext";
 
 interface Props {

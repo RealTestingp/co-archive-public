@@ -8,6 +8,23 @@ import { useTheme } from "../../context/ThemeContext";
 // endpoint, so this modal is a simple details form, not the full
 // AddProductionModal wizard.
 
+/* EditProductionModal.tsx
+   Edits a production's own fields: title, season, venue, event type, languages,
+   runtime, notes and the program PDF.
+
+   Scope is deliberately narrow. It does not touch cast, crew or characters,
+   because those are appearances rather than fields on the production, and they
+   have their own editor in ManageCastModal. Keeping them apart means this form
+   maps one to one onto a single PUT.
+
+   Unlike the add wizard this is one screen, since editing means changing one or
+   two things rather than building a record from nothing. The user should not
+   have to walk five steps to fix a typo in a title.
+
+   The form is populated from the production prop in an effect rather than
+   initial state, because the modal stays mounted between openings and would
+   otherwise keep showing whichever production was opened first.
+*/
 interface LookupItem {
   id: number;
   name?: string;
@@ -297,9 +314,21 @@ const EditProductionModal = ({
     setError(null);
 
     try {
-      // Update requires `id` in the body (UpdateProductionDto). Also passing
-      // programPdfUrl through unchanged — a new upload (below) is what
-      // actually updates ProgramPdfUrl.
+      /* PUT replaces the whole record, so every field has to be sent, including
+         the ones the user did not touch. Omitting one would null it out.
+
+         The id goes in the body as well as the URL because the backend DTO
+         requires it, which is a C# model binding convention rather than
+         something the frontend needs.
+
+         programPdfUrl is passed through unchanged. If a new PDF was chosen, the
+         upload below is what actually replaces it, so sending the existing
+         value here stops the PUT from clearing the current one first.
+
+         Note this is a full replace, not a PATCH. If two admins edit the same
+         production at once, the second save wins outright and the first one's
+         changes are lost with no warning. Fixing that needs a version or
+         timestamp check on the backend. */
       const res = await api.put(`/api/productions/${production.id}`, {
         id: production.id,
         title: form.title.trim(),

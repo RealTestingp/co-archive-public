@@ -1,3 +1,24 @@
+/* DeletePersonModal.tsx
+   Confirmation before deleting a person, and a guard against deleting one who
+   still appears in productions.
+
+   The block is confirmed rather than assumed here, unlike the production
+   version: the backend's delete has no foreign key handling, so removing a
+   person who has appearances throws a raw database error with no clean message
+   for the frontend to show. Checking here means the user gets a real
+   explanation instead of an opaque failure.
+
+   Worth saying out loud that this is the weaker half of the pattern. A client
+   side guard is a courtesy, not a constraint. Anyone calling the API directly
+   still hits the unhandled error, which is why the durable fix is on the
+   backend: either cascade inside a transaction or return a 409 the frontend can
+   display.
+
+   In practice deletion should be rare. A performer who is no longer active is
+   marked inactive rather than removed, because the archive is a historical
+   record and deleting someone would erase productions they were genuinely part
+   of.
+*/
 import { useTheme } from "../../context/ThemeContext";
 
 interface Props {

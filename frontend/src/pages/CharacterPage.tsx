@@ -1,3 +1,15 @@
+/* CharacterPage.tsx
+   The detail view for one role, at /characters/:id.
+
+   A character belongs to an opera, not to a production, which is the thing
+   worth understanding here. Cio-Cio-San is a role in Madama Butterfly, and
+   every staging of that opera reuses the same character record rather than
+   creating its own. That is what makes the interesting question answerable:
+   everyone who has ever sung this role, across every production.
+
+   So this page is the third view of the same appearances join. ProductionPage
+   reads it by production, PersonPage by person, and this one by character.
+*/
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";

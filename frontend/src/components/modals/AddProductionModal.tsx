@@ -1,3 +1,37 @@
+/* AddProductionModal.tsx
+   The five step wizard for adding a production to the archive. This is the
+   largest file in the project, so here is the whole thing before the detail.
+
+   Why it is a wizard and not one form: a production is not one record. Saving it
+   creates a production, then an appearance row for every cast and crew member,
+   and optionally uploads a program PDF. Asking for all of that on a single
+   screen would be roughly forty fields at once.
+
+   The five steps:
+   0. Opera      pick the work being staged, or create it inline
+   1. Details    season, venue, event type, languages, runtime, notes, program PDF
+   2. Characters choose which roles appear in this production
+   3. Cast & Crew match people to those roles, and to crew positions
+   4. Review     confirm, then save
+
+   The save order matters, and is the thing worth understanding. The production
+   has to exist before anything can reference it, because appearances need its
+   id. So it is: create the production, read back the new id, then create every
+   appearance against it, then upload the PDF. See handleSave.
+
+   Inline creation is a running theme. At almost every step the user can add a
+   missing opera, season, venue, language or character without leaving the
+   wizard. That is why there are so many showAddX and savingX state pairs. The
+   archivists were entering historical records where the lookup data often did
+   not exist yet, and sending them to another screen would have lost the work in
+   progress.
+
+   Honest assessment: at 2,400 lines this file does too much. Each step is
+   really its own component, and the shared form state could live in a reducer
+   or a context. Splitting it is the first thing I would do with more time. It
+   grew this way because the steps were added one at a time as the requirements
+   became clear.
+*/
 import { useState, useEffect, useMemo } from "react";
 import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
@@ -118,8 +152,15 @@ interface Props {
   onSuccess?: () => void;
 }
 
-// Full-width, portalled dropdown; theme "auto" so it follows the app theme
-// now that the modal itself is theme-aware.
+/* Shared dropdown settings, defined once so every dropdown in the wizard is
+   identical rather than each one repeating five props.
+   - portal: true is required here. The modal body scrolls, and an inline
+     dropdown panel would be clipped at the modal edge.
+   - highlightWhenSet: false because the accent "a filter is active" styling is
+     for filters. Inside a form, every field having a value is normal and does
+     not need highlighting.
+   - as const keeps the literal types, so size: "md" stays "md" rather than
+     widening to string and failing the prop type. */
 const DD = {
   size: "md",
   block: true,
@@ -128,10 +169,15 @@ const DD = {
   highlightWhenSet: false,
 } as const;
 
+/* Local id for cast and crew rows, so React has a stable key before the row has
+   been saved and has a real database id. Only ever used in the browser, never
+   sent to the API. Array index would break here, since rows can be removed from
+   the middle. */
 const newId = () => Math.random().toString(36).slice(2);
 
 const STEPS = ["Opera", "Details", "Characters", "Cast & Crew", "Review"];
 
+// Client side guard only. The backend has to enforce its own limit too.
 const MAX_PDF_BYTES = 50 * 1024 * 1024;
 const ACCEPTED_PDF_TYPE = "application/pdf";
 
@@ -430,6 +476,14 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }
   };
 
+  /* Positions depend on the contributor type, so they cannot be loaded up front
+     with the other lookups. They are fetched the first time a crew row picks a
+     type, then cached in positionsByType.
+
+     The cache check is the important line: without it, every crew row selecting
+     Creative Team would refetch the same list. With twenty crew members that is
+     twenty identical requests. Keyed by contributor type id, so each distinct
+     type is fetched exactly once per open. */
   const fetchPositions = async (contributorTypeId: string) => {
     if (!contributorTypeId || positionsByType[contributorTypeId]) return;
     try {
@@ -445,7 +499,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }
   };
 
-  // ── Fetch on open ──
+  /* Load everything when the modal opens, not when it mounts. The modal is
+     always mounted and merely hidden, so a mount-time fetch would run once on
+     page load and then serve stale lookups forever. Keying on isOpen means each
+     open gets fresh data, which matters because another admin may have added a
+     season or venue in the meantime. */
   useEffect(() => {
     if (!isOpen) return;
     fetchOperas();
@@ -679,7 +737,28 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     );
   };
 
-  // ── Step 3: Person search ──
+  /* ── Step 3: Person search ──────────────────────────────────────────────────
+     Autocomplete for matching a cast or crew row to an existing person.
+
+     Clearing personId and personName on every keystroke is deliberate. Once the
+     user starts editing the text, whatever they had selected is no longer what
+     the box says, so the row must not keep claiming a person they have typed
+     past. The row goes back to unselected until they pick again.
+
+     The two character minimum stops a single letter returning most of the
+     archive.
+
+     Results are stored per row id rather than in one shared list, because
+     several cast rows can have open search panels at once and they must not
+     show each other's results.
+
+     Two things I would fix, and would rather name than have found:
+     - There is no debounce, so this fires a request on every keystroke past two
+       characters. It should wait until typing pauses, around 300ms.
+     - There is no protection against out of order responses. A slow request for
+       "ad" can land after a fast one for "addis" and overwrite the better
+       results. The usual fix is to track the latest query per row and discard
+       anything that does not match it. */
   const searchPersons = async (rowId: string, q: string, isCast: boolean) => {
     if (isCast)
       setCastRows((prev) =>
@@ -747,7 +826,37 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setPersonResults((prev) => ({ ...prev, [rowId]: [] }));
   };
 
-  // ── Step 4: Save ──
+  /* ── Step 4: Save ──────────────────────────────────────────────────────────
+     The whole wizard lands here. Four things happen, in this order, and the
+     order is forced by the data model.
+
+     1. Create the production. Everything else references it, so nothing can be
+        saved until it exists and has an id.
+     2. Read the new id back out of the response.
+     3. Create an appearance for every cast and crew row that was filled in.
+        Cast rows carry a characterId, crew rows carry a contributorTypeId and
+        an optional positionId. Both become rows in the same appearances table.
+     4. Upload the program PDF, if one was chosen.
+
+     Two deliberate choices worth explaining:
+
+     Promise.allSettled, not Promise.all, for the appearances. all rejects as
+     soon as one request fails, which would leave the remaining ones unsent and
+     the production half populated with no record of which succeeded.
+     allSettled sends all of them regardless. The production plus most of its
+     cast is a far better outcome than the production plus whichever cast
+     members happened to be queued before the failure.
+
+     The PDF upload has its own try/catch and only produces a warning. By this
+     point the production and its cast are already saved, so a failed upload
+     must not present as a failed save. The user is told what happened and
+     where to retry, rather than being shown an error that implies they lost
+     everything.
+
+     Known limitation: there is no transaction across these calls. If step 3
+     partially fails the production still exists, just incomplete. Doing this
+     properly means one endpoint that accepts the whole production and saves it
+     in a single database transaction, which is the change I would make next. */
   const handleSave = async () => {
     setSubmitting(true);
     setSubmitError(null);
@@ -774,6 +883,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
       if (!prodRes.ok) throw new Error("Failed to create production.");
       const created = await prodRes.json();
 
+      /* Rows the user started but never filled in are dropped rather than
+         rejected. A blank row is someone changing their mind, not an error, so
+         it should not block the save. */
       const castAppearances = castRows
         .filter((r) => r.personId)
         .map((r) =>
@@ -795,6 +907,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
           }),
         );
 
+      /* Both arrays hold already-started promises, since .map called api.post
+         immediately. So these requests are in flight in parallel, and this line
+         only waits for them all to settle. */
       await Promise.allSettled([...castAppearances, ...crewAppearances]);
 
       if (programPdfFile) {
@@ -824,6 +939,17 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }
   };
 
+  /* Resets everything back to a blank wizard.
+
+     It is long because the modal is never unmounted, it is hidden with the
+     `if (!isOpen) return null` further down. That keeps it responsive to reopen
+     but means React does not clear the state for us, so every field has to be
+     reset by hand. Miss one and the next production opens with the last one's
+     data still in it.
+
+     The alternative is keying the modal on something in the parent so React
+     remounts it fresh each time, which would delete this whole function. That
+     is the cleaner fix. */
   const handleClose = () => {
     setStep(0);
     setSelectedOperaId(null);
