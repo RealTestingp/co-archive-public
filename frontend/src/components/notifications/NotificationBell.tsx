@@ -111,10 +111,10 @@ const NotificationBell = () => {
           <span
             style={{
               position: "absolute",
-              top: "-1px",
-              right: "-1px",
-              width: "10px",
-              height: "10px",
+              top: "6px",
+              right: "6px",
+              width: "12px",
+              height: "12px",
               boxSizing: "border-box",
               borderRadius: "var(--radius-pill)",
               background: colors.brand,
