@@ -23,6 +23,26 @@ export interface AppNotification {
   };
 }
 
+/* 50 -> "50th", 1 -> "1st", 22 -> "22nd", 113 -> "113th".
+   `milestoneCount` is the milestone being celebrated (a 50th performance), NOT
+   a count of anything. Rendered as a bare number next to a name it reads like a
+   counter and gets confused with the unread badge, so both the bell panel and
+   the toast run it through here. */
+export const ordinal = (n: number): string => {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+};
+
 interface NotificationsValue {
   items: AppNotification[];
   count: number;
