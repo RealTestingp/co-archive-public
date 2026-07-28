@@ -102,38 +102,26 @@ const NotificationBell = () => {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
 
-        {/* Unread count — the ONE red counter in the notification UI, and the
-            only number that should ever mean "how many". Caps at 99 so it
-            agrees with the panel and the toast for any realistic backlog. */}
+        {/* Unread indicator. A plain dot rather than a count — the exact
+            number was never the point at a glance, and dropping it removes
+            the vertical-centring problem entirely along with the risk of the
+            badge disagreeing with the panel or the toast. The count still
+            lives in the button's aria-label for screen readers. */}
         {count > 0 && (
           <span
             style={{
               position: "absolute",
-              top: "-4px",
-              right: "-4px",
-              // Flex-centred instead of line-height-centred. The old
-              // `lineHeight: "18px"` fought the 2px border: with border-box the
-              // content area is only 14px tall, so an 18px line box dropped the
-              // digit below centre. lineHeight 1 + centring is border-agnostic.
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: "18px",
-              height: "18px",
-              padding: "0 5px",
+              top: "-1px",
+              right: "-1px",
+              width: "10px",
+              height: "10px",
               boxSizing: "border-box",
               borderRadius: "var(--radius-pill)",
               background: colors.brand,
-              color: colors.brandOn,
-              fontSize: type.xs,
-              fontWeight: weight.semibold,
-              lineHeight: 1,
               border: `2px solid ${colors.bg}`,
               pointerEvents: "none",
             }}
-          >
-            {count > 99 ? "99+" : count}
-          </span>
+          />
         )}
       </button>
 
