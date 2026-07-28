@@ -68,7 +68,7 @@ const ProgramPdfPreview = ({ url, title, width = 76 }: Props) => {
         canvas.width = Math.floor(viewport.width);
         canvas.height = Math.floor(viewport.height);
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        await page.render({ canvas, canvasContext: ctx, viewport }).promise;
         if (!cancelled) setStatus("ready");
       } catch {
         if (!cancelled) setStatus("error");
