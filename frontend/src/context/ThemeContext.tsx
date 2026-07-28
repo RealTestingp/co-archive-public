@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
    THEME + DESIGN TOKENS
    ----------------------------------------------------------------------------
    `colors` mirrors the CSS custom properties in index.css so inline styles and
-   CSS Modules stay in lockstep. `type` and `weight` are the same 6-size /
+   CSS Modules stay in lockstep. `type` and `weight` are the same 4-size /
    2-weight scale, exposed to TypeScript so a component can never invent a new
    font size — the type system rejects it.
 
@@ -15,20 +15,22 @@ import { createContext, useContext, useState, useEffect } from "react";
 type ThemeMode = "light" | "dark" | "system";
 type Theme = "light" | "dark";
 
-/* ── Typography: 6 sizes, 2 weights. Same for both themes. ── */
+/* ── Typography: 4 sizes, 2 weights. Same for both themes.
+   Every step is an even number of px: 12 / 16 / 26 / 40.
+
+   Four steps, not six. 14px folded up into 16 and 20px folded up into 26.
+   Because 16px is exactly the threshold below which iOS Safari auto-zooms a
+   focused input, putting body text at 16 removed the need for the mobile
+   input-zoom workaround altogether. ── */
 export const type = {
-  /** 11px — overline, chips, counts, table meta */
-  xs: "0.6875rem",
-  /** 13px — DEFAULT body and all UI text */
-  sm: "0.8125rem",
-  /** 15px — emphasised body, card titles, inputs */
-  md: "0.9375rem",
-  /** 20px — section headings */
-  lg: "1.25rem",
-  /** 26px — page titles */
-  xl: "1.625rem",
+  /** 12px — overlines, chips, counts, meta, form labels */
+  xs: "0.75rem",
+  /** 16px — DEFAULT. Body, UI text, inputs, buttons, card titles */
+  sm: "1rem",
+  /** 26px — page titles AND section headings */
+  lg: "1.625rem",
   /** 40px — hero and 404 only */
-  display: "2.5rem",
+  xl: "2.5rem",
 } as const;
 
 export const weight = {

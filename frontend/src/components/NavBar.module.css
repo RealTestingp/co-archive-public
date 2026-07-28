@@ -280,12 +280,24 @@
   }
 }
 
-/* ── Phone: nav links become a swipeable strip ── */
+/* ── Phone: drop the wordmark, hand the room to the tabs ──
+   The "CALGARY OPERA ARCHIVE" wordmark eats most of a 375px bar and pushes the
+   tabs into a cramped scroll. Below 640px it's hidden and the grid drops to two
+   columns, so the tabs get the full width. Nothing is lost: the first tab is
+   Search, which is also the home route. */
 @media (max-width: 640px) {
   .nav {
+    /* Two columns now — .brand is display:none and leaves grid flow entirely,
+       so the explicit redefinition is required or .links would land in the
+       column meant for .brand. */
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0 1rem;
     height: 56px; /* taller so 44px tap targets fit */
     gap: 0.75rem;
+  }
+
+  .brand {
+    display: none;
   }
 
   .links {
@@ -326,9 +338,13 @@
   }
 }
 
-/* ── Very narrow (≤380px): drop the wordmark tagline weight ── */
+/* ── Very narrow (≤380px) ── */
 @media (max-width: 380px) {
-  .brandLink {
+  .links {
+    gap: 0.875rem;
+  }
+
+  .link {
     font-size: var(--fs-xs);
   }
 }

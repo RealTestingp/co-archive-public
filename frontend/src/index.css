@@ -15,19 +15,24 @@
   /* ── Typography: family ── */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* ── Typography: 6-step scale ──
-     xs  11px  overline, chips, counts, table meta
-     sm  13px  DEFAULT body / all UI text
-     md  15px  emphasised body, card titles, inputs
-     lg  20px  section headings
-     xl  26px  page titles
-     display 40px  hero + 404 only                                        */
-  --fs-xs: 0.6875rem;
-  --fs-sm: 0.8125rem;
-  --fs-md: 0.9375rem;
-  --fs-lg: 1.25rem;
-  --fs-xl: 1.625rem;
-  --fs-display: 2.5rem;
+  /* ── Typography: 4-step scale — every step an even number of px ──
+     xs  12px  overlines, chips, counts, meta, form labels
+     sm  16px  DEFAULT — body, UI text, inputs, buttons, card titles
+     lg  26px  page titles AND section headings
+     xl  40px  hero + 404 only
+
+     Four steps, not six. 14px and 20px were dropped: 14 collapsed up into 16
+     and 20 collapsed up into 26. Two consequences worth knowing —
+     1. 16px is exactly the threshold below which iOS Safari auto-zooms a
+        focused input, so with body at 16 the zoom workaround is unnecessary
+        and has been removed.
+     2. With only two mid-range steps left, the gap between a section heading
+        and a page title is carried by POSITION and spacing rather than size.
+        --fs-lg does both jobs.                                            */
+  --fs-xs: 0.75rem;
+  --fs-sm: 1rem;
+  --fs-lg: 1.625rem;
+  --fs-xl: 2.5rem;
 
   /* ── Typography: 2 weights ── */
   --fw-regular: 400;
@@ -147,10 +152,9 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
 }
 
-h1 { font-size: var(--fs-xl); letter-spacing: var(--ls-tight); }
+h1 { font-size: var(--fs-lg); letter-spacing: var(--ls-tight); }
 h2 { font-size: var(--fs-lg); }
-h3 { font-size: var(--fs-md); }
-h4, h5, h6 { font-size: var(--fs-sm); }
+h3, h4, h5, h6 { font-size: var(--fs-sm); }
 
 /* Nothing should ever overflow the viewport horizontally. */
 img, svg, video, canvas {
@@ -224,13 +228,9 @@ p, td, th, li, dd, dt {
     gap: 12px;
   }
 
-  /* iOS Safari auto-zooms any focused input under 16px. Bump on small
-     screens only, so the 13px desktop scale is preserved. */
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
+  /* No input-zoom workaround needed: --fs-sm is 16px, which is exactly the
+     threshold below which iOS Safari auto-zooms a focused field. Collapsing
+     the scale to four steps removed the problem rather than patching it. */
 
   /* Touch targets. */
   button,

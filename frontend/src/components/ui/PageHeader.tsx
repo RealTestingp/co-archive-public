@@ -15,7 +15,7 @@ interface Props {
    hide one (which is also how callers gate actions behind admin rights).
 
    Design system notes:
-   • Title = --fs-xl / semibold. Subtitle = --fs-sm / regular.
+   • Title = --fs-lg (26px) / semibold. Subtitle = --fs-sm / regular.
    • Buttons = --fs-sm / semibold, 44px min height for touch targets.
    • Only ONE button (Edit, the primary action) carries the brand red fill.
      Delete is a brand-tinted outline, View History is fully neutral — this
@@ -59,7 +59,7 @@ const PageHeader = ({
       <div style={{ minWidth: 0 }}>
         <h1
           style={{
-            fontSize: type.xl,
+            fontSize: type.lg,
             fontWeight: weight.semibold,
             color: colors.ink,
             letterSpacing: "var(--ls-tight)",
