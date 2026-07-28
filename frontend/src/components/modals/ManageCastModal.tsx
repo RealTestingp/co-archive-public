@@ -1,3 +1,23 @@
+/* ManageCastModal.tsx
+   Editing the cast of an existing production: assign someone to a role, remove
+   them, or swap one performer for another in the same role.
+
+   Everything here operates on appearances, not on people or productions. An
+   appearance is the join record linking a person to a production, optionally as
+   a character. So "add a cast member" is creating an appearance, and "remove"
+   is deleting one. Neither touches the person or the production themselves,
+   which is exactly why the join table exists.
+
+   Three operations, and each has a reason for the order it does things:
+   - Assign    POST a new appearance
+   - Remove    DELETE the appearance
+   - Reassign  POST the replacement first, then DELETE the original, so the role
+               is never briefly empty. See handleReassign.
+
+   The modal does not keep its own copy of the cast list. After every change it
+   calls onChanged and lets the parent page refetch. One source of truth, and no
+   risk of the modal and the page disagreeing about who is in the cast.
+*/
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
@@ -199,6 +219,16 @@ const ManageCastModal = ({
     }
   };
 
+  /* Assigns a person to this production.
+
+     The 409 is handled separately from other failures on purpose. A conflict
+     means the person is already in that role, which is a normal thing for a
+     user to try, not a system error. It gets a specific message rather than the
+     generic "please try again", which would be misleading since retrying would
+     fail the same way.
+
+     On success the form is cleared and onChanged fires, so the parent refetches
+     and the new cast member appears in the list. */
   const handleAssign = async () => {
     if (!selectedPerson) {
       setError("Search and pick a person to assign.");
@@ -237,6 +267,10 @@ const ManageCastModal = ({
     }
   };
 
+  /* appearanceId is optional on CastMember because some API responses do not
+     include it, so it is checked before use rather than assumed. Without the
+     guard this would send a DELETE to /api/appearances/undefined. The message
+     says what is actually wrong instead of showing a generic failure. */
   const handleRemove = async (appearanceId?: number) => {
     if (appearanceId == null) {
       setError("This cast row is missing its appearance id — can't remove it.");
@@ -302,8 +336,18 @@ const ManageCastModal = ({
     }
   };
 
-  // Recast a role: create the new appearance (same character) first, then
-  // delete the old one, so the slot is never empty mid-swap.
+  /* Recast a role. Create the replacement appearance first, then delete the old
+     one, so the role is never empty in between.
+
+     Doing it the other way round would mean that if the create failed after the
+     delete succeeded, the production would silently lose a cast member. This
+     order fails safe: if the delete fails, the worst outcome is the role listed
+     twice, which is visible and fixable, rather than a performer quietly
+     vanishing from the archive.
+
+     Known gap: these are two separate requests with no transaction, so the
+     duplicate case is possible. It is the deliberately less bad of the two
+     failure modes, not a case that cannot happen. */
   const handleReassign = async (
     member: CastMember,
     newPerson: PersonSearchResult,

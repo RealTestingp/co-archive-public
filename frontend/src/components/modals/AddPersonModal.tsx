@@ -3,6 +3,22 @@ import { api, uploadFile } from "../../api";
 import Dropdown from "../dropdown/Dropdown";
 import { useTheme } from "../../context/ThemeContext";
 
+/* AddPersonModal.tsx
+   Creates an artist or contributor record.
+
+   Simpler than AddProductionModal because a person is nearly one record. The
+   only complication is the profile image, which cannot be sent with the JSON
+   because the person needs an id before the image has anywhere to attach to.
+   So it is create first, then upload. See handleSubmit.
+
+   Nationalities are multi select because performers can hold more than one, and
+   the archive records all of them. That is why nationalityIds is an array while
+   voiceTypeId is a single value.
+
+   Pairs with EditPersonModal, which is the same form pre-filled. They are kept
+   separate rather than one component with a mode flag, which is duplication I
+   would collapse given more time.
+*/
 interface LookupItem {
   id: number;
   name: string;
@@ -137,6 +153,20 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
 
   const handleImageClick = () => fileInputRef.current?.click();
 
+  /* Validates the chosen image and shows a preview before anything is uploaded.
+
+     Type and size are checked here so the user finds out immediately rather
+     than after filling in the rest of the form and pressing save. This is
+     convenience, not security: the backend has to enforce both itself, since
+     anything sent from a browser can be forged.
+
+     FileReader turns the file into a data URL so the preview renders straight
+     from memory, with no upload and no server round trip.
+
+     Clearing fileInputRef.current.value at the end matters. A file input does
+     not fire change when the same file is picked twice in a row, so without the
+     reset, choosing a file, removing it, then choosing the same one again would
+     do nothing. */
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -161,6 +191,21 @@ const AddPersonModal = ({ isOpen, onClose, onSuccess }: Props) => {
     .join("")
     .toUpperCase();
 
+  /* Create the person, then attach the image.
+
+     Two steps rather than one, because the upload endpoint is keyed by person
+     id and the id does not exist until the record is saved. profileImageUrl is
+     sent as null for the same reason, and the upload endpoint fills it in.
+
+     The upload is deliberately fire and forget. By that point the person has
+     been created successfully, so a failed image must not surface as a failed
+     save. The tradeoff is that the user is not told the image did not attach,
+     which is worse than AddProductionModal's behaviour, where the PDF failure
+     produces a visible warning. Matching that here would be a small improvement.
+
+     Empty optional fields are converted to null rather than sent as empty
+     strings, so the database stores "no value" instead of "a value that happens
+     to be blank". */
   const handleSubmit = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError("First name and last name are required.");

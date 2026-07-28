@@ -40,6 +40,14 @@ const ProgramPdfPreview = ({ url, title, width = 76 }: Props) => {
 
   const height = Math.round(width * LETTER_RATIO);
 
+  /* Loads and draws the PDF.
+
+     cancelled plus task.destroy() in the cleanup is what stops a half rendered
+     PDF from a previous url writing onto the canvas after the component has
+     moved on. Every await is followed by a cancelled check, because each one is
+     a point where the component could have unmounted or the url changed while
+     the work was in flight. task.destroy() also aborts the download itself
+     rather than just ignoring the result. */
   useEffect(() => {
     if (!url) return;
 
@@ -59,8 +67,13 @@ const ProgramPdfPreview = ({ url, title, width = 76 }: Props) => {
         const ctx = canvas?.getContext("2d");
         if (!canvas || !ctx) return;
 
-        // Render at device pixel ratio so the thumbnail isn't soft on retina
-        // and on the projector, then let CSS scale it back down.
+        /* Render at device pixel ratio so the thumbnail is not soft on retina
+           screens or on the projector, then let CSS scale it back down.
+
+           The canvas is drawn at width * dpr actual pixels but displayed at
+           width CSS pixels. On a 2x display that means twice the pixel data in
+           the same visible space, which is what keeps it sharp. Drawing at
+           width alone would look blurry on any modern screen. */
         const base = page.getViewport({ scale: 1 });
         const dpr = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: (width * dpr) / base.width });

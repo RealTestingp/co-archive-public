@@ -1,3 +1,21 @@
+/* Dropdown.tsx
+   Single select dropdown, built to replace the native <select>.
+
+   Why it exists: a native select draws its option list at the operating system
+   level, not in the page, so CSS cannot limit its height. On Windows Chrome the
+   Season list was long enough to run off the top of the screen. This renders the
+   panel as normal page elements, so max-height and overflow actually apply.
+
+   What that costs: everything the native element gave us free has to be rebuilt
+   here. Keyboard navigation, typeahead, focus return, ARIA roles. That is most
+   of the code below.
+
+   Two rendering modes:
+   - Inline, the default. Panel is absolutely positioned inside the wrapper.
+   - Portal, rendered into document.body. Needed inside modals, because every
+     modal panel is overflow-y: auto, which clips an absolutely positioned child
+     at the modal edge.
+*/
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./Dropdown.module.css";
@@ -16,13 +34,13 @@ interface DropdownProps {
   options: DropdownOption[];
   /** Shown when nothing is selected; also the reset row inside the list. */
   placeholder?: string;
-  /** false hides the reset row — for pickers that must always have a value. */
+  /** false hides the reset row, for pickers that must always have a value. */
   allowClear?: boolean;
   /** false disables the accent "filter is active" styling (per-page, modals). */
   highlightWhenSet?: boolean;
   /** xs = 28px (per-page), sm = 32px (page filters), md = 36px (modal forms). */
   size?: DropdownSize;
-  /** Stretch to fill the container — modal form fields want this. */
+  /** Stretch to fill the container. Modal form fields want this. */
   block?: boolean;
   /**
    * Render the panel into document.body instead of inline.
@@ -31,9 +49,9 @@ interface DropdownProps {
    */
   portal?: boolean;
   /**
-   * "auto" follows [data-theme]. "light" pins light colours — the modals are
-   * hardcoded white and don't consume ThemeContext, so an auto-darkening
-   * dropdown inside one would render a dark panel on a white form.
+   * "auto" follows [data-theme]. "light" pins light colours. Escape hatch for a
+   * dropdown sitting on a permanently light surface. Nothing passes it now that
+   * the modals are themed.
    */
   theme?: "auto" | "light";
   label?: string;
@@ -43,6 +61,9 @@ interface DropdownProps {
   ariaLabel?: string;
 }
 
+/* Panel sizing. MIN_HEIGHT is the floor: below this the panel is too short to be
+   worth showing, so we flip it above the trigger instead. VIEWPORT_MARGIN keeps
+   it off the very edge of the window. */
 const MAX_HEIGHT: Record<DropdownSize, number> = { xs: 200, sm: 260, md: 260 };
 const MIN_HEIGHT = 140;
 const GAP = 4;
@@ -75,6 +96,8 @@ export default function Dropdown({
   ariaLabel,
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
+  /* Which row the keyboard cursor is on. -1 means none. Kept separate from the
+     selected value, since you can move the cursor without choosing anything. */
   const [highlighted, setHighlighted] = useState(-1);
   const [geo, setGeo] = useState<Geometry>({
     dropUp: false,
@@ -88,10 +111,18 @@ export default function Dropdown({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  /* Typeahead buffer lives in a ref, not state, because typing into it should
+     not trigger a re-render. Only the resulting highlight change should. */
   const typeahead = useRef<{ query: string; timer?: number }>({ query: "" });
 
+  /* useId gives a stable unique id per instance, which the aria-controls and
+     aria-labelledby wiring below needs. Doing this by hand would collide when
+     two dropdowns are on the same page. */
   const id = useId();
 
+  /* Prepend the clear row so it is part of the same list the keyboard walks.
+     Making it a real row rather than a special case is what lets arrow keys and
+     typeahead reach it without extra index maths. */
   const rows = useMemo<DropdownOption[]>(
     () => (allowClear ? [{ value: "", label: placeholder }, ...options] : options),
     [allowClear, options, placeholder]
@@ -101,6 +132,14 @@ export default function Dropdown({
   const hasValue = value !== "";
   const displayLabel = selected && hasValue ? selected.label : placeholder;
 
+  /* Works out where the panel goes and how tall it can be.
+     - Measures the trigger's position on screen with getBoundingClientRect
+     - Flips above the trigger only if there is genuinely not enough room below
+       AND there is more room above, so it does not flip needlessly
+     - Clamps the height between MIN_HEIGHT and the preferred size, so the panel
+       shrinks to fit rather than overflowing the window
+     - Also stores left/width/top/bottom, which portal mode needs because the
+       panel is no longer positioned relative to the wrapper */
   const measure = () => {
     const el = buttonRef.current;
     if (!el) return;
@@ -126,12 +165,17 @@ export default function Dropdown({
 
   const openList = () => {
     if (disabled) return;
+    // Measure before opening, so the panel never paints in the wrong place.
     measure();
     setOpen(true);
+    // Start the cursor on the current value rather than the top of the list.
     const i = rows.findIndex((o) => o.value === value);
     setHighlighted(i >= 0 ? i : 0);
   };
 
+  /* refocus puts focus back on the trigger, which matters for keyboard users so
+     they do not get dumped at the top of the page. Skipped when the user closed
+     it by clicking the trigger itself, since it already has focus. */
   const closeList = (refocus = true) => {
     setOpen(false);
     setHighlighted(-1);
@@ -143,9 +187,11 @@ export default function Dropdown({
     closeList();
   };
 
-  // Outside click. In portal mode the panel is not a DOM descendant of the
-  // wrapper, so it has to be checked separately or every click inside the
-  // list would count as "outside" and close it.
+  /* Close on a click outside.
+     In portal mode the panel is not a DOM descendant of the wrapper, so a click
+     inside the list would look like an outside click and close the panel before
+     the option's onClick ever fired. Hence checking listRef separately.
+     pointerdown rather than click so it fires before focus moves. */
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -159,8 +205,12 @@ export default function Dropdown({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
-  // Keep the panel pinned to the trigger while anything scrolls or resizes.
-  // Capture phase so it also fires for the modal's own scroll container.
+  /* Keep the panel pinned to the trigger while anything scrolls or resizes.
+     The panel is positioned from coordinates measured at open time, so those go
+     stale the moment the page moves.
+     The third argument to addEventListener is capture: true. Scroll events do
+     not bubble, so without capture this would miss a modal's own scroll
+     container and only catch the window. */
   useEffect(() => {
     if (!open) return;
     const onReflow = () => measure();
@@ -173,14 +223,23 @@ export default function Dropdown({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, size]);
 
+  /* Scroll the highlighted row into view when arrow keys move past the edge of
+     the visible area. block: "nearest" scrolls the minimum needed instead of
+     jumping the row to the centre. */
   useEffect(() => {
     if (!open || highlighted < 0) return;
     const node = listRef.current?.children[highlighted] as HTMLElement | undefined;
     node?.scrollIntoView({ block: "nearest" });
   }, [open, highlighted]);
 
+  // Clear the pending typeahead timer if the component unmounts mid-type.
   useEffect(() => () => window.clearTimeout(typeahead.current.timer), []);
 
+  /* Typeahead, matching what a native select does. Characters accumulate into a
+     buffer so typing "mad" jumps to Madama Butterfly rather than landing on M,
+     then A, then D. The buffer resets after 600ms of no typing.
+     If the list is closed this selects the match outright, which is again what
+     the native element does. */
   const handleTypeahead = (char: string) => {
     const state = typeahead.current;
     window.clearTimeout(state.timer);
@@ -195,6 +254,14 @@ export default function Dropdown({
     else commit(rows[match]);
   };
 
+  /* Keyboard handling. This is the ARIA listbox pattern:
+     - Closed: arrows, Enter or Space open it. Any printable character starts
+       typeahead.
+     - Open: Escape closes and refocuses, Tab closes without refocusing so focus
+       moves on normally, Home and End jump to the ends.
+     - Arrow wrap-around uses modulo, and the + rows.length on ArrowUp is there
+       because JavaScript's % returns a negative for a negative left operand.
+     - preventDefault stops Space and the arrows scrolling the page underneath. */
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
@@ -247,6 +314,11 @@ export default function Dropdown({
     }
   };
 
+  /* Inline mode only needs a max height, since CSS handles the rest.
+     Portal mode needs everything, because the panel now sits on document.body
+     with no positioned ancestor to anchor to. position: fixed is used rather
+     than absolute so the coordinates are viewport relative, matching what
+     getBoundingClientRect returned. */
   const listStyle: React.CSSProperties = portal
     ? {
         position: "fixed",
@@ -256,15 +328,19 @@ export default function Dropdown({
         ...(geo.dropUp
           ? { bottom: `${geo.bottom}px`, top: "auto" }
           : { top: `${geo.top}px`, bottom: "auto" }),
-        // Modal overlays sit at z-index 50.
+        // Modal overlays sit at z-index 50, so the panel has to clear them.
         zIndex: 1000,
       }
     : { maxHeight: `${geo.maxHeight}px` };
 
+  /* The panel is built once as a variable, then either rendered inline or
+     portalled at the bottom of the component. Building it once means the two
+     modes cannot drift apart. */
   const list = (
     <ul
       ref={listRef}
       id={id}
+      // role="listbox" is what makes this announce as a select to screen readers.
       role="listbox"
       className={[
         styles.list,
@@ -274,7 +350,9 @@ export default function Dropdown({
         .filter(Boolean)
         .join(" ")}
       style={listStyle}
+      // Inline mode flips via CSS; portal mode already did it inline above.
       data-drop-up={!portal && geo.dropUp ? "" : undefined}
+      // Focusable programmatically, but kept out of the tab order.
       tabIndex={-1}
       aria-label={!label ? (ariaLabel ?? placeholder) : undefined}
       aria-labelledby={label ? `${id}-label` : undefined}
@@ -286,9 +364,14 @@ export default function Dropdown({
           role="option"
           aria-selected={option.value === value}
           className={styles.option}
+          /* State goes out as data-* attributes and CSS reacts to them. Setting
+             them to undefined rather than false removes the attribute entirely,
+             so the CSS attribute selectors do not match. */
           data-highlighted={i === highlighted || undefined}
           data-selected={(option.value === value && hasValue) || undefined}
           data-muted={option.value === "" || undefined}
+          /* Hover moves the same highlight the keyboard uses, so mouse and
+             keyboard never show two cursors at once. */
           onMouseEnter={() => setHighlighted(i)}
           onClick={() => commit(option)}
         >
@@ -317,10 +400,13 @@ export default function Dropdown({
         </span>
       )}
 
-      {/* data-placeholder lets CSS tell a real selection apart from the
-          placeholder, so a chosen value renders in primary ink while the
-          placeholder stays muted. data-active-value can't do that job: modals
-          pass highlightWhenSet: false, so it is never set on form fields. */}
+      {/* aria-haspopup, aria-expanded and aria-controls are what make this
+          announce as a collapsed listbox rather than a plain button.
+
+          data-active-value drives the accent "a filter is set" styling.
+          data-placeholder is separate because modals pass highlightWhenSet
+          false, so data-active-value is never set on form fields and cannot be
+          used to tell a real selection from the placeholder. */}
       <button
         ref={buttonRef}
         type="button"
@@ -354,6 +440,7 @@ export default function Dropdown({
         </svg>
       </button>
 
+      {/* The whole point, in one line: same panel, two places it can live. */}
       {open && (portal ? createPortal(list, document.body) : list)}
     </div>
   );

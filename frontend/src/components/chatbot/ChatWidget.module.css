@@ -1,3 +1,15 @@
+/* ChatWidget.module.css
+   Styles for the assistant: the floating bubble, the panel, the message list
+   and the input row. Shared by ChatBubble, ChatPanel and ChatWidget.
+
+   Not my file, part of the chat feature.
+
+   The typing indicator below is three dots animated with staggered negative
+   delays, so they are already mid-cycle on the first frame and bounce out of
+   step rather than in unison. It shows while a request is in flight, which
+   matters because the AI call is the slowest thing in the app and silence would
+   read as a broken widget.
+*/
 .typingIndicator {
   display: flex;
   align-items: center;

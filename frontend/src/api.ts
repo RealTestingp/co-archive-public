@@ -22,6 +22,7 @@ export async function apiFetch(
 ): Promise<Response> {
   return fetch(`${BASE_URL}${path}`, {
     ...options,
+    // Spread options.headers last so a caller can override the defaults.
     headers: {
       "Content-Type": "application/json",
       // Spread options.headers AFTER the default above, so a caller can

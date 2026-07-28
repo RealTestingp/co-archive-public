@@ -1,3 +1,19 @@
+/* ErrorState.tsx
+   Shown in place of content when a fetch fails.
+
+   The point is that a failed request produces something deliberate rather than
+   a blank page. A user who sees nothing assumes the archive is empty; a user who
+   sees this knows something went wrong and that retrying is worth a try.
+
+   onRetry is optional, so the retry button only appears where the caller can
+   actually retry. Offering a button that does nothing is worse than not
+   offering one.
+
+   FIXED: colours were hardcoded, so the "Error" label used the light mode red
+   (too low contrast on a dark page) and the message text stayed mid grey. Now
+   uses var(--c-brand-text) for the label, which is a lighter red in dark mode
+   for exactly this reason, and var(--c-ink-muted) for the body.
+*/
 interface Props {
   message?: string;
   onRetry?: () => void;
@@ -24,7 +40,7 @@ const ErrorState = ({
           fontWeight: 600,
           letterSpacing: "0.15em",
           textTransform: "uppercase",
-          color: "#9B1C1C",
+          color: "var(--c-brand-text)",
           marginBottom: "0.5rem",
         }}
       >
@@ -33,7 +49,7 @@ const ErrorState = ({
       <p
         style={{
           fontSize: "14px",
-          color: "#9ca3af",
+          color: "var(--c-ink-muted)",
           marginBottom: "1.5rem",
           maxWidth: "320px",
           lineHeight: 1.75,
@@ -50,9 +66,9 @@ const ErrorState = ({
             padding: "8px 16px",
             borderRadius: "6px",
             cursor: "pointer",
-            border: "1px solid #9B1C1C",
-            background: "#9B1C1C",
-            color: "#fff",
+            border: "1px solid var(--c-brand)",
+            background: "var(--c-brand)",
+            color: "var(--c-brand-on)",
           }}
         >
           Try Again

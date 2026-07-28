@@ -1,3 +1,22 @@
+/* PersonPage.tsx
+   The detail view for one artist or contributor, at /persons/:id.
+
+   Shows their details and every production they have appeared in. That list is
+   the point of the page and the reason the archive exists: from one performer
+   you can see their whole history with the company, which is the question staff
+   most often need answered.
+
+   The appearance list is the same join table read from the other direction.
+   ProductionPage asks "who was in this production", this page asks "what was
+   this person in". One relationship, two views, which is why neither needed its
+   own endpoint or table.
+
+   Every production in that list links onward, so someone can move from a person
+   to a production to another performer without ever going back to search.
+
+   Edit and delete are admin only and gated on useAuth().isAdmin, which hides
+   the buttons rather than securing the action.
+*/
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";

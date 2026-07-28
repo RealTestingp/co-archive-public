@@ -1,3 +1,20 @@
+/* NotificationsContext.tsx
+   Milestone notifications, for example an artist reaching their 50th
+   performance. Shared by the bell in the navbar and the toast, which is why it
+   is context rather than state inside either one. Both need the same list and
+   the same unread count, and they must not disagree.
+
+   Mounted once in App, above the routes, so the list survives navigation
+   instead of refetching every time the page changes.
+
+   Historical note, and a useful one: this file is the subject of the production
+   only bug described in main.tsx. Top level await there made the entry an async
+   module, Rollup split shared modules across chunks, and this module ended up
+   duplicated in the bundle. The provider and the hook then referenced two
+   different context objects, so the lookup at the bottom of this file found
+   nothing and threw. The error read as though the provider was missing when it
+   was plainly there.
+*/
 import {
   createContext,
   useContext,
@@ -82,8 +99,18 @@ export const NotificationsProvider = ({
     refetch();
   }, [refetch]);
 
-  // The endpoint only returns unread items, so on success we drop it locally
-  // rather than refetching — keeps the badge instant.
+  /* Optimistic update. The item is removed from the list immediately, before the
+     server has confirmed anything, so the badge count drops the instant the user
+     clicks rather than after a round trip.
+
+     previous is captured first so the change can be undone. If the request
+     fails, the list is put back exactly as it was and the notification
+     reappears, which is the correct outcome since it was never actually marked
+     read.
+
+     Refetching instead would be simpler but would make the badge lag behind the
+     click, and the endpoint only returns unread items anyway, so removing it
+     locally produces the same result. */
   const markAsRead = useCallback(async (id: number) => {
     const previous = items;
     setItems((list) => list.filter((n) => n.id !== id));
@@ -124,6 +151,13 @@ export const NotificationsProvider = ({
   );
 };
 
+/* Throwing rather than returning undefined means a component used outside the
+   provider fails loudly at the point of the mistake, instead of quietly reading
+   undefined and crashing somewhere less obvious later.
+
+   This is the throw that fired during the chunking bug. Worth remembering that
+   the message was accurate about the symptom and misleading about the cause:
+   the provider existed, it just belonged to a different copy of this module. */
 export const useNotifications = (): NotificationsValue => {
   const ctx = useContext(NotificationsContext);
   if (!ctx)

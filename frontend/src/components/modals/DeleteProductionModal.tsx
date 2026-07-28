@@ -1,3 +1,30 @@
+/* DeleteProductionModal.tsx
+   Confirmation before deleting a production, and a guard against deleting one
+   that still has data hanging off it.
+
+   Two states rather than one:
+   - Nothing depends on this production, so confirming deletes it
+   - It still has performance dates or cast and crew, so deletion is blocked and
+     the modal explains what has to be removed first
+
+   Blocking in the browser is a workaround, not the proper fix. The backend's
+   delete has no foreign key handling, so a production with appearances would
+   fail at the database level and surface as an unexplained error. Stopping it
+   here means the user gets a clear reason instead.
+
+   The real fix belongs on the backend: either cascade the delete inside a
+   transaction, or return a 409 with a message the frontend can show. Then this
+   component would not need to know anything about foreign keys.
+
+   Open question, still unconfirmed: whether the backend actually throws or
+   quietly cascades. The guard assumes it throws, which is the safe assumption,
+   since blocking a delete that would have worked is recoverable and allowing
+   one that corrupts the archive is not.
+
+   Nothing is deleted here. The modal only asks, and the parent page owns the
+   request, which keeps the confirmation reusable and the delete logic in one
+   place.
+*/
 import { useTheme } from "../../context/ThemeContext";
 
 interface Props {
@@ -35,6 +62,10 @@ const DeleteProductionModal = ({
 
   const isBlocked = performanceCount > 0 || personnelCount > 0;
 
+  /* Builds the list of what is blocking the delete, so the message names the
+     actual obstacles rather than saying "this production has dependencies".
+     Singular and plural are handled inline because "1 performance dates" reads
+     as a bug to the archivists using this. */
   const detailParts: string[] = [];
   if (performanceCount > 0) {
     detailParts.push(

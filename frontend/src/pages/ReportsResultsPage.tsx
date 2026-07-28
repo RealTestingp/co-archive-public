@@ -1,3 +1,22 @@
+/* ReportsResultsPage.tsx
+   Runs the report built on ReportsPage and shows the results, with export to
+   PDF or Excel.
+
+   This page does the actual API call. ReportsPage only assembles the criteria
+   and navigates here with them in router state, which keeps building a report
+   and running one as separate steps.
+
+   The consequence of using router state rather than the URL: this page cannot
+   be linked to or refreshed. Arriving without state means there is no report to
+   run, so it redirects back to the builder rather than showing an empty screen.
+   The tradeoff was accepted because ten multi value filters would make an
+   unreadable query string, and the page also needs the resolved filter names
+   for the export header.
+
+   COLUMNS is defined once and drives the table, the PDF and the spreadsheet, so
+   all three always show the same columns in the same order. Adding a column is
+   one entry rather than three edits that can drift apart.
+*/
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import NavBar from "../components/NavBar";

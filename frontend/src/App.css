@@ -1,3 +1,15 @@
+/* App.css
+   DEAD FILE. Left over from the Vite React starter template.
+
+   Nothing imports it, and none of these classes (.counter, .hero, .base,
+   .framework, .vite) appear anywhere in the app. It is not in the bundle
+   either, since Vite only includes CSS that is actually imported, so it costs
+   nothing at runtime.
+
+   Kept only because deleting files the night before a review is not worth the
+   risk. It should be removed. All real styling lives in index.css for the
+   global tokens, and in the per component .module.css files.
+*/
 .counter {
   font-size: 16px;
   padding: 5px 10px;

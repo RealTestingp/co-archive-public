@@ -1,3 +1,13 @@
+/* ProtectedRoute
+   Wraps any route that needs a signed in user. No session means a redirect to
+   login.
+
+   replace: true so the guarded URL does not go into history, otherwise the back
+   button bounces the user straight back into the redirect.
+
+   Passing location in state lets LoginPage send them where they were originally
+   headed instead of dumping everyone on /search. */
+
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSession } from "../auth";
