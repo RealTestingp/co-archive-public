@@ -1,106 +1,270 @@
+/* Temporary demo login screen. Tokenised so it follows [data-theme="dark"]
+   like the rest of the app; red is confined to the accent rule, the selected
+   role and the submit button. */
+
 .root {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #f7f5f2;
-  font-family: 'Inter', sans-serif;
-  padding-bottom: 80px; /* nudges card up optically */
+  background: var(--c-surface);
+  font-family: var(--font-sans);
+  padding: 2rem 1rem 4rem;
 }
 
 .card {
-  background: #ffffff;
-  border: 0.5px solid rgba(0, 0, 0, 0.12);
-  border-radius: 12px;
-  padding: 56px 52px 48px; /* slightly more breathing room */
-  width: 420px; /* wider */
+  width: 100%;
+  max-width: 420px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 48px 44px 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+/* ── Wordmark ── */
 .wordmark {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 36px;
+  gap: 8px;
+  margin-bottom: 32px;
 }
 
 .wordmarkText {
-  font-size: 18px;
-  font-weight: 500;
-  color: #111111;
-  letter-spacing: 0.01em;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--c-ink);
 }
 
 .wordmarkAccent {
   width: 32px;
   height: 2px;
-  background: #9B1C1C;
-  border-radius: 2px;
+  background: var(--c-brand);
+  border-radius: var(--radius-pill);
 }
 
-.divider {
-  width: 100%;
-  height: 0.5px;
-  background: rgba(0, 0, 0, 0.1);
-  margin-bottom: 32px;
-}
-
+/* ── Headings ── */
 .heading {
-  font-size: 20px;
-  font-weight: 500;
-  color: #111111;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  color: var(--c-ink);
   margin: 0 0 8px;
   text-align: center;
 }
 
 .subheading {
-  font-size: 13px;
-  color: #666666;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
   text-align: center;
   line-height: 1.6;
-  margin: 0 0 28px;
-  max-width: 280px;
+  margin: 0 0 24px;
+  max-width: 300px;
 }
 
+/* ── Disabled Microsoft button (kept for context) ── */
 .msButton {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
+  min-height: var(--tap-min);
   padding: 11px 20px;
-  background: #ffffff;
-  border: 0.5px solid rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #111111;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.msStatus {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--c-ink-muted);
+}
+
+/* ── "or" separator ── */
+.orRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.orLine {
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+
+.orText {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+}
+
+/* ── Form ── */
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--c-ink-muted);
+}
+
+.input {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 10px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.input:focus-visible {
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 3px var(--c-brand-ring);
+}
+
+/* ── Role picker ── */
+.roleGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.roleBtn {
+  flex: 1;
+  min-height: var(--tap-min);
+  padding: 10px 12px;
+  text-align: left;
+  line-height: 1.35;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: background 0.15s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.msButton:hover {
-  background: #f5f5f5;
+.roleBtn:hover {
+  background: var(--c-surface-hover);
 }
 
-.msButton:active {
-  background: #eeeeee;
-  transform: scale(0.98);
-}
-
-.msButton:focus-visible {
-  outline: 2px solid #9B1C1C;
+.roleBtn:focus-visible {
+  outline: 2px solid var(--c-brand);
   outline-offset: 2px;
 }
 
+.roleBtnActive {
+  border-color: var(--c-brand);
+  background: var(--c-brand-tint);
+  color: var(--c-ink);
+  font-weight: var(--fw-semibold);
+}
+
+.roleName {
+  display: block;
+}
+
+.roleMeta {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
+}
+
+/* ── Submit ── */
+.submit {
+  width: 100%;
+  min-height: var(--tap-min);
+  margin-top: 4px;
+  padding: 11px 20px;
+  background: var(--c-brand);
+  color: var(--c-brand-on);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submit:hover {
+  background: var(--c-brand-hover);
+}
+
+.submit:active {
+  transform: scale(0.99);
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--c-brand);
+  outline-offset: 2px;
+}
+
+/* ── Footer ── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--c-border);
+  margin-top: 28px;
+}
+
 .footer {
-  font-size: 12px;
-  color: #999999;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--c-ink-muted);
   text-align: center;
-  margin-top: 24px;
+  margin-top: 20px;
   line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 36px 24px 32px;
+  }
+
+  .roleGroup {
+    flex-direction: column;
+  }
 }
