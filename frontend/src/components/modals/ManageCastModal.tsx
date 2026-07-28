@@ -107,6 +107,9 @@ const ManageCastModal = ({
     [],
   );
 
+  // Remove needs a confirm click — the row shows "Remove?" before it deletes.
+  const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+
   // ── Theme tokens ──
   const overlay = "rgba(0,0,0,0.5)";
   const surface = isDark ? "#1c1c1c" : "#fff";
@@ -196,6 +199,7 @@ const ManageCastModal = ({
     setReassigningId(null);
     setReassignSearch("");
     setReassignResults([]);
+    setPendingRemoveId(null);
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, operaId]);
@@ -283,6 +287,22 @@ const ManageCastModal = ({
     } finally {
       setBusy(false);
     }
+  };
+
+  // Two-step remove: first click arms the confirm, second click deletes.
+  const askRemove = (appearanceId?: number) => {
+    if (appearanceId == null) {
+      setError("This cast row is missing its appearance id — can't remove it.");
+      return;
+    }
+    cancelReassign();
+    setError(null);
+    setPendingRemoveId(appearanceId);
+  };
+
+  const confirmRemove = async (appearanceId?: number) => {
+    await handleRemove(appearanceId);
+    setPendingRemoveId(null);
   };
 
   const startReassign = (appearanceId?: number) => {
@@ -540,47 +560,103 @@ const ManageCastModal = ({
                           </span>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                        {/* Change = recast this role to a different person. */}
-                        <button
-                          onClick={() =>
-                            reassigningId === m.appearanceId
-                              ? cancelReassign()
-                              : startReassign(m.appearanceId)
-                          }
-                          disabled={busy}
+                      {pendingRemoveId === m.appearanceId ? (
+                        // Confirm step — deliberate second click to delete.
+                        <div
                           style={{
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            padding: "4px 10px",
-                            borderRadius: "6px",
-                            cursor: busy ? "not-allowed" : "pointer",
-                            border: `1px solid ${border}`,
-                            background: surface,
-                            color: textPrimary,
-                            fontFamily: "Inter, sans-serif",
+                            display: "flex",
+                            gap: "6px",
+                            alignItems: "center",
+                            flexShrink: 0,
                           }}
                         >
-                          {reassigningId === m.appearanceId ? "Cancel" : "Change"}
-                        </button>
-                        <button
-                          onClick={() => handleRemove(m.appearanceId)}
-                          disabled={busy}
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 500,
-                            padding: "4px 10px",
-                            borderRadius: "6px",
-                            cursor: busy ? "not-allowed" : "pointer",
-                            border: `1px solid ${dangerBorder}`,
-                            background: dangerBg,
-                            color: "#9B1C1C",
-                            fontFamily: "Inter, sans-serif",
-                          }}
+                          <span
+                            style={{ fontSize: "12px", color: textSecondary }}
+                          >
+                            Remove?
+                          </span>
+                          <button
+                            onClick={() => setPendingRemoveId(null)}
+                            disabled={busy}
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              cursor: busy ? "not-allowed" : "pointer",
+                              border: `1px solid ${border}`,
+                              background: surface,
+                              color: textPrimary,
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => confirmRemove(m.appearanceId)}
+                            disabled={busy}
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              cursor: busy ? "not-allowed" : "pointer",
+                              border: "1px solid #9B1C1C",
+                              background: "#9B1C1C",
+                              color: "#fff",
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {busy ? "Removing…" : "Remove"}
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          style={{ display: "flex", gap: "6px", flexShrink: 0 }}
                         >
-                          Remove
-                        </button>
-                      </div>
+                          {/* Change = recast this role to a different person. */}
+                          <button
+                            onClick={() =>
+                              reassigningId === m.appearanceId
+                                ? cancelReassign()
+                                : startReassign(m.appearanceId)
+                            }
+                            disabled={busy}
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              cursor: busy ? "not-allowed" : "pointer",
+                              border: `1px solid ${border}`,
+                              background: surface,
+                              color: textPrimary,
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {reassigningId === m.appearanceId
+                              ? "Cancel"
+                              : "Change"}
+                          </button>
+                          <button
+                            onClick={() => askRemove(m.appearanceId)}
+                            disabled={busy}
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              cursor: busy ? "not-allowed" : "pointer",
+                              border: `1px solid ${dangerBorder}`,
+                              background: dangerBg,
+                              color: "#9B1C1C",
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Inline recast search for this row. */}

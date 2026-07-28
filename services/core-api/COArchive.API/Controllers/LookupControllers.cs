@@ -236,6 +236,29 @@ namespace COArchive.API.Controllers
             await _db.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var opera = await _db.Operas.FindAsync(id);
+            if (opera == null) return NotFound();
+
+            // Check if opera is linked to any productions
+            var hasProuctions = await _db.Productions
+                .AnyAsync(p => p.OperaId == id);
+            if (hasProuctions)
+                return Conflict("This opera is linked to one or more productions and cannot be deleted.");
+            try
+            {
+                _db.Operas.Remove(opera);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("This opera could not be deleted due to existing related records.");
+            }
+        }
     }
 
     [ApiController]
