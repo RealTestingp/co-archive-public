@@ -560,9 +560,9 @@ const SearchPage = () => {
                             strokeLinejoin="round"
                             aria-hidden="true"
                           >
-                            <path d="M2 6l10-4 10 4v2H2V6z" />
-                            <path d="M4 8v10h16V8" />
-                            <path d="M9 12h6" />
+                            <path d="M2 4h20" />
+                            <path d="M5 4v16c3 0 4-2.5 4-6V4" />
+                            <path d="M19 4v16c-3 0-4-2.5-4-6V4" />
                           </svg>
                         </div>
                         <div className={styles.cardBody}>
