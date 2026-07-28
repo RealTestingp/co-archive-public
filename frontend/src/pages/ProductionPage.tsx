@@ -10,6 +10,7 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 import ErrorState from "../components/ui/ErrorState";
 import EditProductionModal from "../components/modals/EditProductionModal";
 import DeleteProductionModal from "../components/modals/DeleteProductionModal";
+import ProgramPdfPreview from "../components/ProgramPdfPreview";
 import ManageCastModal from "../components/modals/ManageCastModal";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../auth";
@@ -340,30 +341,47 @@ const ProductionPage = () => {
 
         {hasError ? (
           <ErrorState onRetry={fetchProduction} />
-        ) : (
-          <>
-            {isLoading ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  marginBottom: "1.5rem",
-                }}
-              >
-                <LoadingSkeleton width="280px" height="26px" />
-                <LoadingSkeleton width="160px" height="14px" />
+        ) : (<>
+            {/* Header — the program thumbnail sits to the left of the title,
+                the same relationship the profile photo has on PersonPage.
+                Renders nothing when the production has no PDF, so the title
+                falls back flush left. */}
+            <div
+              style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}
+            >
+              {!isLoading && production?.programPdfUrl && (
+                <ProgramPdfPreview
+                  url={production.programPdfUrl}
+                  title={production.title}
+                />
+              )}
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {isLoading ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      marginBottom: "1.5rem",
+                    }}
+                  >
+                    <LoadingSkeleton width="280px" height="26px" />
+                    <LoadingSkeleton width="160px" height="14px" />
+                  </div>
+                ) : (
+                  <PageHeader
+                    title={production!.title}
+                    subtitle={`${production!.season} · ${production!.eventType}`}
+                    editLabel="Edit Production"
+                    onEdit={isAdmin ? () => setShowEditModal(true) : undefined}
+                    onDelete={
+                      isAdmin ? () => setShowDeleteModal(true) : undefined
+                    }
+                  />
+                )}
               </div>
-            ) : (
-              <PageHeader
-                title={production!.title}
-                subtitle={`${production!.season} · ${production!.eventType}`}
-                editLabel="Edit Production"
-                // Admin-only: omitting the handlers hides the buttons entirely.
-                onEdit={isAdmin ? () => setShowEditModal(true) : undefined}
-                onDelete={isAdmin ? () => setShowDeleteModal(true) : undefined}
-              />
-            )}
+            </div>
 
             <Divider />
 
@@ -392,31 +410,6 @@ const ProductionPage = () => {
               </div>
             ) : (
               <DetailRow details={details} />
-            )}
-
-            {/* Program PDF */}
-            {!isLoading && production && production.programPdfUrl && (
-              <div style={{ marginBottom: "1.5rem" }}>
-                <a
-                  href={production.programPdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: textPrimary,
-                    textDecoration: "none",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
-                  }}
-                >
-                  📄 View Program PDF
-                </a>
-              </div>
             )}
 
             {/* Performance Dates */}
