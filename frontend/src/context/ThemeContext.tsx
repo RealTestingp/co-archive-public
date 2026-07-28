@@ -16,17 +16,18 @@ type ThemeMode = "light" | "dark" | "system";
 type Theme = "light" | "dark";
 
 /* ── Typography: 4 sizes, 2 weights. Same for both themes.
-   Every step is an even number of px: 12 / 16 / 26 / 40.
+   Every step is an even number of px: 12 / 14 / 26 / 40.
 
-   Four steps, not six. 14px folded up into 16 and 20px folded up into 26.
-   Because 16px is exactly the threshold below which iOS Safari auto-zooms a
-   focused input, putting body text at 16 removed the need for the mobile
-   input-zoom workaround altogether. ── */
+   Body is 14px, not 16px, on purpose. The two conventions split by product
+   type: content sites (articles, marketing) use 16px, dense APPLICATION UI
+   (dashboards, search results, data tables) uses 14px. COA is the second kind.
+   Atlassian's system, built for the same sort of product, sets body at 14/20
+   and steps up to 16 only for long-form prose. ── */
 export const type = {
-  /** 12px — overlines, chips, counts, meta, form labels */
+  /** 12px — overlines, chips, counts, meta, form labels. Fine print only. */
   xs: "0.75rem",
-  /** 16px — DEFAULT. Body, UI text, inputs, buttons, card titles */
-  sm: "1rem",
+  /** 14px — DEFAULT. Body, UI text, inputs, buttons, card titles */
+  sm: "0.875rem",
   /** 26px — page titles AND section headings */
   lg: "1.625rem",
   /** 40px — hero and 404 only */

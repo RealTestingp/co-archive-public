@@ -3,7 +3,8 @@
 /* ==========================================================================
    COA DESIGN TOKENS
    --------------------------------------------------------------------------
-   Type scale ....... 6 sizes  (professor requirement: max 4–6)
+   Type scale ....... 4 sizes  (professor requirement: max 4–6)
+   Font family ...... 1  (Inter)
    Font weights ..... 2        (professor requirement: exactly 2)
    Colour ........... 60 / 30 / 10
                         60% = surfaces      (--c-bg, --c-surface)
@@ -16,21 +17,24 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* ── Typography: 4-step scale — every step an even number of px ──
-     xs  12px  overlines, chips, counts, meta, form labels
-     sm  16px  DEFAULT — body, UI text, inputs, buttons, card titles
+     xs  12px  overlines, chips, counts, meta, form labels (fine print only)
+     sm  14px  DEFAULT — body, UI text, inputs, buttons, card titles
      lg  26px  page titles AND section headings
      xl  40px  hero + 404 only
 
-     Four steps, not six. 14px and 20px were dropped: 14 collapsed up into 16
-     and 20 collapsed up into 26. Two consequences worth knowing —
-     1. 16px is exactly the threshold below which iOS Safari auto-zooms a
-        focused input, so with body at 16 the zoom workaround is unnecessary
-        and has been removed.
-     2. With only two mid-range steps left, the gap between a section heading
-        and a page title is carried by POSITION and spacing rather than size.
-        --fs-lg does both jobs.                                            */
+     Why 14px and not 16px for body: there are two conventions, and they split
+     by product type. Content sites (articles, marketing) use 16px — the
+     browser default and the right baseline for long-form reading. Dense
+     APPLICATION UI — dashboards, search results, data tables — uses 14px.
+     COA is the second kind. Atlassian's system, built for the same sort of
+     product, sets body at 14/20 and steps up to 16 only for long-form prose.
+
+     Four steps, not six: 16px and 20px were dropped. With only one mid-range
+     step, the gap between a section heading and a page title is carried by
+     POSITION and spacing rather than size — --fs-lg does both jobs, and a
+     section heading is --fs-sm semibold where 26px would be too loud.      */
   --fs-xs: 0.75rem;
-  --fs-sm: 1rem;
+  --fs-sm: 0.875rem;
   --fs-lg: 1.625rem;
   --fs-xl: 2.5rem;
 
@@ -228,9 +232,14 @@ p, td, th, li, dd, dt {
     gap: 12px;
   }
 
-  /* No input-zoom workaround needed: --fs-sm is 16px, which is exactly the
-     threshold below which iOS Safari auto-zooms a focused field. Collapsing
-     the scale to four steps removed the problem rather than patching it. */
+  /* iOS Safari auto-zooms any focused input under 16px, and the body scale is
+     14px. Bump inputs to 16px on small screens ONLY — the desktop density the
+     14px base exists for is left untouched. */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 
   /* Touch targets. */
   button,
