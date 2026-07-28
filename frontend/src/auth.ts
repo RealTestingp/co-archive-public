@@ -25,8 +25,8 @@ export const DEMO_USERS: Record<DemoRole, AuthUser> = {
     isAdmin: true,
   },
   user: {
-    name: "Jordan Lee",
-    email: "jordan.lee@calgaryopera.com",
+    name: "Verity Boyd",
+    email: "verity.boyd@calgaryopera.com",
     isAdmin: false,
   },
 };
