@@ -485,12 +485,15 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }
   };
 
-  const fetchAllCharacters = async () => {
+  const fetchAllCharacters = async (): Promise<Character[]> => {
     try {
       const res = await api.get("/api/characters");
-      if (res.ok) setAllCharacters(await res.json());
+      if (!res.ok) return [];
+      const data: Character[] = await res.json();
+      setAllCharacters(data);
+      return data;
     } catch {
-      /* ignore */
+      return [];
     }
   };
 
@@ -707,7 +710,8 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
   };
 
   const handleSaveNewCharacter = async () => {
-    if (!newCharacterName.trim()) {
+    const name = newCharacterName.trim();
+    if (!name) {
       setCharacterError("Name is required.");
       return;
     }
@@ -719,16 +723,46 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
     setCharacterError(null);
     try {
       const res = await api.post("/api/characters", {
-        name: newCharacterName.trim(),
+        name,
         operaId: selectedOperaId,
       });
       if (!res.ok) throw new Error();
-      const created = await res.json();
-      setAllCharacters((prev) => [
-        ...prev,
-        { ...created, operaId: created.operaId ?? selectedOperaId },
-      ]);
-      setSelectedCharacterIds((prev) => [...prev, created.id]);
+
+      // The POST response shape isn't guaranteed — the endpoint may return the
+      // full record, only an id, or 201 with no body at all. The old code
+      // spread it straight into state, so any response missing `name` rendered
+      // a blank row that stayed blank through Cast & Crew and Review. Take the
+      // canonical record from a re-fetch of the list instead, and never read
+      // the display name off the POST body.
+      const raw = await res.json().catch(() => null);
+      const createdId: number | undefined = raw?.id ?? raw?.characterId;
+
+      const list = await fetchAllCharacters();
+      const match =
+        (createdId != null && list.find((c) => c.id === createdId)) ||
+        list.find(
+          (c) =>
+            c.name?.trim().toLowerCase() === name.toLowerCase() &&
+            (c.operaId == null || c.operaId === selectedOperaId),
+        );
+
+      if (match) {
+        setSelectedCharacterIds((prev) =>
+          prev.includes(match.id) ? prev : [...prev, match.id],
+        );
+      } else {
+        // Re-fetch didn't surface it. Fall back to a local record built from
+        // what was typed so the wizard stays usable. NOTE: if `createdId` is
+        // also missing, this row carries a placeholder id and the production
+        // POST will reject it — real fix is for the API to return the record.
+        const fallbackId = createdId ?? -Date.now();
+        setAllCharacters((prev) => [
+          ...prev,
+          { id: fallbackId, name, operaId: selectedOperaId },
+        ]);
+        setSelectedCharacterIds((prev) => [...prev, fallbackId]);
+      }
+
       setNewCharacterName("");
       setShowAddCharacter(false);
     } catch {

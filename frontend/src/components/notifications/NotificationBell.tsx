@@ -111,6 +111,13 @@ const NotificationBell = () => {
               position: "absolute",
               top: "-4px",
               right: "-4px",
+              // Flex-centred instead of line-height-centred. The old
+              // `lineHeight: "18px"` fought the 2px border: with border-box the
+              // content area is only 14px tall, so an 18px line box dropped the
+              // digit below centre. lineHeight 1 + centring is border-agnostic.
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               minWidth: "18px",
               height: "18px",
               padding: "0 5px",
@@ -120,8 +127,7 @@ const NotificationBell = () => {
               color: colors.brandOn,
               fontSize: type.xs,
               fontWeight: weight.semibold,
-              lineHeight: "18px",
-              textAlign: "center",
+              lineHeight: 1,
               border: `2px solid ${colors.bg}`,
               pointerEvents: "none",
             }}

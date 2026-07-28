@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../auth";
+import { useAuth, signOut } from "../auth";
 import NotificationBell from "./notifications/NotificationBell";
 import styles from "./NavBar.module.css";
 
@@ -108,7 +108,8 @@ const NavBar = () => {
   };
 
   const handleLogout = () => {
-    console.log("logout");
+    signOut();
+    navigate("/login", { replace: true });
   };
 
   // Three appearance choices, current one gets a checkmark.
