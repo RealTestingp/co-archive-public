@@ -1,6 +1,27 @@
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { useNotifications } from "../../context/NotificationsContext";
+import { useNotifications, ordinal } from "../../context/NotificationsContext";
+
+/* ============================================================================
+   NOTIFICATION BELL
+
+   Two bugs fixed here:
+
+   1. BADGE DIDN'T MATCH THE LIST. The badge read `count > 9 ? "9+" : count`,
+      so with 12 unread the badge said "9+", the panel listed 12 rows, and the
+      toast header said "12 milestones" — three different numbers for one
+      state. A 9 cap is far too low for an archive that backfills decades of
+      history. Now the real number shows up to 99.
+
+   2. THE CIRCLED NUMBER WASN'T A COUNT. It's `milestoneCount` — the milestone
+      being celebrated (a 50th performance). It sat in a red circle styled
+      almost identically to the unread badge, so the same visual language meant
+      two different things. It's now a neutral pill reading "50th", with the
+      type spelled out beside it. That also pulls red off every single row,
+      which is where most of the 10% budget was going on this panel.
+
+   Type: --fs-xs (12px) and --fs-sm (16px) only. Colours all from tokens.
+   ========================================================================== */
 
 // "just now" / "3h ago" / "2d ago" / date for anything older than a week.
 const relativeTime = (iso: string) => {
@@ -19,7 +40,7 @@ const relativeTime = (iso: string) => {
 };
 
 const NotificationBell = () => {
-  const { isDark, colors } = useTheme();
+  const { colors, type, weight } = useTheme();
   const { items, count, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -42,16 +63,6 @@ const NotificationBell = () => {
     };
   }, [open]);
 
-  // ── Theme tokens ──
-  const surface = isDark ? "#1c1c1c" : "#fff";
-  const border = isDark ? "#2a2a2a" : "#e5e7eb";
-  const borderLight = isDark ? "#2a2a2a" : "#f3f4f6";
-  const textPrimary = colors.textPrimary;
-  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
-  const textMuted = isDark ? "#6b7280" : "#9ca3af";
-  const tableBg = isDark ? "#161616" : "#f9fafb";
-  const hoverBg = isDark ? "#242424" : "#f9fafb";
-
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
       {/* Bell button */}
@@ -67,12 +78,12 @@ const NotificationBell = () => {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          width: "34px",
-          height: "34px",
-          borderRadius: "8px",
+          width: "36px",
+          height: "36px",
+          borderRadius: "var(--radius-lg)",
           border: "none",
-          background: open ? hoverBg : "transparent",
-          color: textSecondary,
+          background: open ? colors.surfaceHover : "transparent",
+          color: colors.inkMuted,
           cursor: "pointer",
         }}
       >
@@ -91,29 +102,31 @@ const NotificationBell = () => {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
 
-        {/* Unread-count badge — a badge, kept red. */}
+        {/* Unread count — the ONE red counter in the notification UI, and the
+            only number that should ever mean "how many". Caps at 99 so it
+            agrees with the panel and the toast for any realistic backlog. */}
         {count > 0 && (
           <span
             style={{
               position: "absolute",
-              top: "-3px",
-              right: "-3px",
-              minWidth: "15px",
-              height: "15px",
-              padding: "0 4px",
+              top: "-4px",
+              right: "-4px",
+              minWidth: "18px",
+              height: "18px",
+              padding: "0 5px",
               boxSizing: "border-box",
-              borderRadius: "8px",
-              background: "#9B1C1C",
-              color: "#fff",
-              fontSize: "9px",
-              fontWeight: 600,
-              lineHeight: "15px",
+              borderRadius: "var(--radius-pill)",
+              background: colors.brand,
+              color: colors.brandOn,
+              fontSize: type.xs,
+              fontWeight: weight.semibold,
+              lineHeight: "18px",
               textAlign: "center",
-              border: `2px solid ${colors.background}`,
+              border: `2px solid ${colors.bg}`,
               pointerEvents: "none",
             }}
           >
-            {count > 9 ? "9+" : count}
+            {count > 99 ? "99+" : count}
           </span>
         )}
       </button>
@@ -126,17 +139,16 @@ const NotificationBell = () => {
             position: "absolute",
             top: "calc(100% + 8px)",
             right: 0,
-            width: "340px",
-            maxHeight: "420px",
+            width: "380px",
+            maxWidth: "calc(100vw - 2rem)",
+            maxHeight: "440px",
             overflowY: "auto",
-            background: surface,
-            border: `1px solid ${border}`,
-            borderRadius: "10px",
-            boxShadow: isDark
-              ? "0 8px 28px rgba(0,0,0,0.5)"
-              : "0 8px 28px rgba(0,0,0,0.12)",
+            background: colors.bg,
+            border: `1px solid ${colors.border}`,
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "var(--shadow-overlay)",
             zIndex: 100,
-            fontFamily: "Inter, sans-serif",
+            fontFamily: "var(--font-sans)",
           }}
         >
           {/* Header */}
@@ -145,20 +157,21 @@ const NotificationBell = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: "8px",
               padding: "12px 16px",
-              background: tableBg,
-              borderBottom: `1px solid ${border}`,
+              background: colors.surface,
+              borderBottom: `1px solid ${colors.border}`,
               position: "sticky",
               top: 0,
             }}
           >
             <span
               style={{
-                fontSize: "10px",
-                fontWeight: 600,
+                fontSize: type.xs,
+                fontWeight: weight.semibold,
                 textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                color: textMuted,
+                letterSpacing: "var(--ls-wide)",
+                color: colors.inkMuted,
               }}
             >
               Milestones
@@ -174,14 +187,15 @@ const NotificationBell = () => {
                   e.currentTarget.style.textDecoration = "none";
                 }}
                 style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  color: textPrimary,
+                  fontSize: type.xs,
+                  fontWeight: weight.semibold,
+                  color: colors.ink,
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   padding: 0,
-                  fontFamily: "Inter, sans-serif",
+                  fontFamily: "var(--font-sans)",
+                  whiteSpace: "nowrap",
                 }}
               >
                 Mark all read
@@ -195,8 +209,8 @@ const NotificationBell = () => {
               style={{
                 padding: "2rem 16px",
                 textAlign: "center",
-                fontSize: "13px",
-                color: textMuted,
+                fontSize: type.sm,
+                color: colors.inkMuted,
               }}
             >
               You're all caught up.
@@ -209,55 +223,68 @@ const NotificationBell = () => {
                   display: "flex",
                   gap: "12px",
                   alignItems: "flex-start",
-                  padding: "12px 16px",
+                  padding: "14px 16px",
                   borderBottom:
-                    i < items.length - 1 ? `1px solid ${borderLight}` : "none",
+                    i < items.length - 1
+                      ? `1px solid ${colors.borderSubtle}`
+                      : "none",
                 }}
               >
-                {/* Milestone count badge — a badge, kept red. */}
+                {/* Milestone marker. NEUTRAL on purpose — a red circle here is
+                    the same visual language as the unread badge above, and
+                    these two numbers mean completely different things. The
+                    ordinal ("50th") also stops it reading as a quantity. */}
                 <div
                   style={{
                     flexShrink: 0,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
-                    background: isDark ? "#2a1414" : "#fef2f2",
-                    border: `1px solid ${isDark ? "#4a2020" : "#fecaca"}`,
-                    color: "#9B1C1C",
-                    fontSize: "13px",
-                    fontWeight: 700,
+                    minWidth: "42px",
+                    height: "42px",
+                    padding: "0 6px",
+                    boxSizing: "border-box",
+                    borderRadius: "var(--radius-pill)",
+                    background: colors.surfaceHover,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.ink,
+                    fontSize: type.xs,
+                    fontWeight: weight.semibold,
                   }}
                 >
-                  {n.milestoneCount}
+                  {ordinal(n.milestoneCount)}
                 </div>
 
                 {/* Body */}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: textPrimary,
+                      fontSize: type.sm,
+                      fontWeight: weight.semibold,
+                      color: colors.ink,
                       marginBottom: "2px",
+                      overflowWrap: "break-word",
                     }}
                   >
                     {n.person.firstName} {n.person.lastName}
                   </div>
                   <div
                     style={{
-                      fontSize: "12px",
-                      color: textSecondary,
+                      fontSize: type.sm,
+                      fontWeight: weight.regular,
+                      color: colors.inkMuted,
                       lineHeight: 1.4,
                       marginBottom: "4px",
+                      overflowWrap: "break-word",
                     }}
                   >
                     {n.message}
                   </div>
-                  <div style={{ fontSize: "11px", color: textMuted }}>
-                    {n.milestoneType} · {relativeTime(n.createdAt)}
+                  {/* Spells out what the pill means, so the number is never
+                      ambiguous on its own. */}
+                  <div style={{ fontSize: type.xs, color: colors.inkMuted }}>
+                    {ordinal(n.milestoneCount)} {n.milestoneType} ·{" "}
+                    {relativeTime(n.createdAt)}
                   </div>
                 </div>
 
@@ -270,11 +297,13 @@ const NotificationBell = () => {
                     flexShrink: 0,
                     border: "none",
                     background: "transparent",
-                    color: textMuted,
+                    color: colors.inkMuted,
                     cursor: "pointer",
-                    fontSize: "15px",
+                    fontSize: type.sm,
                     lineHeight: 1,
-                    padding: "2px 4px",
+                    minWidth: "32px",
+                    minHeight: "32px",
+                    borderRadius: "var(--radius-sm)",
                   }}
                 >
                   ×

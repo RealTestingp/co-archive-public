@@ -1,6 +1,23 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { useNotifications } from "../../context/NotificationsContext";
+import { useNotifications, ordinal } from "../../context/NotificationsContext";
+
+/* ============================================================================
+   WEEKLY MILESTONE TOAST
+
+   THE MYSTERY NUMBER: each preview row used to lead with a bare bold
+   `{n.milestoneCount}` — "50 Jane Doe — Performance". That number is the
+   milestone being celebrated (a 50th performance), not a count of anything,
+   but sitting alone in bold ahead of a name it reads like a counter and gets
+   confused with the unread badge on the bell. (The old code comment even
+   called it an "Inline count", which is how the confusion started.)
+
+   It now reads "Jane Doe — 50th Performance": the number carries its unit and
+   its noun, so there is exactly one number in this component that means
+   "how many", and it's the one in the header.
+
+   Type: --fs-xs (12px) and --fs-sm (16px) only. Colours all from tokens.
+   ========================================================================== */
 
 // ISO week key like "2026-W29" so the toast shows at most once per week.
 const isoWeekKey = (d = new Date()) => {
@@ -18,7 +35,7 @@ const STORAGE_PREFIX = "coa_week_toast_";
 const AUTO_DISMISS_MS = 9000;
 
 const NotificationToast = () => {
-  const { isDark, colors } = useTheme();
+  const { colors, type, weight } = useTheme();
   const { items, count, loading } = useNotifications();
   const [show, setShow] = useState(false);
   const [mounted, setMounted] = useState(false); // drives slide-in transition
@@ -55,12 +72,6 @@ const NotificationToast = () => {
 
   if (!show) return null;
 
-  const surface = isDark ? "#1c1c1c" : "#fff";
-  const border = isDark ? "#2a2a2a" : "#e5e7eb";
-  const textPrimary = colors.textPrimary;
-  const textSecondary = isDark ? "#9ca3af" : "#6b7280";
-  const textMuted = isDark ? "#6b7280" : "#9ca3af";
-
   const preview = items.slice(0, 3);
 
   return (
@@ -69,26 +80,26 @@ const NotificationToast = () => {
       aria-live="polite"
       style={{
         position: "fixed",
-        // Top-right, just below the 52px navbar — sits under the bell it came
-        // from and clears the chat widget's column entirely (bubble + panel).
+        // Top-right, just below the navbar — sits under the bell it came from
+        // and clears the chat widget's column entirely (bubble + panel).
         top: "68px",
         right: "24px",
-        width: "320px",
-        background: surface,
-        border: `1px solid ${border}`,
-        borderRadius: "12px",
-        boxShadow: isDark
-          ? "0 10px 34px rgba(0,0,0,0.55)"
-          : "0 10px 34px rgba(0,0,0,0.15)",
+        width: "360px",
+        // Never wider than the viewport on a phone.
+        maxWidth: "calc(100vw - 2rem)",
+        background: colors.bg,
+        border: `1px solid ${colors.border}`,
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-overlay)",
         padding: "16px",
         zIndex: 1000,
-        fontFamily: "Inter, sans-serif",
+        fontFamily: "var(--font-sans)",
         transform: mounted ? "translateY(0)" : "translateY(-12px)",
         opacity: mounted ? 1 : 0,
         transition: "transform 0.25s ease, opacity 0.25s ease",
       }}
     >
-      {/* Header */}
+      {/* Header — the only "how many" number in this component. */}
       <div
         style={{
           display: "flex",
@@ -105,17 +116,22 @@ const NotificationToast = () => {
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#9B1C1C"
+            stroke={colors.brandText}
             strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
+            style={{ flexShrink: 0 }}
           >
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           <span
-            style={{ fontSize: "13px", fontWeight: 600, color: textPrimary }}
+            style={{
+              fontSize: type.sm,
+              fontWeight: weight.semibold,
+              color: colors.ink,
+            }}
           >
             {count} milestone{count !== 1 ? "s" : ""} to review
           </span>
@@ -126,51 +142,51 @@ const NotificationToast = () => {
           style={{
             border: "none",
             background: "transparent",
-            color: textMuted,
+            color: colors.inkMuted,
             cursor: "pointer",
-            fontSize: "16px",
+            fontSize: type.sm,
             lineHeight: 1,
-            padding: 0,
+            flexShrink: 0,
+            minWidth: "28px",
+            minHeight: "28px",
+            borderRadius: "var(--radius-sm)",
           }}
         >
           ×
         </button>
       </div>
 
-      {/* Preview list */}
+      {/* Preview list. Name first, then the milestone with its unit attached —
+          no bare leading number to be mistaken for a count. */}
       {preview.map((n) => (
         <div
           key={n.id}
           style={{
-            display: "flex",
-            gap: "8px",
-            alignItems: "baseline",
-            fontSize: "12px",
-            color: textSecondary,
+            fontSize: type.sm,
+            fontWeight: weight.regular,
+            color: colors.inkMuted,
             marginBottom: "6px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
-          {/* Inline count — reading text, so ink not red (the bell icon and
-              the panel's circular badge carry the red accent). */}
-          <span
-            style={{ fontWeight: 700, color: textPrimary, whiteSpace: "nowrap" }}
-          >
-            {n.milestoneCount}
+          <span style={{ fontWeight: weight.semibold, color: colors.ink }}>
+            {n.person.firstName} {n.person.lastName}
           </span>
-          <span
-            style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {n.person.firstName} {n.person.lastName} — {n.milestoneType}
-          </span>
+          {" — "}
+          {ordinal(n.milestoneCount)} {n.milestoneType}
         </div>
       ))}
 
       {count > preview.length && (
-        <div style={{ fontSize: "11px", color: textMuted, marginTop: "4px" }}>
+        <div
+          style={{
+            fontSize: type.xs,
+            color: colors.inkMuted,
+            marginTop: "4px",
+          }}
+        >
           + {count - preview.length} more — open the bell to see all.
         </div>
       )}
