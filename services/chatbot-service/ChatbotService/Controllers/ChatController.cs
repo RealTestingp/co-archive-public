@@ -48,6 +48,8 @@ namespace ChatbotService.Controllers
 
         // Foundry's Responses API expects the whole conversation as a list of "input items,"
         // not just the newest message — so we rebuild the full history here every time.
+
+        // Point here if asked about Parameters being used - this is where the request gets built.
         var inputItems = new List<object>();
         foreach (var turn in request.History)
         {
@@ -77,10 +79,7 @@ namespace ChatbotService.Controllers
         });
 
         var requestBody = new { input = inputItems };
-        var jsonBody = JsonSerializer.Serialize(requestBody);
-
-        // Logs the exact JSON being sent to Foundry — useful while debugging, safe to delete later.
-        _logger.LogInformation("Outgoing request body: {Body}", jsonBody);
+        var jsonBody = JsonSerializer.Serialize(requestBody); //turns the C# objects into the JSON string.
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, agentEndpoint)
         {
