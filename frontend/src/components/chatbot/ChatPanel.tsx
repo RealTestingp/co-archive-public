@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect, type SyntheticEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import styles from "./ChatWidget.module.css";
+import remarkGfm from "remark-gfm";
 
 export interface ChatMessage {
   id: string;
@@ -93,8 +94,10 @@ const ChatPanel = ({
               // Style differs based on who sent it.
               className={`${styles.message} ${m.role === "user" ? styles.messageUser : styles.messageAssistant}`}
             >
-              {/* Renders markdown (e.g. **bold**) as formatted text, not raw asterisks. */}
-              <ReactMarkdown>{m.content}</ReactMarkdown>
+              {/* Renders tables and other GFM markdown formatting (added remark-gfm plugin). */}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {m.content}
+              </ReactMarkdown>
             </div>
           ))
         )}
