@@ -1,19 +1,8 @@
 /* ChatPanel.tsx
-   The chat window itself. Presentational: it holds the draft message and
-   scrolling, while ChatWidget owns the conversation and the API call.
+   The chat window itself. Presentational — ChatWidget owns state/API calls, this just renders.
 
-   Not my file, but two things in it are worth knowing.
-
-   The effect on messages scrolls to the bottom whenever the list changes, so a
-   new reply is visible without the user scrolling. block behaviour is smooth
-   rather than instant so it reads as the conversation moving rather than
-   jumping.
-
-   Replies render through react-markdown rather than being injected as HTML. The
-   assistant returns markdown, and react-markdown parses it to React elements
-   instead of setting innerHTML, so model output cannot inject script into the
-   page. That is the right answer if anyone asks how you handle untrusted text
-   from an AI service.
+   Two things worth knowing: messages auto-scroll to bottom on update, and replies render via
+   react-markdown (not raw HTML) so model output can't inject scripts into the page.
 */
 import { useState, useRef, useEffect, type SyntheticEvent } from "react";
 import ReactMarkdown from "react-markdown";
@@ -38,19 +27,13 @@ const ChatPanel = ({
   onClose,
   isSending,
 }: ChatPanelProps) => {
-  // DRAFT holds whatever the user is currently typing, before it's sent.
+  // What the user is currently typing.
   const [draft, setDraft] = useState("");
 
-  // useRef gives us a direct reference to the actual scrollable message
-  // list DOM element, so we can call scrollTo() on it manually. We need
-  // this because React doesn't have a built-in "auto-scroll to bottom"
-  // behavior.
+  // Ref to the message list so we can manually scroll it (React has no built-in auto-scroll).
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Every time `messages` changes (a new message is added, either from
-  // the user or the assistant), scroll the list down to the bottom so the
-  // newest message is always visible, instead of the user having to
-  // manually scroll down after every reply.
+  // Scroll to bottom whenever messages change.
   useEffect(() => {
     listRef.current?.scrollTo({
       top: listRef.current.scrollHeight,
@@ -59,14 +42,9 @@ const ChatPanel = ({
   }, [messages]);
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
-    // Forms reload the page by default on submit — preventDefault stops
-    // that, we're handling the "submission" entirely in JS instead.
-    e.preventDefault();
+    e.preventDefault(); // Stop the default page reload on submit.
     const trimmed = draft.trim();
-    // Guard clause: don't send an empty/whitespace-only message, and
-    // don't let the user send a second message while we're still waiting
-    // on a response to the first one (isSending).
-    if (!trimmed || isSending) return;
+    if (!trimmed || isSending) return; // No empty sends, no overlapping sends.
     onSend(trimmed);
     setDraft("");
   };
@@ -103,7 +81,7 @@ const ChatPanel = ({
 
       <div className={styles.messageList} ref={listRef}>
         {messages.length === 0 ? (
-          // Empty state shown before the user has sent their first message
+          // Shown before the first message is sent.
           <div className={styles.emptyState}>
             Ask me anything about the Calgary Opera archive — productions,
             artists, seasons, and more.
@@ -112,23 +90,16 @@ const ChatPanel = ({
           messages.map((m) => (
             <div
               key={m.id}
-              // Different styling depending on who sent the message, so
-              // user messages and assistant replies look visually distinct.
+              // Style differs based on who sent it.
               className={`${styles.message} ${m.role === "user" ? styles.messageUser : styles.messageAssistant}`}
             >
-              {/* ReactMarkdown renders the message content as formatted
-                  markdown instead of plain text. This matters because the AI model's replies often come back
-                  with markdown formatting.
-
-                  EX: **bold** opera titles - this is how users would see them formatted,
-                  with asterisks instead of actually bolded. */}
+              {/* Renders markdown (e.g. **bold**) as formatted text, not raw asterisks. */}
               <ReactMarkdown>{m.content}</ReactMarkdown>
             </div>
           ))
         )}
         {isSending && (
-          // "Typing" indicator. The three animated dots shown while we're
-          // waiting on a reply from the chatbot.
+          // Animated "typing" dots while waiting on a reply.
           <div className={`${styles.message} ${styles.messageAssistant}`}>
             <div className={styles.typingIndicator}>
               <span></span>
@@ -147,9 +118,7 @@ const ChatPanel = ({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           aria-label="Chat message"
-          // Disabled while waiting for a response, so the user can't
-          // queue up multiple messages before the first one finishes.
-          disabled={isSending}
+          disabled={isSending} // Prevents overlapping requests.
         />
         <button
           className={styles.sendButton}
@@ -157,9 +126,7 @@ const ChatPanel = ({
           aria-label="Send message"
           disabled={isSending}
         >
-          {/* Paper-plane "send" icon — a diagonal line plus a triangular
-              polygon shape, same inline-SVG approach as the other icons
-              in this component and others (no icon library dependency). */}
+          {/* Paper-plane send icon — inline SVG, no icon library. */}
           <svg
             width="16"
             height="16"

@@ -1,18 +1,9 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controllers
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// CORS: allows requests from these origins to call this service directly.
-
-// In practice, this almost never applies in production. The browser
-// only ever talks to the gateway, and the gateway forwards requests to
-// this service server-to-server, which isn't subject to CORS at all
-
-// This policy really only matters if someone tests
-// chatbot-service directly from a browser at localhost, bypassing the
-// gateway entirely.
+// Only matters if someone tests chatbot-service directly from a browser, bypassing the gateway.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
