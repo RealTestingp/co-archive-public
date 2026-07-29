@@ -2,13 +2,8 @@
    Styles for the assistant: the floating bubble, the panel, the message list
    and the input row. Shared by ChatBubble, ChatPanel and ChatWidget.
 
-   Not my file, part of the chat feature.
-
-   The typing indicator below is three dots animated with staggered negative
-   delays, so they are already mid-cycle on the first frame and bounce out of
-   step rather than in unison. It shows while a request is in flight, which
-   matters because the AI call is the slowest thing in the app and silence would
-   read as a broken widget.
+   Animated dots with staggered negative delays - already mid-cycle on the first frame and bounce out of step.
+   It shows while a request is processing - AI call  is the slowest service and silence is off-putting.
 */
 .typingIndicator {
   display: flex;
@@ -300,4 +295,33 @@
 
 [data-theme="dark"] .messageAssistant :global(code) {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.messageAssistant :global(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 4px 0 8px 0;
+  font-size: 12px;
+}
+
+.messageAssistant :global(th),
+.messageAssistant :global(td) {
+  border: 1px solid #e5e7eb;
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.messageAssistant :global(th) {
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .messageAssistant :global(th),
+[data-theme="dark"] .messageAssistant :global(td) {
+  border-color: #2a2a2a;
+}
+
+[data-theme="dark"] .messageAssistant :global(th) {
+  background: #2a2a2a;
 }
