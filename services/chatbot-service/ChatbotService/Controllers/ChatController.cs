@@ -1,6 +1,7 @@
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
 using System.Text.Json;
 
@@ -24,12 +25,18 @@ namespace ChatbotService.Controllers
       _env = env;
     }
 
+    private const int MaxMessageLength = 2000; // Roughly 400-500 tokens worth of user input.
+
     // POST /api/chat
     [HttpPost]
+    [EnableRateLimiting("chat")]
     public async Task<IActionResult> Chat([FromBody] ChatRequestDto request)
     {
       if (string.IsNullOrWhiteSpace(request.Message))
         return BadRequest("Message cannot be empty.");
+
+      if (request.Message.Length > MaxMessageLength)
+        return BadRequest($"Message exceeds maximum length of {MaxMessageLength} characters.");
 
       try
       {

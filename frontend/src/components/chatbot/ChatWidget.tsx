@@ -46,8 +46,21 @@ const ChatWidget = () => {
       // Shared fetch wrapper — calls the gateway directly (see api.ts).
       const res = await api.post("/api/chat", { message: text, history });
 
-      if (!res.ok)
-        throw new Error(`Chat request failed with status ${res.status}`);
+      if (!res.ok) {
+        // Try to use the backend's actual error message (e.g. rate limit, message too long)
+        // instead of always showing a generic fallback.
+        const errorText = await res.text().catch(() => "");
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: errorText || "Something went wrong. Please try again.",
+          },
+        ]);
+        return;
+      }
 
       const data: { reply: string } = await res.json();
 
@@ -56,7 +69,7 @@ const ChatWidget = () => {
         { id: crypto.randomUUID(), role: "assistant", content: data.reply },
       ]);
     } catch (err) {
-      // Show a fallback message instead of a stuck typing indicator.
+      // Network failure or unexpected error (not an HTTP error response).
       console.error("Chat request failed:", err);
       setMessages((prev) => [
         ...prev,
