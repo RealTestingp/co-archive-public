@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using COArchive.API.DataTransferObjects;
 using Microsoft.AspNetCore.Authorization;
+using COArchive.API.Services;
 
 namespace COArchive.API.Controllers
 {
@@ -13,10 +14,12 @@ namespace COArchive.API.Controllers
     public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly ContentModerationService _contentModeration;
 
-        public ProductionsController(ApplicationDbContext db)
+        public ProductionsController(ApplicationDbContext db, ContentModerationService contentModeration)
         {
             _db = db;
+            _contentModeration = contentModeration;
         }
 
         // GET /api/productions?search=butterfly - search terms
@@ -187,6 +190,9 @@ namespace COArchive.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
+            if (!_contentModeration.IsSafe(dto.Notes))
+                return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
+
             if (id != dto.Id) return BadRequest("ID mismatch.");
 
             var existing = await _db.Productions.FindAsync(id);
@@ -253,6 +259,10 @@ namespace COArchive.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
+            //Check Content moderation on notes field
+            if (!_contentModeration.IsSafe(dto.Notes))
+                return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
+
             using var transaction = await _db.Database.BeginTransactionAsync();
             try
             {

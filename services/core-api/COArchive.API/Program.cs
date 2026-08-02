@@ -25,6 +25,9 @@ builder.Services.AddSingleton(x => new BlobServiceClient(
     builder.Configuration.GetConnectionString("BlobStorage")));
 builder.Services.AddScoped<BlobStorageService>();
 
+//ContentModeration using Profanity.Detector NuGet Package
+builder.Services.AddSingleton<ContentModerationService>();
+
 // CORS — allow React frontend
 builder.Services.AddCors(options =>
 {
