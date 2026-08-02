@@ -142,6 +142,13 @@
   line-height: 1.5;
 }
 
+.disclaimer {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 4px 12px 8px;
+}
+
 .message {
   max-width: 80%;
   padding: 8px 12px;
@@ -233,6 +240,9 @@
   border-bottom-color: #2a2a2a;
 }
 [data-theme="dark"] .emptyState {
+  color: #6b7280;
+}
+[data-theme="dark"] .disclaimer {
   color: #6b7280;
 }
 [data-theme="dark"] .messageUser {
