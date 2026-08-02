@@ -47,8 +47,16 @@ namespace COArchive.API.Controllers
             if (notification == null) return NotFound();
 
             notification.IsRead = true;
-            await _db.SaveChangesAsync();
-            return NoContent();
+            
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred marking the notification as read.");
+            }
         }
 
         // PUT /api/notifications/read-all — mark all as read
@@ -62,8 +70,15 @@ namespace COArchive.API.Controllers
             foreach (var n in unread)
                 n.IsRead = true;
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+           try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred marking notifications as read.");
+            }
         }
     }
 }

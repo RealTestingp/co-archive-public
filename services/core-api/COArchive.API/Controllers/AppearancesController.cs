@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 
 using COArchive.API.DataTransferObjects;
+using Microsoft.AspNetCore.Authorization;
 
 namespace COArchive.API.Controllers
 {
@@ -105,8 +106,15 @@ namespace COArchive.API.Controllers
                 CharacterId = dto.CharacterId,
             };
 
-            _db.Appearances.Add(appearance);
-            await _db.SaveChangesAsync();
+            try
+            {
+                _db.Appearances.Add(appearance);
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the appearance.");
+            }
 
             // Check for milestones
             await CheckMilestoneAsync(dto.PersonId, dto.ProductionId);
@@ -121,9 +129,16 @@ namespace COArchive.API.Controllers
             var appearance = await _db.Appearances.FindAsync(id);
             if (appearance == null) return NotFound();
 
-            _db.Appearances.Remove(appearance);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                _db.Appearances.Remove(appearance);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the appearance.");
+            }
         }
 
         // Milestone Notifications

@@ -4,7 +4,7 @@ using COArchive.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+
 
 namespace COArchive.API.Controllers
 {
@@ -179,9 +179,16 @@ namespace COArchive.API.Controllers
                 person.Nationalities = nationalities;
             }
 
-            _db.Persons.Add(person);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = person.Id }, new { person.Id });
+            try
+            {
+                _db.Persons.Add(person);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetById), new { id = person.Id }, new { person.Id });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the person.");
+            }
         }
 
         // DELETE /api/persons/1
@@ -191,9 +198,21 @@ namespace COArchive.API.Controllers
             var person = await _db.Persons.FindAsync(id);
             if (person == null) return NotFound();
 
-            _db.Persons.Remove(person);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            // Check for linked appearances before attempting delete
+            var hasAppearances = await _db.Appearances.AnyAsync(a => a.PersonId == id);
+            if (hasAppearances)
+                return Conflict("This person has appearance records and cannot be deleted.");
+
+            try
+            {
+                _db.Persons.Remove(person);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the person.");
+            }
         }
 
         // PUT /api/persons/5
@@ -226,8 +245,15 @@ namespace COArchive.API.Controllers
                 existing.Nationalities = nationalities;
             }
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the person.");
+            }
         }
     }
 }

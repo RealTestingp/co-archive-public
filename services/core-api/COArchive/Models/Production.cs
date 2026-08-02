@@ -6,7 +6,7 @@ namespace COArchive.Models
 
     /// Represents a Calgary Opera production or event within a season.
     /// e.g. "Madama Butterfly" (MainStage), "Barber of Seville - Brunch" (Brunch).
-    /// A single Event can have multiple Performances on different dates.
+    /// A single Production can have multiple Performances on different dates.
 
     public class Production
     {

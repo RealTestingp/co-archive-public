@@ -27,7 +27,6 @@ namespace COArchive.API.Controllers
                 return BadRequest("Search term too long.");
 
             // Ignore search terms under 2 characters, avoids single-letter queries
-            //TODO FIX - display error or stop search - less than 2 chars returns entire db
             if (search!= null && search.Trim().Length > 0 && search.Trim().Length < 2)
             {
                 return Ok(new List<object>());
@@ -204,7 +203,6 @@ namespace COArchive.API.Controllers
             existing.ProgramPdfUrl = dto.ProgramPdfUrl;
             existing.Notes = dto.Notes;
 
-            await _db.SaveChangesAsync();
 
             // Update performance dates if provided — clear existing and replace
             if (dto.PerformanceDates != null || dto.TourStartDate.HasValue)
@@ -234,18 +232,21 @@ namespace COArchive.API.Controllers
                     {
                         ProductionId = id,
                         Date = dto.TourStartDate.Value,
-                    });
-                    _db.Performances.Add(new Performance
-                    {
-                        ProductionId = id,
-                        Date = dto.TourEndDate.Value,
+                        DateTo = dto.TourEndDate.Value,  // ← one row with both dates
                     });
                 }
 
-                await _db.SaveChangesAsync();
             }
 
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the production.");
+            }
         }
 
         // POST /api/productions
@@ -330,9 +331,16 @@ namespace COArchive.API.Controllers
             var production = await _db.Productions.FindAsync(id);
             if (production == null) return NotFound();
 
-            _db.Productions.Remove(production);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                _db.Productions.Remove(production);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the production.");
+            }
         }
     }
 }
