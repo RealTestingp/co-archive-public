@@ -193,6 +193,27 @@ namespace COArchive.API.Controllers
             if (!_contentModeration.IsSafe(dto.Notes))
                 return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
 
+            var maxDate = DateTime.UtcNow.AddYears(5);
+            var minDate = new DateTime(1970, 1, 1);
+
+            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+            {
+                if (dto.PerformanceDates.Any(d => d > maxDate))
+                    return BadRequest("Performance dates cannot be more than 5 years in the future.");
+                if (dto.PerformanceDates.Any(d => d < minDate))
+                    return BadRequest("Performance dates cannot be before 1970.");
+            }
+
+            if (dto.TourStartDate.HasValue || dto.TourEndDate.HasValue)
+            {
+                if (dto.TourStartDate > maxDate || dto.TourEndDate > maxDate)
+                    return BadRequest("Tour dates cannot be more than 5 years in the future.");
+                if (dto.TourStartDate < minDate)
+                    return BadRequest("Tour dates cannot be before 1970.");
+                if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue && dto.TourStartDate >= dto.TourEndDate)
+                    return BadRequest("Tour end date must be after tour start date.");
+            }
+
             if (id != dto.Id) return BadRequest("ID mismatch.");
 
             var existing = await _db.Productions.FindAsync(id);
@@ -262,6 +283,27 @@ namespace COArchive.API.Controllers
             //Check Content moderation on notes field
             if (!_contentModeration.IsSafe(dto.Notes))
                 return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
+
+            var maxDate = DateTime.UtcNow.AddYears(5);
+            var minDate = new DateTime(1970, 1, 1);
+
+            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+            {
+                if (dto.PerformanceDates.Any(d => d > maxDate))
+                    return BadRequest("Performance dates cannot be more than 5 years in the future.");
+                if (dto.PerformanceDates.Any(d => d < minDate))
+                    return BadRequest("Performance dates cannot be before 1970.");
+            }
+
+            if (dto.TourStartDate.HasValue || dto.TourEndDate.HasValue)
+            {
+                if (dto.TourStartDate > maxDate || dto.TourEndDate > maxDate)
+                    return BadRequest("Tour dates cannot be more than 5 years in the future.");
+                if (dto.TourStartDate < minDate)
+                    return BadRequest("Tour dates cannot be before 1970.");
+                if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue && dto.TourStartDate >= dto.TourEndDate)
+                    return BadRequest("Tour end date must be after tour start date.");
+            }
 
             using var transaction = await _db.Database.BeginTransactionAsync();
             try
