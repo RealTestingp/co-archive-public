@@ -146,6 +146,10 @@ const ChatPanel = ({
           </svg>
         </button>
       </form>
+      <div className={styles.disclaimer}>
+        AI-generated responses may be inaccurate. Please verify important
+        details.
+      </div>
     </div>
   );
 };
