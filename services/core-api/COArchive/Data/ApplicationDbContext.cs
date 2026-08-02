@@ -40,19 +40,19 @@ namespace COArchive.Data
 
             // ── Many-to-many join tables ──────────────────────────────────
 
-            // Opera ↔ Composer
+            // Opera ↔ Composer — one opera has many composers, one composer wrote many operas
             modelBuilder.Entity<Opera>()
                 .HasMany(o => o.Composers)
                 .WithMany(c => c.Operas)
                 .UsingEntity(j => j.ToTable("OperaComposer"));
 
-            // Opera ↔ Librettist
+            // Opera ↔ Librettist — one opera has many librettists, one librettist wrote many operas
             modelBuilder.Entity<Opera>()
                 .HasMany(o => o.Librettists)
                 .WithMany(l => l.Operas)
                 .UsingEntity(j => j.ToTable("OperaLibrettist"));
 
-            // Person ↔ Nationality
+            // Person ↔ Nationality — one person can have many nationalities, one nationality belongs to many persons
             modelBuilder.Entity<Person>()
                 .HasMany(p => p.Nationalities)
                 .WithMany(n => n.Persons)
@@ -62,12 +62,14 @@ namespace COArchive.Data
             // Must be explicit — EF Core can't auto-resolve two FKs
             // pointing to the same table
 
+            // One Language → many Productions (written in that language)
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.WrittenLanguage)
                 .WithMany(l => l.WrittenLanguageProductions)
                 .HasForeignKey(e => e.WrittenLanguageId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // One Language → many Productions (sung in that language)
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.SungLanguage)
                 .WithMany(l => l.SungLanguageProductions)
@@ -76,6 +78,7 @@ namespace COArchive.Data
 
             // ── Events relationships ───────────────────────────────────────
 
+            // One Season → many Productions
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.Season)
                 .WithMany(s => s.Productions)
@@ -83,6 +86,7 @@ namespace COArchive.Data
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete a Season that still has Events
 
+            // One EventType → many Productions
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.EventType)
                 .WithMany(et => et.Productions)
@@ -90,6 +94,7 @@ namespace COArchive.Data
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete an EventType that still has Events
 
+            // One Venue → many Productions
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.Venue)
                 .WithMany(v => v.Productions)
@@ -97,6 +102,7 @@ namespace COArchive.Data
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete a Venue that still has Events
 
+            // One Opera → many Productions
             modelBuilder.Entity<Production>()
                 .HasOne(e => e.Opera)
                 .WithMany(o => o.Productions)
@@ -106,22 +112,25 @@ namespace COArchive.Data
 
             // ── Performance relationships ──────────────────────────────────
 
+            // One Production → many Performances
             modelBuilder.Entity<Performance>()
                 .HasOne(p => p.Production)
                 .WithMany(e => e.Performances)
                 .HasForeignKey(p => p.ProductionId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // Cascade — deleting an Event deletes its Performances too
+            // Cascade — deleting a Production deletes its Performances too
 
             // ── Appearance relationships ───────────────────────────────────
 
+            // One Production → many Appearances
             modelBuilder.Entity<Appearance>()
                 .HasOne(a => a.Production)
                 .WithMany(e => e.Appearances)
                 .HasForeignKey(a => a.ProductionId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // Cascade — deleting an Event deletes its Appearances too
+            // Cascade — deleting a Production deletes its Appearances too
 
+            // One Person → many Appearances
             modelBuilder.Entity<Appearance>()
                 .HasOne(a => a.Person)
                 .WithMany(p => p.Appearances)
@@ -129,18 +138,21 @@ namespace COArchive.Data
                 .OnDelete(DeleteBehavior.Restrict);
             // Restrict — can't delete a Person who has Appearances
 
+            // One ContributorType → many Appearances
             modelBuilder.Entity<Appearance>()
                 .HasOne(a => a.ContributorType)
                 .WithMany(ct => ct.Appearances)
                 .HasForeignKey(a => a.ContributorTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // One Position → many Appearances
             modelBuilder.Entity<Appearance>()
                 .HasOne(a => a.Position)
                 .WithMany(p => p.Appearances)
                 .HasForeignKey(a => a.PositionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // One Character → many Appearances
             modelBuilder.Entity<Appearance>()
                 .HasOne(a => a.Character)
                 .WithMany(c => c.Appearances)
@@ -149,6 +161,7 @@ namespace COArchive.Data
 
             // ── Character relationships ────────────────────────────────────
 
+            // One Opera → many Characters
             modelBuilder.Entity<Character>()
                 .HasOne(c => c.Opera)
                 .WithMany(o => o.Characters)
@@ -158,6 +171,7 @@ namespace COArchive.Data
 
             // ── Position relationships ─────────────────────────────────────
 
+            // One ContributorType → many Positions
             modelBuilder.Entity<Position>()
                 .HasOne(p => p.ContributorType)
                 .WithMany(ct => ct.Positions)
@@ -166,6 +180,7 @@ namespace COArchive.Data
 
             // ── Person relationships ───────────────────────────────────────
 
+            // One VoiceType → many Persons
             modelBuilder.Entity<Person>()
                 .HasOne(p => p.VoiceType)
                 .WithMany(vt => vt.Persons)
@@ -174,6 +189,7 @@ namespace COArchive.Data
 
             // ── Notification relationships ─────────────────────────────────
 
+            // One Person → many Notifications
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.Person)
                 .WithMany(p => p.Notifications)
