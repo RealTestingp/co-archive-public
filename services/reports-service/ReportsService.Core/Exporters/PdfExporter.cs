@@ -42,7 +42,6 @@ namespace ReportsService.Core.Exporters
                         table.ColumnsDefinition(cols =>
                         {
                             cols.RelativeColumn(2); // Full Name
-                            cols.RelativeColumn(2); // Email
                             cols.RelativeColumn(1); // Contributor Type
                             cols.RelativeColumn(1); // Position
                             cols.RelativeColumn(1); // Character
@@ -54,7 +53,7 @@ namespace ReportsService.Core.Exporters
 
                         // Header
                         string[] headers = {
-                            "Full Name", "Email", "Contributor Type",
+                            "Full Name", "Contributor Type",
                             "Position", "Character", "Production",
                             "Season", "Nationality", "Voice Type"
                         };
@@ -86,7 +85,6 @@ namespace ReportsService.Core.Exporters
 
                             string[] cells = {
                                 row.FullName,
-                                row.Email ?? "",
                                 row.ContributorType,
                                 row.Position ?? "",
                                 row.Character ?? "",

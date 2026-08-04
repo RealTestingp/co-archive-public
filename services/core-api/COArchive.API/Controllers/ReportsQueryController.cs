@@ -108,7 +108,6 @@ namespace COArchive.API.Controllers
             var rows = appearances.Select(a => new ReportRowDto
             {
                 FullName = a.Person.FullName,
-                Email = a.Person.Email,
                 ContributorType = a.ContributorType.Name,
                 Position = a.Position?.Name,
                 Character = a.Character?.Name,

@@ -17,17 +17,17 @@ namespace ReportsService.Core.Exporters
             sheet.Cell(1, 1).Value = result.ReportTitle;
             sheet.Cell(1, 1).Style.Font.Bold = true;
             sheet.Cell(1, 1).Style.Font.FontSize = 14;
-            sheet.Range(1, 1, 1, 9).Merge();
+            sheet.Range(1, 1, 1, 8).Merge();
 
             // Generated date row
             sheet.Cell(2, 1).Value =
                 $"Generated: {result.GeneratedAt:yyyy-MM-dd HH:mm} UTC";
-            sheet.Range(2, 1, 2, 9).Merge();
+            sheet.Range(2, 1, 2, 8).Merge();
 
             // Header row
             int headerRow = 4;
             string[] headers = {
-                "Full Name", "Email", "Contributor Type",
+                "Full Name", "Contributor Type",
                 "Position", "Character", "Production",
                 "Season", "Nationality", "Voice Type"
             };
@@ -47,14 +47,13 @@ namespace ReportsService.Core.Exporters
             foreach (var row in result.Rows)
             {
                 sheet.Cell(dataRow, 1).Value = row.FullName;
-                sheet.Cell(dataRow, 2).Value = row.Email ?? "";
-                sheet.Cell(dataRow, 3).Value = row.ContributorType;
-                sheet.Cell(dataRow, 4).Value = row.Position ?? "";
-                sheet.Cell(dataRow, 5).Value = row.Character ?? "";
-                sheet.Cell(dataRow, 6).Value = row.Production ?? "";
-                sheet.Cell(dataRow, 7).Value = row.Season ?? "";
-                sheet.Cell(dataRow, 8).Value = row.Nationality ?? "";
-                sheet.Cell(dataRow, 9).Value = row.VoiceType ?? "";
+                sheet.Cell(dataRow, 2).Value = row.ContributorType;
+                sheet.Cell(dataRow, 3).Value = row.Position ?? "";
+                sheet.Cell(dataRow, 4).Value = row.Character ?? "";
+                sheet.Cell(dataRow, 5).Value = row.Production ?? "";
+                sheet.Cell(dataRow, 6).Value = row.Season ?? "";
+                sheet.Cell(dataRow, 7).Value = row.Nationality ?? "";
+                sheet.Cell(dataRow, 8).Value = row.VoiceType ?? "";
                 dataRow++;
             }
 
@@ -63,7 +62,7 @@ namespace ReportsService.Core.Exporters
             sheet.Cell(totalRow, 1).Value =
                 $"Total: {result.TotalCount} record(s)";
             sheet.Cell(totalRow, 1).Style.Font.Bold = true;
-            sheet.Range(totalRow, 1, totalRow, 9).Merge();
+            sheet.Range(totalRow, 1, totalRow, 8).Merge();
 
             // Auto-fit columns
             sheet.Columns().AdjustToContents();
