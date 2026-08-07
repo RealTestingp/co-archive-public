@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ChatbotService.Controllers
 {
   [ApiController]
   [Route("api/[controller]")]
+  [Authorize]
   public class ChatController : ControllerBase
   {
     private readonly IConfiguration _config;

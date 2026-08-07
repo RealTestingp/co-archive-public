@@ -1,12 +1,13 @@
 ﻿using COArchive.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace COArchive.API.Controllers
 {
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class NotificationsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -47,7 +48,7 @@ namespace COArchive.API.Controllers
             if (notification == null) return NotFound();
 
             notification.IsRead = true;
-            
+
             try
             {
                 await _db.SaveChangesAsync();
@@ -70,7 +71,7 @@ namespace COArchive.API.Controllers
             foreach (var n in unread)
                 n.IsRead = true;
 
-           try
+            try
             {
                 await _db.SaveChangesAsync();
                 return NoContent();

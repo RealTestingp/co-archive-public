@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ReportsService.Core.Models;
 using ReportsService.Core.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ReportsService.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ReportsController : ControllerBase
     {
         private readonly IReportGenerator _reportGenerator;

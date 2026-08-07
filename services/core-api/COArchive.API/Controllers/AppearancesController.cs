@@ -9,10 +9,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace COArchive.API.Controllers
 {
-
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AppearancesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -58,6 +57,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/appearances
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateAppearanceDto dto)
         {
             // Validate person exists
@@ -124,6 +124,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/appearances/1
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var appearance = await _db.Appearances.FindAsync(id);

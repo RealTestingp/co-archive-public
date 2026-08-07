@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace COArchive.API.Controllers
 {
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
-    
+    [Authorize]
+
     public class PersonsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -117,7 +117,7 @@ namespace COArchive.API.Controllers
                 Nationalities = person.Nationalities?
                 .Select(n => n.Name)
                 .ToList() ?? new List<string>(),
-                            ContributorTypes = appearances
+                ContributorTypes = appearances
                 .Select(a => a.ContributorType.Name)
                 .Distinct()
                 .ToList() ?? new List<string>(),
@@ -157,6 +157,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/persons
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreatePersonDto dto)
         {
             var person = new Person
@@ -193,6 +194,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/persons/1
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var person = await _db.Persons.FindAsync(id);
@@ -217,6 +219,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/persons/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePersonDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
