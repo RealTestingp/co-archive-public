@@ -6,6 +6,10 @@ WORKDIR /app
 # Gateway's URL, baked into the compiled JS at build time — changing it later needs a full rebuild.
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_ENTRA_CLIENT_ID
+ENV VITE_ENTRA_CLIENT_ID=$VITE_ENTRA_CLIENT_ID
+ARG VITE_ENTRA_TENANT_ID
+ENV VITE_ENTRA_TENANT_ID=$VITE_ENTRA_TENANT_ID
 
 # Copy package files first so npm install only reruns when they actually change.
 COPY package*.json ./
