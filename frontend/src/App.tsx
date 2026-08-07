@@ -21,6 +21,8 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import LoginPage from "./pages/LoginPage";
@@ -35,6 +37,20 @@ import ReportResultsPage from "./pages/ReportsResultsPage";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import { NotificationsProvider } from "./context/NotificationsContext";
 import NotificationToast from "./components/notifications/NotificationToast";
+
+/* Root path has no page of its own — it just decides where to send you. But it
+   can't decide that immediately: if MSAL just redirected back here with an
+   auth code in the URL, navigating away right now would wipe that code out
+   before MsalProvider's internal handleRedirectPromise() ever reads it. So
+   this waits for MSAL to finish processing (inProgress === None) before
+   redirecting anywhere. */
+const RootRedirect = () => {
+  const { inProgress } = useMsal();
+
+  if (inProgress !== InteractionStatus.None) return null;
+
+  return <Navigate to="/search" replace />;
+};
 
 /* Split out from App so it can call useLocation, which only works inside
    BrowserRouter. A hook cannot be called in the same component that renders the
@@ -53,10 +69,10 @@ const AppRoutes = () => {
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* There is no dashboard, so the root goes straight to search.
-            replace: true keeps "/" out of history, otherwise the back button
-            lands on the redirect and is immediately bounced forward again. */}
-        <Route path="/" element={<Navigate to="/search" replace />} />
+        {/* There is no dashboard, so the root goes straight to search — but
+            only once MSAL has had a chance to process a redirect response
+            first. See RootRedirect above. */}
+        <Route path="/" element={<RootRedirect />} />
 
         {/* Protected */}
         <Route
