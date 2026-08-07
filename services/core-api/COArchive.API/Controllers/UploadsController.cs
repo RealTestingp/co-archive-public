@@ -3,11 +3,13 @@ using COArchive.Data;
 using COArchive.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/uploads")]
+    [Authorize]
     public class UploadsController : ControllerBase
     {
         private static readonly string[] AllowedImageTypes = { "image/jpeg", "image/png", "image/webp" };
@@ -26,6 +28,7 @@ namespace COArchive.API.Controllers
         }
 
         [HttpPost("profile-image/{personId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UploadProfileImage(int personId, IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -51,6 +54,7 @@ namespace COArchive.API.Controllers
         }
 
         [HttpPost("program-pdf/{productionId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UploadProgramPdf(int productionId, IFormFile file)
         {
             if (file == null || file.Length == 0)

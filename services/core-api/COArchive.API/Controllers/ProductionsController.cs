@@ -10,7 +10,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize] // all endpoints require login
+    [Authorize] // all endpoints require login
     public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -30,7 +30,7 @@ namespace COArchive.API.Controllers
                 return BadRequest("Search term too long.");
 
             // Ignore search terms under 2 characters, avoids single-letter queries
-            if (search!= null && search.Trim().Length > 0 && search.Trim().Length < 2)
+            if (search != null && search.Trim().Length > 0 && search.Trim().Length < 2)
             {
                 return Ok(new List<object>());
             }
@@ -188,6 +188,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/productions/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
             if (!_contentModeration.IsSafe(dto.Notes))
@@ -278,6 +279,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/productions
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
             //Check Content moderation on notes field
@@ -378,6 +380,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/productions/1
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var production = await _db.Productions.FindAsync(id);

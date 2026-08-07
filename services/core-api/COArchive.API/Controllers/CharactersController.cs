@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace COArchive.API.Controllers
 {
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CharactersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -106,6 +106,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/characters
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
         {
             var character = new COArchive.Models.Character
@@ -128,6 +129,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/characters/1
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCharacterDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
@@ -149,10 +151,11 @@ namespace COArchive.API.Controllers
             }
         }
 
-        
+
 
         // DELETE /api/characters/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var character = await _db.Characters.FindAsync(id);

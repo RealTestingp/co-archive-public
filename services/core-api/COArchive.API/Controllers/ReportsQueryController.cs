@@ -2,10 +2,13 @@
 using COArchive.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+
 namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ReportsQueryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
