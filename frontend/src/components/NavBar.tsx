@@ -11,15 +11,15 @@
    URL rather than being tracked separately, and it stays correct after a back
    navigation or a direct link.
 
-   Sign out calls signOut from auth.ts, which clears the session store and
-   notifies every subscriber. Because the session is exposed through
-   useSyncExternalStore, the whole app re-renders as signed out immediately, and
-   the route guards redirect to login without a page reload.
+   Sign out calls MSAL's logoutRedirect, which clears the session and redirects
+   to /login on its own (postLogoutRedirectUri is set in authConfig.ts) — no
+   manual navigate() call needed here.
 */
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useMsal } from "@azure/msal-react";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth, signOut } from "../auth";
+import { useAuth } from "../auth";
 import NotificationBell from "./notifications/NotificationBell";
 import styles from "./NavBar.module.css";
 
@@ -102,6 +102,7 @@ const CheckIcon = () => (
 const NavBar = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { instance } = useMsal();
   const { mode, setMode } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,8 +127,9 @@ const NavBar = () => {
   };
 
   const handleLogout = () => {
-    signOut();
-    navigate("/login", { replace: true });
+    instance.logoutRedirect({
+      postLogoutRedirectUri: "/login",
+    });
   };
 
   // Three appearance choices, current one gets a checkmark.
