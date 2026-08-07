@@ -1,6 +1,4 @@
-/* Temporary demo login screen. Tokenised so it follows [data-theme="dark"]
-   like the rest of the app; red is confined to the accent rule, the selected
-   role and the submit button. */
+/* Sign-in screen — Microsoft/Entra ID login only. */
 
 .root {
   display: flex;
@@ -68,7 +66,7 @@
   max-width: 300px;
 }
 
-/* ── Disabled Microsoft button (kept for context) ── */
+/* ── Microsoft sign-in button ── */
 .msButton {
   display: flex;
   align-items: center;
@@ -84,160 +82,15 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   color: var(--c-ink);
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.msStatus {
-  margin-left: auto;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-regular);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-wide);
-  color: var(--c-ink-muted);
-}
-
-/* ── "or" separator ── */
-.orRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  margin: 20px 0;
-}
-
-.orLine {
-  flex: 1;
-  height: 1px;
-  background: var(--c-border);
-}
-
-.orText {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-regular);
-  color: var(--c-ink-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-wide);
-}
-
-/* ── Form ── */
-.form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-wide);
-  color: var(--c-ink-muted);
-}
-
-.input {
-  width: 100%;
-  min-height: var(--tap-min);
-  padding: 10px 12px;
-  font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  color: var(--c-ink);
-  background: var(--c-bg);
-  border: 1px solid var(--c-border-strong);
-  border-radius: var(--radius-md);
-  outline: none;
-}
-
-.input:focus-visible {
-  border-color: var(--c-brand);
-  box-shadow: 0 0 0 3px var(--c-brand-ring);
-}
-
-/* ── Role picker ── */
-.roleGroup {
-  display: flex;
-  gap: 8px;
-}
-
-.roleBtn {
-  flex: 1;
-  min-height: var(--tap-min);
-  padding: 10px 12px;
-  text-align: left;
-  line-height: 1.35;
-  font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  color: var(--c-ink-muted);
-  background: var(--c-bg);
-  border: 1px solid var(--c-border-strong);
-  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.roleBtn:hover {
+.msButton:hover {
   background: var(--c-surface-hover);
 }
 
-.roleBtn:focus-visible {
-  outline: 2px solid var(--c-brand);
-  outline-offset: 2px;
-}
-
-.roleBtnActive {
-  border-color: var(--c-brand);
-  background: var(--c-brand-tint);
-  color: var(--c-ink);
-  font-weight: var(--fw-semibold);
-}
-
-.roleName {
-  display: block;
-}
-
-.roleMeta {
-  display: block;
-  margin-top: 2px;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-regular);
-  color: var(--c-ink-muted);
-}
-
-/* ── Submit ── */
-.submit {
-  width: 100%;
-  min-height: var(--tap-min);
-  margin-top: 4px;
-  padding: 11px 20px;
-  background: var(--c-brand);
-  color: var(--c-brand-on);
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.submit:hover {
-  background: var(--c-brand-hover);
-}
-
-.submit:active {
-  transform: scale(0.99);
-}
-
-.submit:focus-visible {
+.msButton:focus-visible {
   outline: 2px solid var(--c-brand);
   outline-offset: 2px;
 }
@@ -262,9 +115,5 @@
 @media (max-width: 480px) {
   .card {
     padding: 36px 24px 32px;
-  }
-
-  .roleGroup {
-    flex-direction: column;
   }
 }
