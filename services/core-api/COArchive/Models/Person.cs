@@ -2,7 +2,7 @@
 
 namespace COArchive.Models
 {
-    public class Person
+    public class Person : IAuditable
     {
         public int Id { get; set; }
 
