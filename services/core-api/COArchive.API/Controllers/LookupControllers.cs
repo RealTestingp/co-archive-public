@@ -7,10 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace COArchive.API.Controllers
 {
-
-    //TODO add auth in this controller
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class SeasonsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -24,6 +23,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateSeasonDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Label))
@@ -33,14 +33,23 @@ namespace COArchive.API.Controllers
                 return Conflict("A season with this label already exists.");
 
             var season = new Season { Label = dto.Label };
-            _db.Seasons.Add(season);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = season.Id }, new { season.Id, season.Label });
+
+            try
+            {
+                _db.Seasons.Add(season);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = season.Id }, new { season.Id, season.Label });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the season.");
+            }
         }
     }
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class VenuesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -63,6 +72,7 @@ namespace COArchive.API.Controllers
         .ToListAsync());
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateVenueDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
@@ -81,15 +91,24 @@ namespace COArchive.API.Controllers
                 Country = dto.Country,
             };
 
-            _db.Venues.Add(venue);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = venue.Id }, new { venue.Id, venue.Name });
+
+            try
+            {
+                _db.Venues.Add(venue);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = venue.Id }, new { venue.Id, venue.Name });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the venue.");
+            }
         }
 
     }
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class EventTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -105,6 +124,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class VoiceTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -120,6 +140,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class NationalitiesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -135,6 +156,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ContributorTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -150,10 +172,11 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class OperasController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
-        
+
         public OperasController(ApplicationDbContext db) => _db = db;
 
         [HttpGet]
@@ -164,6 +187,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateOperaDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
@@ -190,12 +214,21 @@ namespace COArchive.API.Controllers
                 opera.Librettists = librettists;
             }
 
-            _db.Operas.Add(opera);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = opera.Id }, new { opera.Id, opera.Title });
+            try
+            {
+                _db.Operas.Add(opera);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = opera.Id }, new { opera.Id, opera.Title });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the opera.");
+            }
         }
 
+
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateOperaDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
@@ -233,11 +266,19 @@ namespace COArchive.API.Controllers
                 existing.Librettists = librettists;
             }
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the opera.");
+            }
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var opera = await _db.Operas.FindAsync(id);
@@ -263,6 +304,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LanguagesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -276,6 +318,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateLanguageDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
@@ -285,14 +328,24 @@ namespace COArchive.API.Controllers
                 return Conflict("A language with this name already exists.");
 
             var language = new Language { Name = dto.Name };
-            _db.Languages.Add(language);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = language.Id }, new { language.Id, language.Name });
+
+            try
+            {
+                _db.Languages.Add(language);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = language.Id }, new { language.Id, language.Name });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the language.");
+            }
         }
+
     }
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PositionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -318,6 +371,7 @@ namespace COArchive.API.Controllers
     // ── COMPOSERS ─────────────────────────────────────────────────
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ComposersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -330,7 +384,7 @@ namespace COArchive.API.Controllers
                 .Select(c => new { c.Id, c.Name })
                 .ToListAsync());
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateComposerDto dto)
         {
@@ -341,13 +395,21 @@ namespace COArchive.API.Controllers
                 return Conflict("A composer with this name already exists.");
 
             var composer = new Composer { Name = dto.Name };
-            _db.Composers.Add(composer);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = composer.Id }, new { composer.Id, composer.Name });
+
+            try
+            {
+                _db.Composers.Add(composer);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = composer.Id }, new { composer.Id, composer.Name });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the composer.");
+            }
         }
 
         // DELETE /api/composers/5
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -376,6 +438,7 @@ namespace COArchive.API.Controllers
     // ── LIBRETTISTS ───────────────────────────────────────────────
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LibrettistsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -388,7 +451,7 @@ namespace COArchive.API.Controllers
                 .Select(l => new { l.Id, l.Name })
                 .ToListAsync());
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLibrettistDto dto)
         {
@@ -399,13 +462,21 @@ namespace COArchive.API.Controllers
                 return Conflict("A librettist with this name already exists.");
 
             var librettist = new Librettist { Name = dto.Name };
-            _db.Librettists.Add(librettist);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetAll), new { id = librettist.Id }, new { librettist.Id, librettist.Name });
+
+            try
+            {
+                _db.Librettists.Add(librettist);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAll), new { id = librettist.Id }, new { librettist.Id, librettist.Name });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the librettist.");
+            }
         }
 
         // DELETE /api/librettists/5
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -428,8 +499,5 @@ namespace COArchive.API.Controllers
                 return Conflict("This librettist could not be deleted due to existing related records.");
             }
         }
-
-
-
     }
 }

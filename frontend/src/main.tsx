@@ -2,8 +2,12 @@
    App entry point. Sets up MSAL, then mounts React inside the providers.
 
    Provider order matters. MsalProvider is outermost since auth is the widest
-   concern, then ThemeProvider, then the app. */
-import React from "react";
+   concern, then ThemeProvider, then the app.
+
+   TEMPORARY: React.StrictMode removed to test whether its double-invocation
+   behavior in dev is interfering with MSAL's internal handleRedirectPromise()
+   call. Re-add once confirmed either way.
+*/
 import ReactDOM from "react-dom/client";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
@@ -14,19 +18,6 @@ import "./index.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
-/* This used to be a top level await, and it caused a bug that only showed up in
-   the production build.
-
-   Top level await makes this module async. Rollup then split shared modules
-   across chunks and NotificationsContext ended up duplicated, so the provider
-   and the hook were pointing at two different context objects. The lookup found
-   nothing and the app threw "useNotifications must be used within a
-   <NotificationsProvider>", even though it clearly was inside one. Dev mode was
-   fine because Vite serves modules unbundled.
-
-   Wrapping the await in a normal async function keeps the module graph
-   synchronous, which stops the split. Do not move this await back to the top
-   level. */
 async function bootstrap() {
   await msalInstance.initialize();
 
@@ -36,13 +27,11 @@ async function bootstrap() {
      throws BrowserAuthError: no_token_request_cache_error. */
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-      <MsalProvider instance={msalInstance}>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
-      </MsalProvider>
-    </React.StrictMode>,
+    <MsalProvider instance={msalInstance}>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </MsalProvider>,
   );
 }
 

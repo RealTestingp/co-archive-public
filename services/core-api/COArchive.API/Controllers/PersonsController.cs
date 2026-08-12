@@ -4,14 +4,14 @@ using COArchive.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+
 
 namespace COArchive.API.Controllers
 {
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
-    
+    [Authorize]
+
     public class PersonsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -117,7 +117,7 @@ namespace COArchive.API.Controllers
                 Nationalities = person.Nationalities?
                 .Select(n => n.Name)
                 .ToList() ?? new List<string>(),
-                            ContributorTypes = appearances
+                ContributorTypes = appearances
                 .Select(a => a.ContributorType.Name)
                 .Distinct()
                 .ToList() ?? new List<string>(),
@@ -157,6 +157,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/persons
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreatePersonDto dto)
         {
             var person = new Person
@@ -179,25 +180,46 @@ namespace COArchive.API.Controllers
                 person.Nationalities = nationalities;
             }
 
-            _db.Persons.Add(person);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = person.Id }, new { person.Id });
+            try
+            {
+                _db.Persons.Add(person);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetById), new { id = person.Id }, new { person.Id });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the person.");
+            }
         }
 
         // DELETE /api/persons/1
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var person = await _db.Persons.FindAsync(id);
             if (person == null) return NotFound();
 
-            _db.Persons.Remove(person);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            // Check for linked appearances before attempting delete
+            var hasAppearances = await _db.Appearances.AnyAsync(a => a.PersonId == id);
+            if (hasAppearances)
+                return Conflict("This person has appearance records and cannot be deleted.");
+
+            try
+            {
+                _db.Persons.Remove(person);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the person.");
+            }
         }
 
         // PUT /api/persons/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePersonDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
@@ -226,8 +248,15 @@ namespace COArchive.API.Controllers
                 existing.Nationalities = nationalities;
             }
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the person.");
+            }
         }
     }
 }

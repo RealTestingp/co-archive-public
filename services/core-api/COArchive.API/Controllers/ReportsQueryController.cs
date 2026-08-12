@@ -2,10 +2,13 @@
 using COArchive.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+
 namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ReportsQueryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -108,7 +111,6 @@ namespace COArchive.API.Controllers
             var rows = appearances.Select(a => new ReportRowDto
             {
                 FullName = a.Person.FullName,
-                Email = a.Person.Email,
                 ContributorType = a.ContributorType.Name,
                 Position = a.Position?.Name,
                 Character = a.Character?.Name,

@@ -9,7 +9,6 @@
     public class ReportRowDto
     {
         public string FullName { get; set; } = string.Empty;
-        public string? Email { get; set; }
         public string ContributorType { get; set; } = string.Empty;
         public string? Position { get; set; }
         public string? Character { get; set; }

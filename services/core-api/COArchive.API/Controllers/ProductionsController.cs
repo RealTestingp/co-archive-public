@@ -4,19 +4,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using COArchive.API.DataTransferObjects;
 using Microsoft.AspNetCore.Authorization;
+using COArchive.API.Services;
 
 namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize] // all endpoints require login
+    [Authorize] // all endpoints require login
     public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly ContentModerationService _contentModeration;
 
-        public ProductionsController(ApplicationDbContext db)
+        public ProductionsController(ApplicationDbContext db, ContentModerationService contentModeration)
         {
             _db = db;
+            _contentModeration = contentModeration;
         }
 
         // GET /api/productions?search=butterfly - search terms
@@ -27,8 +30,7 @@ namespace COArchive.API.Controllers
                 return BadRequest("Search term too long.");
 
             // Ignore search terms under 2 characters, avoids single-letter queries
-            //TODO FIX - display error or stop search - less than 2 chars returns entire db
-            if (search!= null && search.Trim().Length > 0 && search.Trim().Length < 2)
+            if (search != null && search.Trim().Length > 0 && search.Trim().Length < 2)
             {
                 return Ok(new List<object>());
             }
@@ -186,8 +188,33 @@ namespace COArchive.API.Controllers
 
         // PUT /api/productions/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
+            if (!_contentModeration.IsSafe(dto.Notes))
+                return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
+
+            var maxDate = DateTime.UtcNow.AddYears(5);
+            var minDate = new DateTime(1970, 1, 1);
+
+            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+            {
+                if (dto.PerformanceDates.Any(d => d > maxDate))
+                    return BadRequest("Performance dates cannot be more than 5 years in the future.");
+                if (dto.PerformanceDates.Any(d => d < minDate))
+                    return BadRequest("Performance dates cannot be before 1970.");
+            }
+
+            if (dto.TourStartDate.HasValue || dto.TourEndDate.HasValue)
+            {
+                if (dto.TourStartDate > maxDate || dto.TourEndDate > maxDate)
+                    return BadRequest("Tour dates cannot be more than 5 years in the future.");
+                if (dto.TourStartDate < minDate)
+                    return BadRequest("Tour dates cannot be before 1970.");
+                if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue && dto.TourStartDate >= dto.TourEndDate)
+                    return BadRequest("Tour end date must be after tour start date.");
+            }
+
             if (id != dto.Id) return BadRequest("ID mismatch.");
 
             var existing = await _db.Productions.FindAsync(id);
@@ -204,7 +231,6 @@ namespace COArchive.API.Controllers
             existing.ProgramPdfUrl = dto.ProgramPdfUrl;
             existing.Notes = dto.Notes;
 
-            await _db.SaveChangesAsync();
 
             // Update performance dates if provided — clear existing and replace
             if (dto.PerformanceDates != null || dto.TourStartDate.HasValue)
@@ -234,24 +260,53 @@ namespace COArchive.API.Controllers
                     {
                         ProductionId = id,
                         Date = dto.TourStartDate.Value,
-                    });
-                    _db.Performances.Add(new Performance
-                    {
-                        ProductionId = id,
-                        Date = dto.TourEndDate.Value,
+                        DateTo = dto.TourEndDate.Value,  // ← one row with both dates
                     });
                 }
 
-                await _db.SaveChangesAsync();
             }
 
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the production.");
+            }
         }
 
         // POST /api/productions
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
+            //Check Content moderation on notes field
+            if (!_contentModeration.IsSafe(dto.Notes))
+                return BadRequest("Notes cannot contain inappropriate content. Please review and resubmit.");
+
+            var maxDate = DateTime.UtcNow.AddYears(5);
+            var minDate = new DateTime(1970, 1, 1);
+
+            if (dto.PerformanceDates != null && dto.PerformanceDates.Any())
+            {
+                if (dto.PerformanceDates.Any(d => d > maxDate))
+                    return BadRequest("Performance dates cannot be more than 5 years in the future.");
+                if (dto.PerformanceDates.Any(d => d < minDate))
+                    return BadRequest("Performance dates cannot be before 1970.");
+            }
+
+            if (dto.TourStartDate.HasValue || dto.TourEndDate.HasValue)
+            {
+                if (dto.TourStartDate > maxDate || dto.TourEndDate > maxDate)
+                    return BadRequest("Tour dates cannot be more than 5 years in the future.");
+                if (dto.TourStartDate < minDate)
+                    return BadRequest("Tour dates cannot be before 1970.");
+                if (dto.TourStartDate.HasValue && dto.TourEndDate.HasValue && dto.TourStartDate >= dto.TourEndDate)
+                    return BadRequest("Tour end date must be after tour start date.");
+            }
+
             using var transaction = await _db.Database.BeginTransactionAsync();
             try
             {
@@ -325,14 +380,22 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/productions/1
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var production = await _db.Productions.FindAsync(id);
             if (production == null) return NotFound();
 
-            _db.Productions.Remove(production);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                _db.Productions.Remove(production);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the production.");
+            }
         }
     }
 }

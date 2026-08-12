@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace COArchive.API.Controllers
 {
-    //TODO add auth
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CharactersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -106,6 +106,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/characters
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
         {
             var character = new COArchive.Models.Character
@@ -114,13 +115,21 @@ namespace COArchive.API.Controllers
                 OperaId = dto.OperaId,
             };
 
-            _db.Characters.Add(character);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = character.Id }, new { character.Id });
+            try
+            {
+                _db.Characters.Add(character);
+                await _db.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetById), new { id = character.Id }, new { character.Id });
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred saving the character.");
+            }
         }
 
         // PUT /api/characters/1
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCharacterDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
@@ -131,20 +140,37 @@ namespace COArchive.API.Controllers
             existing.Name = dto.Name;
             existing.OperaId = dto.OperaId;
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred updating the character.");
+            }
         }
+
+
 
         // DELETE /api/characters/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var character = await _db.Characters.FindAsync(id);
             if (character == null) return NotFound();
 
-            _db.Characters.Remove(character);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                _db.Characters.Remove(character);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(500, "An error occurred deleting the character. Consider checking for any linked appearances.");
+            }
         }
     }
 }
