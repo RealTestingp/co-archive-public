@@ -29,7 +29,6 @@ import { exportToPdf, exportToXlsx } from "../utils/reportExport";
 
 interface ReportRow {
   fullName: string;
-  email?: string | null;
   contributorType: string;
   position?: string | null;
   character?: string | null;
@@ -54,9 +53,11 @@ interface LocationState {
 }
 
 // Column definitions in display order.
+// Email is deliberately excluded — reports must not expose contributor email
+// addresses. The backend also stopped returning it (ReportRowDto), so this
+// stays out of the table and both exports.
 const COLUMNS: { key: keyof ReportRow; label: string }[] = [
   { key: "fullName", label: "Name" },
-  { key: "email", label: "Email" },
   { key: "contributorType", label: "Contributor Type" },
   { key: "position", label: "Position" },
   { key: "character", label: "Character" },
