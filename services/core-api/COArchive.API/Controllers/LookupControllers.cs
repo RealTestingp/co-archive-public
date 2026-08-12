@@ -179,12 +179,34 @@ namespace COArchive.API.Controllers
 
         public OperasController(ApplicationDbContext db) => _db = db;
 
+        // GET /api/operas?search=traviata
+        // Composers and librettists are projected alongside the title so the
+        // Manage Archive Operas tab can list them and the edit modal can
+        // pre-fill without a second request. Existing callers that only read
+        // { id, title } (the character/production modals) are unaffected —
+        // this is additive.
         [HttpGet]
-        public async Task<IActionResult> GetAll() =>
-            Ok(await _db.Operas
+        public async Task<IActionResult> GetAll([FromQuery] string? search)
+        {
+            var query = _db.Operas.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(o => o.Title.Contains(term));
+            }
+
+            return Ok(await query
                 .OrderBy(o => o.Title)
-                .Select(o => new { o.Id, o.Title })
+                .Select(o => new
+                {
+                    o.Id,
+                    o.Title,
+                    Composers = o.Composers.Select(c => new { c.Id, c.Name }),
+                    Librettists = o.Librettists.Select(l => new { l.Id, l.Name })
+                })
                 .ToListAsync());
+        }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]

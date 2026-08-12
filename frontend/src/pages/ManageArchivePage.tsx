@@ -1,5 +1,5 @@
 /* ManageArchivePage.tsx
-   The admin hub. Three tabs over the three record types, with search,
+   The admin hub. Four tabs over the four record types, with search,
    pagination, and the entry point to every add modal.
 
    Admin only. The route is wrapped in AdminRoute inside ProtectedRoute in
@@ -7,7 +7,7 @@
    Worth repeating that this is a UI guard, not a security boundary.
 
    Two loading strategies, used deliberately:
-   - fetchAll runs once on mount and loads all three tabs together, so the tab
+   - fetchAll runs once on mount and loads all tabs together, so the tab
      counts are correct immediately and switching tabs needs no request at all.
    - fetchData reloads a single tab, used for search and after a record is added
      or edited.
@@ -22,6 +22,20 @@
    Both are Sets rather than booleans because the state is per tab, and both are
    copied rather than mutated on update, since React compares by reference and
    would not re-render on an in place Set.add.
+
+   Per-tab configuration (endpoint, headers, empty message, detail route) lives
+   in the lookup maps below rather than in ternary chains. At three tabs the
+   chains were readable; at four they stopped being, and the maps mean adding a
+   fifth tab is a handful of new entries rather than an edit to every chain.
+
+   Operas is the odd tab out in two ways, both deliberate:
+   - There is no opera detail page, so its title is plain text rather than a
+     NameLink. Nothing to navigate to.
+   - It is the only tab with row-level Edit and Delete actions. The others are
+     managed from their detail pages, which operas don't have. This tab is the
+     only place an opera can be corrected or removed, which is the whole reason
+     it exists — before it, operas could only be created as a side effect of
+     adding a production and could never be fixed afterwards.
 */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -33,10 +47,14 @@ import Dropdown from "../components/dropdown/Dropdown";
 import AddPersonModal from "../components/modals/AddPersonModal";
 import AddProductionModal from "../components/modals/AddProductionModal";
 import AddCharacterModal from "../components/modals/AddCharacterModal";
+import AddOperaModal from "../components/modals/AddOperaModal";
+import EditOperaModal from "../components/modals/EditOperaModal";
+import type { OperaForEdit } from "../components/modals/EditOperaModal";
+import DeleteOperaModal from "../components/modals/DeleteOperaModal";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../api";
 
-type Tab = "Persons" | "Productions" | "Characters";
+type Tab = "Persons" | "Productions" | "Characters" | "Operas";
 
 interface Person {
   id: number;
@@ -64,9 +82,50 @@ interface Character {
   opera?: string;
 }
 
+interface Opera {
+  id: number;
+  title: string;
+  // GET /api/operas projects these alongside the title so this tab can list
+  // them and EditOperaModal can pre-fill without a second request.
+  composers: { id: number; name: string }[];
+  librettists: { id: number; name: string }[];
+}
+
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
-const TABS: Tab[] = ["Persons", "Productions", "Characters"];
+const TABS: Tab[] = ["Persons", "Productions", "Characters", "Operas"];
+
+// Per-tab API endpoint. Every one of these supports ?search=.
+const ENDPOINTS: Record<Tab, string> = {
+  Persons: "/api/persons",
+  Productions: "/api/productions",
+  Characters: "/api/characters",
+  Operas: "/api/operas",
+};
+
+// Detail page route prefix. Operas is absent — it has no detail page, which is
+// what makes its rows render as plain text instead of links.
+const DETAIL_ROUTES: Partial<Record<Tab, string>> = {
+  Persons: "/persons",
+  Productions: "/productions",
+  Characters: "/characters",
+};
+
+// An empty string header is the actions column: right-aligned, fixed width,
+// rendered as "Actions". Only Operas has one.
+const TABLE_HEADERS: Record<Tab, string[]> = {
+  Persons: ["Name", "Voice Type", "Contributor Type", "Status"],
+  Productions: ["Title", "Season", "Event Type", "Venue"],
+  Characters: ["Name", "Opera"],
+  Operas: ["Title", "Composer(s)", "Librettist(s)", ""],
+};
+
+const EMPTY_MESSAGES: Record<Tab, string> = {
+  Persons: "No persons found.",
+  Productions: "No productions found.",
+  Characters: "No characters found.",
+  Operas: "No operas found.",
+};
 
 const ManageArchivePage = () => {
   const { isDark, colors } = useTheme();
@@ -81,6 +140,7 @@ const ManageArchivePage = () => {
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isOperaModalOpen, setIsOperaModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [search, setSearch] = useState("");
@@ -98,6 +158,14 @@ const ManageArchivePage = () => {
   const [persons, setPersons] = useState<Person[]>([]);
   const [productions, setProductions] = useState<Production[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [operas, setOperas] = useState<Opera[]>([]);
+
+  // Opera row actions. Null means no modal open; the opera itself is held so
+  // the modals can pre-fill and so the delete confirmation can name it.
+  const [operaToEdit, setOperaToEdit] = useState<OperaForEdit | null>(null);
+  const [operaToDelete, setOperaToDelete] = useState<Opera | null>(null);
+  const [isDeletingOpera, setIsDeletingOpera] = useState(false);
+  const [deleteOperaError, setDeleteOperaError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -106,60 +174,60 @@ const ManageArchivePage = () => {
     [],
   );
 
-  // Fetch a single tab (used for search and after add/edit).
-  const fetchData = useCallback(async (tab: Tab, searchTerm = "") => {
-    setIsLoading(true);
-    setHasError(false);
-    try {
-      const q = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
-      if (tab === "Persons") {
-        const res = await api.get(`/api/persons${q}`);
-        if (!res.ok) throw new Error();
-        setPersons(await res.json());
-      } else if (tab === "Productions") {
-        const res = await api.get(`/api/productions${q}`);
-        if (!res.ok) throw new Error();
-        setProductions(await res.json());
-      } else {
-        const res = await api.get(`/api/characters${q}`);
-        if (!res.ok) throw new Error();
-        setCharacters(await res.json());
-      }
-      setLoadedTabs((prev) => new Set(prev).add(tab));
-    } catch {
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  // Where each tab's fetched rows go. Declared as a map so fetchData doesn't
+  // need a branch per tab.
+  const setters = useMemo(
+    () =>
+      ({
+        Persons: setPersons,
+        Productions: setProductions,
+        Characters: setCharacters,
+        Operas: setOperas,
+        // Each setter takes its own row type; the map erases that, so callers
+        // hand over parsed JSON and the interfaces above document the shape.
+      }) as Record<Tab, (rows: never[]) => void>,
+    [],
+  );
 
-  // Load all three on mount so every stat count is accurate straight away and
+  // Fetch a single tab (used for search and after add/edit/delete).
+  const fetchData = useCallback(
+    async (tab: Tab, searchTerm = "") => {
+      setIsLoading(true);
+      setHasError(false);
+      try {
+        const q = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "";
+        const res = await api.get(`${ENDPOINTS[tab]}${q}`);
+        if (!res.ok) throw new Error();
+        setters[tab](await res.json());
+        setLoadedTabs((prev) => new Set(prev).add(tab));
+      } catch {
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setters],
+  );
+
+  // Load every tab on mount so all stat counts are accurate straight away and
   // switching tabs needs no fetch at all (instant, no flicker).
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     setHasError(false);
     try {
-      const [pRes, prRes, cRes] = await Promise.all([
-        api.get("/api/persons"),
-        api.get("/api/productions"),
-        api.get("/api/characters"),
-      ]);
-      if (!pRes.ok || !prRes.ok || !cRes.ok) throw new Error();
-      const [p, pr, c] = await Promise.all([
-        pRes.json(),
-        prRes.json(),
-        cRes.json(),
-      ]);
-      setPersons(p);
-      setProductions(pr);
-      setCharacters(c);
-      setLoadedTabs(new Set<Tab>(["Persons", "Productions", "Characters"]));
+      const responses = await Promise.all(
+        TABS.map((tab) => api.get(ENDPOINTS[tab])),
+      );
+      if (responses.some((r) => !r.ok)) throw new Error();
+      const payloads = await Promise.all(responses.map((r) => r.json()));
+      TABS.forEach((tab, i) => setters[tab](payloads[i]));
+      setLoadedTabs(new Set<Tab>(TABS));
     } catch {
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setters]);
 
   useEffect(() => {
     fetchAll();
@@ -207,12 +275,44 @@ const ManageArchivePage = () => {
     if (activeTab === "Persons") setIsPersonModalOpen(true);
     if (activeTab === "Productions") setIsProductionModalOpen(true);
     if (activeTab === "Characters") setIsCharacterModalOpen(true);
+    if (activeTab === "Operas") setIsOperaModalOpen(true);
   };
 
   const handleView = (id: number) => {
-    if (activeTab === "Persons") navigate(`/persons/${id}`);
-    if (activeTab === "Productions") navigate(`/productions/${id}`);
-    if (activeTab === "Characters") navigate(`/characters/${id}`);
+    const route = DETAIL_ROUTES[activeTab];
+    if (route) navigate(`${route}/${id}`);
+  };
+
+  /* Delete leans entirely on the backend's 409. OperasController blocks the
+     delete when productions reference the opera, and the DbUpdateException
+     catch covers characters (Character → Opera is DeleteBehavior.Restrict).
+     The message it sends is a bare string rather than a JSON object, so read
+     it as text and strip the surrounding quotes rather than looking for
+     `.message` — that's what the person/production delete handlers do, and it
+     is why their 409s show the generic fallback instead of the real reason. */
+  const handleDeleteOperaConfirm = async () => {
+    if (!operaToDelete) return;
+    setIsDeletingOpera(true);
+    setDeleteOperaError(null);
+    try {
+      const res = await api.delete(`/api/operas/${operaToDelete.id}`);
+      if (!res.ok) {
+        const message = (await res.text().catch(() => "")).replace(/^"|"$/g, "");
+        throw new Error(
+          message || "Failed to delete this opera. Please try again.",
+        );
+      }
+      setOperaToDelete(null);
+      fetchData("Operas", searchedTabs.has("Operas") ? search : "");
+    } catch (err) {
+      setDeleteOperaError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to delete this opera. Please try again.",
+      );
+    } finally {
+      setIsDeletingOpera(false);
+    }
   };
 
   const tabs = TABS;
@@ -221,14 +321,18 @@ const ManageArchivePage = () => {
   // the current content visible while new data arrives.
   const showSkeletons = isLoading && !loadedTabs.has(activeTab);
 
-  // Active list for pagination
-  const activeList =
-    activeTab === "Persons"
-      ? persons
-      : activeTab === "Productions"
-        ? productions
-        : characters;
+  // Active list for pagination.
+  const listsByTab: Record<Tab, { id: number }[]> = useMemo(
+    () => ({
+      Persons: persons,
+      Productions: productions,
+      Characters: characters,
+      Operas: operas,
+    }),
+    [persons, productions, characters, operas],
+  );
 
+  const activeList = listsByTab[activeTab];
   const totalPages = Math.ceil(activeList.length / pageSize);
   const pagedList = activeList.slice((page - 1) * pageSize, page * pageSize);
 
@@ -236,6 +340,7 @@ const ManageArchivePage = () => {
     Persons: persons.length,
     Productions: productions.length,
     Characters: characters.length,
+    Operas: operas.length,
   };
 
   // ── Styles (theme-aware) ──
@@ -292,26 +397,65 @@ const ManageArchivePage = () => {
     </span>
   );
 
+  // Row-level action button. Neutral by default; Delete turns red on hover so
+  // the destructive one is only loud at the moment it's about to be used.
+  const RowAction = ({
+    label,
+    onClick,
+    danger = false,
+  }: {
+    label: string;
+    onClick: () => void;
+    danger?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = danger ? "#9B1C1C" : textSecondary;
+        e.currentTarget.style.color = danger ? "#9B1C1C" : textPrimary;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = border;
+        e.currentTarget.style.color = textSecondary;
+      }}
+      style={{
+        fontSize: "11px",
+        fontWeight: 500,
+        padding: "4px 10px",
+        borderRadius: "4px",
+        cursor: "pointer",
+        border: `1px solid ${border}`,
+        background: surface,
+        color: textSecondary,
+        fontFamily: "Inter, sans-serif",
+        transition: "border-color 0.15s ease, color 0.15s ease",
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  const rowStyle = (i: number): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    padding: "12px 16px",
+    borderBottom:
+      i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
+  });
+
+  const cellStyle: React.CSSProperties = {
+    flex: 1,
+    fontSize: "13px",
+    color: textSecondary,
+  };
+
   const renderRows = () => {
     if (activeTab === "Persons") {
       return (pagedList as Person[]).map((p, i) => (
-        <div
-          key={p.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "12px 16px",
-            borderBottom:
-              i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
-          }}
-        >
+        <div key={p.id} style={rowStyle(i)}>
           <NameLink id={p.id} label={`${p.lastName}, ${p.firstName}`} />
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {p.voiceType ?? "—"}
-          </span>
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {p.contributorTypes.join(", ") || "—"}
-          </span>
+          <span style={cellStyle}>{p.voiceType ?? "—"}</span>
+          <span style={cellStyle}>{p.contributorTypes.join(", ") || "—"}</span>
           <span style={{ flex: 1, fontSize: "13px" }}>
             <span
               style={{
@@ -338,55 +482,75 @@ const ManageArchivePage = () => {
 
     if (activeTab === "Productions") {
       return (pagedList as Production[]).map((p, i) => (
-        <div
-          key={p.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "12px 16px",
-            borderBottom:
-              i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
-          }}
-        >
+        <div key={p.id} style={rowStyle(i)}>
           <NameLink id={p.id} label={p.title} />
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {p.season}
-          </span>
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {p.eventType}
-          </span>
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {p.venue}
-          </span>
+          <span style={cellStyle}>{p.season}</span>
+          <span style={cellStyle}>{p.eventType}</span>
+          <span style={cellStyle}>{p.venue}</span>
         </div>
       ));
     }
 
     if (activeTab === "Characters") {
       return (pagedList as Character[]).map((c, i) => (
-        <div
-          key={c.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "12px 16px",
-            borderBottom:
-              i < pagedList.length - 1 ? `1px solid ${borderLight}` : "none",
-          }}
-        >
+        <div key={c.id} style={rowStyle(i)}>
           <NameLink id={c.id} label={c.name} />
-          <span style={{ flex: 1, fontSize: "13px", color: textSecondary }}>
-            {c.opera ?? "—"}
-          </span>
+          <span style={cellStyle}>{c.opera ?? "—"}</span>
         </div>
       ));
     }
-  };
 
-  const tableHeaders = {
-    Persons: ["Name", "Voice Type", "Contributor Type", "Status"],
-    Productions: ["Title", "Season", "Event Type", "Venue"],
-    Characters: ["Name", "Opera"],
+    if (activeTab === "Operas") {
+      return (pagedList as Opera[]).map((o, i) => (
+        <div key={o.id} style={rowStyle(i)}>
+          {/* Plain text, not a NameLink — there is no opera detail page. */}
+          <span
+            style={{
+              flex: 2,
+              fontSize: "13px",
+              fontWeight: 500,
+              color: textPrimary,
+            }}
+          >
+            {o.title}
+          </span>
+          <span style={cellStyle}>
+            {o.composers?.map((c) => c.name).join(", ") || "—"}
+          </span>
+          <span style={cellStyle}>
+            {o.librettists?.map((l) => l.name).join(", ") || "—"}
+          </span>
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              minWidth: "100px",
+              justifyContent: "flex-end",
+            }}
+          >
+            <RowAction
+              label="Edit"
+              onClick={() =>
+                setOperaToEdit({
+                  id: o.id,
+                  title: o.title,
+                  composers: o.composers ?? [],
+                  librettists: o.librettists ?? [],
+                })
+              }
+            />
+            <RowAction
+              label="Delete"
+              danger
+              onClick={() => {
+                setDeleteOperaError(null);
+                setOperaToDelete(o);
+              }}
+            />
+          </div>
+        </div>
+      ));
+    }
   };
 
   // Skeleton rows mirror the real row layout: same flex weights per column
@@ -403,7 +567,7 @@ const ManageArchivePage = () => {
           borderBottom: row < 2 ? `1px solid ${borderLight}` : "none",
         }}
       >
-        {tableHeaders[activeTab].map((h, i) =>
+        {TABLE_HEADERS[activeTab].map((h, i) =>
           h === "" ? (
             <div
               key={i}
@@ -435,12 +599,6 @@ const ManageArchivePage = () => {
         )}
       </div>
     ));
-
-  const emptyMessage = {
-    Persons: "No persons found.",
-    Productions: "No productions found.",
-    Characters: "No characters found.",
-  };
 
   return (
     <div
@@ -660,7 +818,7 @@ const ManageArchivePage = () => {
                   borderBottom: `1px solid ${border}`,
                 }}
               >
-                {tableHeaders[activeTab].map((h, i) => (
+                {TABLE_HEADERS[activeTab].map((h, i) => (
                   <span
                     key={i}
                     style={{
@@ -690,7 +848,7 @@ const ManageArchivePage = () => {
                     color: textMuted,
                   }}
                 >
-                  {emptyMessage[activeTab]}
+                  {EMPTY_MESSAGES[activeTab]}
                 </div>
               ) : (
                 renderRows()
@@ -768,6 +926,37 @@ const ManageArchivePage = () => {
         onClose={() => setIsCharacterModalOpen(false)}
         onSuccess={() => fetchData("Characters", search)}
       />
+      <AddOperaModal
+        isOpen={isOperaModalOpen}
+        onClose={() => setIsOperaModalOpen(false)}
+        onSuccess={() => fetchData("Operas", search)}
+      />
+
+      {/* Edit/Delete are rendered only while an opera is selected, so the
+          modals always receive a non-null record and don't need to guard. */}
+      {operaToEdit && (
+        <EditOperaModal
+          isOpen
+          opera={operaToEdit}
+          onClose={() => setOperaToEdit(null)}
+          onSuccess={() =>
+            fetchData("Operas", searchedTabs.has("Operas") ? search : "")
+          }
+        />
+      )}
+      {operaToDelete && (
+        <DeleteOperaModal
+          isOpen
+          operaTitle={operaToDelete.title}
+          isDeleting={isDeletingOpera}
+          error={deleteOperaError}
+          onCancel={() => {
+            setOperaToDelete(null);
+            setDeleteOperaError(null);
+          }}
+          onConfirm={handleDeleteOperaConfirm}
+        />
+      )}
     </div>
   );
 };
