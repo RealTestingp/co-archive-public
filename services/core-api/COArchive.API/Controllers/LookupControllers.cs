@@ -49,7 +49,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class VenuesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -108,7 +108,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class EventTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -124,7 +124,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class VoiceTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -140,7 +140,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class NationalitiesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -156,7 +156,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+  
     public class ContributorTypesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -172,7 +172,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class OperasController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -326,7 +326,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class LanguagesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -367,7 +367,7 @@ namespace COArchive.API.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class PositionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -393,7 +393,7 @@ namespace COArchive.API.Controllers
     // ── COMPOSERS ─────────────────────────────────────────────────
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class ComposersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -460,7 +460,7 @@ namespace COArchive.API.Controllers
     // ── LIBRETTISTS ───────────────────────────────────────────────
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class LibrettistsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
