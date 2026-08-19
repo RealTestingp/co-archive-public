@@ -241,9 +241,7 @@ const EditProductionModal = ({
 
   const set =
     (field: keyof FormState) =>
-    (
-      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const setValue = (field: keyof FormState) => (value: string) =>
@@ -305,7 +303,12 @@ const EditProductionModal = ({
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.seasonId || !form.eventTypeId || !form.venueId) {
+    if (
+      !form.title.trim() ||
+      !form.seasonId ||
+      !form.eventTypeId ||
+      !form.venueId
+    ) {
       setError("Title, season, event type, and venue are required.");
       return;
     }
@@ -342,12 +345,17 @@ const EditProductionModal = ({
         sungLanguageId: form.sungLanguageId
           ? Number(form.sungLanguageId)
           : null,
-        runtimeMinutes: form.runtimeMinutes ? Number(form.runtimeMinutes) : null,
+        runtimeMinutes: form.runtimeMinutes
+          ? Number(form.runtimeMinutes)
+          : null,
         notes: form.notes.trim() || null,
         programPdfUrl: production.programPdfUrl ?? null,
       });
 
-      if (!res.ok) throw new Error("Failed to update production.");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to update production.");
+      }
 
       if (programPdfFile) {
         try {
@@ -374,8 +382,12 @@ const EditProductionModal = ({
 
       handleClose();
       onSuccess?.();
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -600,7 +612,9 @@ const EditProductionModal = ({
                     color: textPrimary,
                   }}
                 >
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span
+                    style={{ overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
                     📄 {programPdfFile.name}
                   </span>
                   <button
@@ -631,7 +645,10 @@ const EditProductionModal = ({
                         href={production.programPdfUrl}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: textPrimary, textDecoration: "underline" }}
+                        style={{
+                          color: textPrimary,
+                          textDecoration: "underline",
+                        }}
                       >
                         View existing PDF
                       </a>
@@ -664,7 +681,11 @@ const EditProductionModal = ({
               )}
               {pdfError && (
                 <div
-                  style={{ fontSize: "12px", color: "#9B1C1C", marginTop: "4px" }}
+                  style={{
+                    fontSize: "12px",
+                    color: "#9B1C1C",
+                    marginTop: "4px",
+                  }}
                 >
                   {pdfError}
                 </div>
