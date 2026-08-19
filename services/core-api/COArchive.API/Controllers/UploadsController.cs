@@ -9,7 +9,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/uploads")]
-    [Authorize]
+    
     public class UploadsController : ControllerBase
     {
         private static readonly string[] AllowedImageTypes = { "image/jpeg", "image/png", "image/webp" };
