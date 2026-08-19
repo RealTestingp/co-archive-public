@@ -1,6 +1,6 @@
 ﻿namespace COArchive.Models
 {
-    public class Appearance : IAuditable
+    public class Appearance
     {
         public int Id { get; set; }
 
