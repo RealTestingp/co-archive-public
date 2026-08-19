@@ -10,7 +10,7 @@ namespace ChatbotService.Controllers
 {
   [ApiController]
   [Route("api/[controller]")]
-  [Authorize]
+ 
   public class ChatController : ControllerBase
   {
     private readonly IConfiguration _config;

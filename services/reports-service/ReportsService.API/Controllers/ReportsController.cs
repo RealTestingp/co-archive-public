@@ -7,7 +7,7 @@ namespace ReportsService.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+   
     public class ReportsController : ControllerBase
     {
         private readonly IReportGenerator _reportGenerator;
