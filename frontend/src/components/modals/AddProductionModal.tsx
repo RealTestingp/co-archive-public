@@ -1025,7 +1025,10 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
         tourEndDate: isTour ? tourEndDate || null : null,
         appearances: [...castAppearances, ...crewAppearances],
       });
-      if (!prodRes.ok) throw new Error("Failed to create production.");
+      if (!prodRes.ok) {
+        const errorText = await prodRes.text();
+        throw new Error(errorText || "Failed to create production.");
+      }
       const created = await prodRes.json();
 
       // Program PDF is a separate file upload, outside the transaction — its
@@ -1470,7 +1473,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       setNewOpera((p) => ({ ...p, composerIds: v }))
                     }
                   />
-                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                  <div
+                    style={{ display: "flex", gap: "6px", marginTop: "6px" }}
+                  >
                     <input
                       type="text"
                       placeholder="Add new composer…"
@@ -1514,7 +1519,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                       setNewOpera((p) => ({ ...p, librettistIds: v }))
                     }
                   />
-                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                  <div
+                    style={{ display: "flex", gap: "6px", marginTop: "6px" }}
+                  >
                     <input
                       type="text"
                       placeholder="Add new librettist…"
@@ -1815,7 +1822,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                     />
                   </div>
                 </div>
-                {venueError && <div style={accordionErrStyle}>{venueError}</div>}
+                {venueError && (
+                  <div style={accordionErrStyle}>{venueError}</div>
+                )}
                 <button
                   onClick={handleSaveNewVenue}
                   disabled={savingVenue}
@@ -1855,7 +1864,9 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
                   ariaLabel="Sung language"
                   value={form.sungLanguageId}
                   options={languageOptions}
-                  onChange={(v) => setForm((p) => ({ ...p, sungLanguageId: v }))}
+                  onChange={(v) =>
+                    setForm((p) => ({ ...p, sungLanguageId: v }))
+                  }
                 />
               </div>
             </div>
@@ -2542,7 +2553,11 @@ const AddProductionModal = ({ isOpen, onClose, onSuccess }: Props) => {
             </div>
             <button
               onClick={() => setCrewRows((prev) => [...prev, makeCrewRow()])}
-              style={{ ...addLookupBtnStyle, width: "100%", marginBottom: "0.5rem" }}
+              style={{
+                ...addLookupBtnStyle,
+                width: "100%",
+                marginBottom: "0.5rem",
+              }}
             >
               + Add crew member
             </button>
