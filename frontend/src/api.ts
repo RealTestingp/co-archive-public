@@ -1,18 +1,40 @@
+import { msalInstance } from "./msalInstance";
+import { loginRequest } from "./authConfig";
+
 // Set at build time via Vite; baked into the JS bundle, can't change post-build.
 export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-// Talks directly to the Gateway (not via nginx proxy) to avoid stale DNS on revision changes.
+// Gets a valid access token silently — uses cached token if still valid
+async function getAuthHeader(): Promise<Record<string, string>> {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length === 0) return {};
+
+  try {
+    const tokenResponse = await msalInstance.acquireTokenSilent({
+      ...loginRequest,
+      account: accounts[0],
+    });
+    return { Authorization: `Bearer ${tokenResponse.accessToken}` };
+  } catch {
+    // Silent acquisition failed — redirect to login
+    await msalInstance.acquireTokenRedirect(loginRequest);
+    return {};
+  }
+}
+
 // Shared fetch wrapper so components don't repeat headers/base URL logic.
 export async function apiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
+  const authHeader = await getAuthHeader();
+
   return fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      // Spread after defaults so callers can override.
+      ...authHeader,
       ...options.headers,
     },
   });
@@ -34,10 +56,17 @@ export async function uploadFile(
   file: File,
   fieldName: string = "file",
 ): Promise<Response> {
-  const formData = new FormData();
-  formData.append(fieldName, file);
+  const authHeader = await getAuthHeader();
+
   return fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    body: formData,
+    headers: {
+      ...authHeader,
+    },
+    body: (() => {
+      const formData = new FormData();
+      formData.append(fieldName, file);
+      return formData;
+    })(),
   });
 }
