@@ -1,18 +1,14 @@
 using Azure.Storage.Blobs;
 using COArchive.API.Services;
 using COArchive.Data;
-using COArchive.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Entra ID authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
-
-builder.Services.AddAuthorization();
+// Add Entra ID authentication
+//builder.Services.AddAuthentication()
+//    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 builder.Services.AddControllers().AddJsonOptions(o =>
        o.JsonSerializerOptions.Converters.Add(
@@ -20,14 +16,9 @@ builder.Services.AddControllers().AddJsonOptions(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Audit logging support
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<AuditSaveChangesInterceptor>();
-
 // DbContext — pulled from COArchive project via project reference
-builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-    .AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>()));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Blob Storage — for profile images and program PDFs
 builder.Services.AddSingleton(x => new BlobServiceClient(
@@ -61,8 +52,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("ReactFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
+//Entra ID is not ready - uncomment the below lines once authentication is configured
+//app.UseAuthentication();
+//app.UseAuthorization();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
