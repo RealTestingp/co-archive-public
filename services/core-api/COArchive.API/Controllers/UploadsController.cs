@@ -54,7 +54,7 @@ namespace COArchive.API.Controllers
         }
 
         [HttpPost("program-pdf/{productionId}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> UploadProgramPdf(int productionId, IFormFile file)
         {
             if (file == null || file.Length == 0)

@@ -106,7 +106,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/characters
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Create([FromBody] CreateCharacterDto dto)
         {
             var character = new COArchive.Models.Character
@@ -155,7 +155,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/characters/5
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Delete(int id)
         {
             var character = await _db.Characters.FindAsync(id);

@@ -157,7 +157,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/persons
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+      
         public async Task<IActionResult> Create([FromBody] CreatePersonDto dto)
         {
             var person = new Person
@@ -194,7 +194,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/persons/1
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Delete(int id)
         {
             var person = await _db.Persons.FindAsync(id);
@@ -219,7 +219,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/persons/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePersonDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");

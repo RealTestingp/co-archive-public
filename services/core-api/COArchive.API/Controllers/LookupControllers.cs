@@ -23,7 +23,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Create([FromBody] CreateSeasonDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Label))
@@ -72,7 +72,7 @@ namespace COArchive.API.Controllers
         .ToListAsync());
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Create([FromBody] CreateVenueDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
@@ -209,7 +209,7 @@ namespace COArchive.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Create([FromBody] CreateOperaDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
@@ -250,7 +250,7 @@ namespace COArchive.API.Controllers
 
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Update(int id, [FromBody] UpdateOperaDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch.");
@@ -300,7 +300,7 @@ namespace COArchive.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Delete(int id)
         {
             var opera = await _db.Operas.FindAsync(id);
@@ -340,7 +340,7 @@ namespace COArchive.API.Controllers
                 .ToListAsync());
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Create([FromBody] CreateLanguageDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
@@ -406,7 +406,7 @@ namespace COArchive.API.Controllers
                 .Select(c => new { c.Id, c.Name })
                 .ToListAsync());
 
-        [Authorize(Roles = "Admin")]
+        
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateComposerDto dto)
         {
@@ -431,7 +431,7 @@ namespace COArchive.API.Controllers
         }
 
         // DELETE /api/composers/5
-        [Authorize(Roles = "Admin")]
+       
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -473,7 +473,7 @@ namespace COArchive.API.Controllers
                 .Select(l => new { l.Id, l.Name })
                 .ToListAsync());
 
-        [Authorize(Roles = "Admin")]
+        
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLibrettistDto dto)
         {
@@ -498,7 +498,7 @@ namespace COArchive.API.Controllers
         }
 
         // DELETE /api/librettists/5
-        [Authorize(Roles = "Admin")]
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

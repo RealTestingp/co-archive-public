@@ -57,7 +57,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/appearances
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Create([FromBody] CreateAppearanceDto dto)
         {
             // Validate person exists
@@ -124,7 +124,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/appearances/1
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Delete(int id)
         {
             var appearance = await _db.Appearances.FindAsync(id);

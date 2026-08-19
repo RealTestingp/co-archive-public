@@ -188,7 +188,7 @@ namespace COArchive.API.Controllers
 
         // PUT /api/productions/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+       
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductionDto dto)
         {
             if (!_contentModeration.IsSafe(dto.Notes))
@@ -279,7 +279,7 @@ namespace COArchive.API.Controllers
 
         // POST /api/productions
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Create([FromBody] CreateProductionDto dto)
         {
             //Check Content moderation on notes field
@@ -380,7 +380,7 @@ namespace COArchive.API.Controllers
 
         // DELETE /api/productions/1
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        
         public async Task<IActionResult> Delete(int id)
         {
             var production = await _db.Productions.FindAsync(id);
