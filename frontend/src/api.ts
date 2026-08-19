@@ -8,24 +8,16 @@ export const BASE_URL =
 // Gets a valid access token silently — uses cached token if still valid
 async function getAuthHeader(): Promise<Record<string, string>> {
   const accounts = msalInstance.getAllAccounts();
-
-  if (accounts.length === 0) {
-    console.warn("No MSAL accounts found — token not attached");
-    return {};
-  }
+  if (accounts.length === 0) return {};
 
   try {
     const tokenResponse = await msalInstance.acquireTokenSilent({
       ...loginRequest,
       account: accounts[0],
     });
-    console.log(
-      "Token acquired:",
-      tokenResponse.accessToken.substring(0, 20) + "...",
-    );
     return { Authorization: `Bearer ${tokenResponse.accessToken}` };
-  } catch (e) {
-    console.error("acquireTokenSilent failed:", e);
+  } catch {
+    // Silent acquisition failed — redirect to login
     await msalInstance.acquireTokenRedirect(loginRequest);
     return {};
   }
