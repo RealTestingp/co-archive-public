@@ -53,44 +53,13 @@ co-archive/
 - [.NET SDK 8.0](https://dotnet.microsoft.com/download)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-### Option A — Run with Docker
-
-1. Unzip the folder anywhere on your machine.
-2. Open a terminal in the unzipped folder (the one containing `docker-compose.yml`).
-3. Run:
-
-```bash
-docker-compose up --build
-```
-
-4. Open `http://localhost:5173`
-
-That's it — the `.env`, `frontend/.env.local`, and `services/core-api/COArchive.API/appsettings.Development.json` files needed to connect to our Azure SQL database and Entra ID are already included in this zip. No additional setup required.
-
-### Option B — View the live deployment
+### View the live deployment
 
 No setup required — the project is already deployed and running on Azure:
 
 🔗 **https://frontend.politeglacier-fb6c27b1.canadacentral.azurecontainerapps.io**
 
 Sign in with the test credentials provided separately to explore the archive as either a Staff or Admin user.
-
-### Option C — Run without Docker
-
-**Frontend:**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Backend:**
-
-```bash
-cd services/core-api
-dotnet run --project COArchive.API
-```
 
 ### Authentication
 
