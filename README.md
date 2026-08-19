@@ -53,46 +53,29 @@ co-archive/
 - [.NET SDK 8.0](https://dotnet.microsoft.com/download)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-### Option A — Run with Docker (recommended)
+### Option A — Run with Docker
 
-1. Clone the repo
-2. Create a `.env` file at the repo root:
-   DB_CONNECTION_STRING=your-azure-sql-connection-string
-   
-   AZURE_TENANT_ID=your-entra-tenant-id
-   
-   AZURE_CLIENT_ID=your-entra-client-id
-   
-4. Create `frontend/.env.local`:
-   VITE_ENTRA_CLIENT_ID=your-entra-client-id
-   
-   VITE_ENTRA_TENANT_ID=your-entra-tenant-id
-   
-6. Create `services/core-api/COArchive.API/appsettings.Development.json` (never commit this):
-
-```json
-{
-  "AzureAd": {
-    "Instance": "https://login.microsoftonline.com/",
-    "TenantId": "your-tenant-id",
-    "ClientId": "your-client-id",
-    "Audience": "your-client-id"
-  },
-  "ConnectionStrings": {
-    "DefaultConnection": "your-azure-sql-connection-string"
-  }
-}
-```
-
-5. Run:
+1. Unzip the folder anywhere on your machine.
+2. Open a terminal in the unzipped folder (the one containing `docker-compose.yml`).
+3. Run:
 
 ```bash
 docker-compose up --build
 ```
 
-6. Open `http://localhost:5173`
+4. Open `http://localhost:5173`
 
-### Option B — Run without Docker
+That's it — the `.env`, `frontend/.env.local`, and `services/core-api/COArchive.API/appsettings.Development.json` files needed to connect to our Azure SQL database and Entra ID are already included in this zip. No additional setup required.
+
+### Option B — View the live deployment
+
+No setup required — the project is already deployed and running on Azure:
+
+🔗 **https://frontend.politeglacier-fb6c27b1.canadacentral.azurecontainerapps.io**
+
+Sign in with the test credentials provided separately to explore the archive as either a Staff or Admin user.
+
+### Option C — Run without Docker
 
 **Frontend:**
 
