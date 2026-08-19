@@ -11,7 +11,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class AppearancesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;

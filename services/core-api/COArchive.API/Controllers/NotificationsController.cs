@@ -7,7 +7,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+ 
     public class NotificationsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;

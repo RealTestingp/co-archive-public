@@ -8,7 +8,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class CharactersController : ControllerBase
     {
         private readonly ApplicationDbContext _db;

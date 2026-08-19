@@ -9,7 +9,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    
     public class SeasonsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;

@@ -10,7 +10,7 @@ namespace COArchive.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // all endpoints require login
+     // all endpoints require login
     public class ProductionsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
