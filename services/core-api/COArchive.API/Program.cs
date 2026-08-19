@@ -35,7 +35,9 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:3000",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://frontend.politeglacier-fb6c27b1.canadacentral.azurecontainerapps.io",
+                "https://gateway.politeglacier-fb6c27b1.canadacentral.azurecontainerapps.io"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
